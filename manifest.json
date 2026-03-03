@@ -1,11 +1,10 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
-	"version": "1.0.0",
-	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
-	"isDesktopOnly": false
+ "id": "biblens",
+  "name": "BibLens",
+  "version": "0.0.1",
+  "minAppVersion": "1.0.0",
+  "description": "Bible reference preview on hover.",
+  "author": "Marek Polášek",
+  "authorUrl": "https://github.com/marekpola",
+  "isDesktopOnly": false
 }
