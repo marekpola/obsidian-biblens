@@ -5,34 +5,15 @@ Each task must include a clear Definition of Done (DoD).
 
 ---
 
-## Task 1 – Remove Sample Logic & Add Diagnostics Command
+## Active
 
-### Goal
-Clean the sample plugin code and replace it with a minimal BibLens structure.
 
-### Scope
-- Remove sample commands and example logic.
-- Keep minimal plugin bootstrap.
-- Add a command: "BibLens: Show Diagnostics".
-- The command should display a Notice with:
-  - Plugin version
-  - Confirmation that plugin is active
+### Task 2 – Create Reference Parser (Czech MVP)
 
-### Definition of Done
-- No sample plugin commands remain.
-- Command palette contains: "BibLens: Show Diagnostics".
-- Triggering the command shows a working Notice.
-- No build errors.
-- Works after Reload app.
-
----
-
-## Task 2 – Create Reference Parser (Czech MVP)
-
-### Goal
+#### Goal
 Implement minimal reference parsing for Czech-style notation.
 
-### Scope
+#### Scope
 Support:
 - Mt 1,3
 - Gn 22,1-19
@@ -50,7 +31,7 @@ Parsing must produce a structured object:
 
 Parser must be independent of Obsidian API.
 
-### Definition of Done
+#### Definition of Done
 - Parser implemented in separate module (e.g., parser.ts).
 - Basic unit tests or test cases documented.
 - Correct parsing of the 3 example formats.
@@ -58,12 +39,12 @@ Parser must be independent of Obsidian API.
 
 ---
 
-## Task 3 – Reading View Hover Detection
+### Task 3 – Reading View Hover Detection
 
-### Goal
+#### Goal
 Detect Bible references in Reading View and display a popover.
 
-### Scope
+#### Scope
 - Use simple regex detection.
 - When hovering a detected reference:
   - Show popover.
@@ -72,7 +53,7 @@ Detect Bible references in Reading View and display a popover.
 
 No real Bible data yet.
 
-### Definition of Done
+#### Definition of Done
 - Hover works in Reading View.
 - No errors in console.
 - No interference with normal Markdown links.
@@ -81,9 +62,9 @@ No real Bible data yet.
 
 ---
 
-## Task 4 – Internal Abbreviation Mapping (Czech)
+### Task 4 – Internal Abbreviation Mapping (Czech)
 
-### Goal
+#### Goal
 Introduce internal mapping of Czech abbreviations to canonical book IDs.
 
 Example:
@@ -91,13 +72,35 @@ Mt -> Matthew
 Gn -> Genesis
 Iz -> Isaiah
 
-### Definition of Done
+#### Definition of Done
 - Mapping stored in dedicated module.
 - Parser uses mapping.
 - Unknown abbreviations handled gracefully.
 - Test cases updated.
 
 ---
+## Done
+
+### Task 1 – Remove Sample Logic & Add Diagnostics Command
+
+#### Goal
+Clean the sample plugin code and replace it with a minimal BibLens structure.
+
+#### Scope
+- Remove sample commands and example logic.
+- Keep minimal plugin bootstrap.
+- Add a command: "BibLens: Show Diagnostics".
+- The command should display a Notice with:
+  - Plugin version
+  - Confirmation that plugin is active
+
+#### Definition of Done
+- No sample plugin commands remain.
+- Command palette contains: "BibLens: Show Diagnostics".
+- Triggering the command shows a working Notice.
+- No build errors.
+- Works after Reload app.
+
 
 ## Future (Not MVP)
 
