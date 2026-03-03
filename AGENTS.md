@@ -249,3 +249,41 @@ this.registerInterval(window.setInterval(() => { /* ... */ }, 1000));
 - Developer policies: https://docs.obsidian.md/Developer+policies
 - Plugin guidelines: https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines
 - Style guide: https://help.obsidian.md/style-guide
+
+---
+
+# BibLens Project Layer
+
+This section extends the default agent rules for the BibLens project.
+
+All agents must additionally follow SPEC.md.
+
+## Project Scope (MVP Phase)
+
+BibLens is currently in MVP phase.
+
+Agents MUST:
+
+- Keep changes incremental and small.
+- Respect MVP boundaries defined in SPEC.md.
+- Avoid feature expansion beyond defined scope.
+- Maintain mobile compatibility at all times.
+- Avoid Node-only runtime features.
+- Avoid external services or cloud APIs.
+- Avoid introducing large dependencies.
+
+## Architectural Direction
+
+- Reference parsing must be implemented as pure, testable logic.
+- UI integration must remain separated from parsing logic.
+- Data providers must be abstracted behind interfaces.
+- Future extensions (parallel texts, morphology) must not influence MVP structure.
+
+## Change Discipline
+
+Every implementation task must:
+
+1. Clearly define scope.
+2. Provide manual test steps.
+3. Update TESTPLAN.md if behavior changes.
+4. Remain reviewable (avoid large refactors).
