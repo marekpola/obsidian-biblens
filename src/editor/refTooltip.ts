@@ -1,0 +1,24 @@
+import { EditorView, hoverTooltip, Tooltip } from "@codemirror/view";
+import { scanRefs, formatRef } from "../parser";
+
+export const refTooltipExtension = hoverTooltip(
+	(view: EditorView, pos: number): Tooltip | null => {
+		const line = view.state.doc.lineAt(pos);
+		const lineText = view.state.sliceDoc(line.from, line.to);
+		const lineOffset = pos - line.from;
+
+		for (const match of scanRefs(lineText)) {
+			if (match.start <= lineOffset && lineOffset <= match.end) {
+				const dom = document.createElement("div");
+				dom.addClass("biblens-editor-tooltip");
+				dom.textContent = `Detected reference: ${formatRef(match.ref)}`;
+				return {
+					pos: line.from + match.start,
+					end: line.from + match.end,
+					create: () => ({ dom }),
+				};
+			}
+		}
+		return null;
+	}
+);

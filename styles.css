@@ -3,6 +3,17 @@
 	cursor: default;
 }
 
+.biblens-editor-tooltip {
+	padding: 6px 10px;
+	background-color: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m, 4px);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	box-shadow: var(--shadow-s);
+	max-width: 320px;
+}
+
 .biblens-popover {
 	position: fixed;
 	z-index: 1000;

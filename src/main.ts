@@ -1,6 +1,8 @@
 import { MarkdownPostProcessorContext, Notice, Plugin } from 'obsidian';
 import { scanRefs, formatRef } from './parser';
 import { PopoverManager } from './ui/hover';
+import { refDecorationsExtension } from './editor/refDecorations';
+import { refTooltipExtension } from './editor/refTooltip';
 
 const EXCLUDED_TAGS = new Set(['A', 'CODE', 'PRE', 'SCRIPT', 'STYLE', 'BUTTON', 'INPUT', 'TEXTAREA']);
 
@@ -36,6 +38,8 @@ export default class BibLensPlugin extends Plugin {
 		this.registerMarkdownPostProcessor(
 			(el: HTMLElement, _ctx: MarkdownPostProcessorContext) => this.processElement(el)
 		);
+
+		this.registerEditorExtension([refDecorationsExtension, refTooltipExtension]);
 	}
 
 	onunload() {

@@ -7,13 +7,9 @@ Each task must include a clear Definition of Done (DoD).
 
 ## Active
 
+
+
 ## Next
-
-### Task 4 – Editor (Live Preview): detect references with CodeMirror decorations
-DoD: underline refs in editor, no lag on large notes, no console errors
-
-## Task 5 – Editor tooltip
-DoD: hover shows tooltip with normalized ref, works after edits, doesn’t break selection/cursor
 
 
 ---
@@ -105,5 +101,13 @@ No real Bible data yet.
 - No interference with normal Markdown links.
 - Works on desktop.
 - Does not break mobile compatibility.
+
+### Task 4 – Editor (Live Preview): detect references with CodeMirror decorations
+DoD: underline refs in editor, no lag on large notes, no console errors
+
+## Task 5 – Editor tooltip
+DoD: hover shows tooltip with normalized ref, works after edits, doesn’t break selection/cursor
+
+
 
 
