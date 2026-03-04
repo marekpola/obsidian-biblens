@@ -125,6 +125,7 @@ Responsibilities:
 - Prefer minimal changes over architectural redesign.
 - When uncertain, ask before making large changes.
 - Always show `git diff` before committing changes.
+- Parsing produces `bookId` in OSIS format (e.g. "MAT", "GEN", "ISA"), not the raw input abbreviation. See D006 in DECISIONS.md and `src/types.ts`.
 
 ## Development workflow: AI-agent assisted with controlled documents
 Decision: Use control documents (CLAUDE.md, SPEC.md, TASKS.md, TESTPLAN.md, AGENTS.md, ARCHITECTURE.md, DECISIONS.md) as the primary source of truth for agents.

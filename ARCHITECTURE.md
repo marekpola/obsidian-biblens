@@ -31,9 +31,11 @@ All source files live under `src/`:
 
 ## Key Types (from src/types.ts)
 
+Canonical type definitions live in `src/types.ts`. The snippet below is kept here for quick reference — `src/types.ts` is the source of truth.
+
 ```ts
 type BibleRef = {
-  book: string;
+  bookId: string;      // OSIS book identifier (e.g. "MAT", "GEN", "ISA"), not the raw input abbreviation
   chapterStart: number;
   verseStart?: number;
   chapterEnd?: number;

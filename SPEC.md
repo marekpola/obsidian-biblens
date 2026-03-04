@@ -62,6 +62,13 @@ Notes:
 - The MVP will initially use a predefined internal abbreviation mapping.
 - Support for configurable abbreviation systems is planned for future versions.
 
+### Input abbreviation vs internal bookId
+
+Input abbreviations (e.g. "Mt", "Gn", "Iz") are the user-facing notation in the note text.
+Internally, the parser maps each abbreviation to a canonical `bookId` in OSIS format (e.g. "MAT", "GEN", "ISA") before storing it in `BibleRef`.
+OSIS identifiers are uppercase, 3-character (or longer) ASCII strings defined by the OSIS Bible standard.
+This separation allows multiple abbreviation systems to map to the same internal identifier in future versions.
+
 ---
 
 ## Non-Goals (MVP)

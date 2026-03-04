@@ -19,15 +19,22 @@ Support:
 - Gn 22,1-19
 - Iz 11
 
-Parsing must produce a structured object:
+Parsing must produce a structured object (see `src/types.ts` for canonical definition):
 
 {
-  book: string,
+  bookId: string,      // OSIS book identifier mapped from input abbreviation (e.g. "Mt" → "MAT")
   chapterStart: number,
   verseStart?: number,
   chapterEnd?: number,
   verseEnd?: number
 }
+
+The parser must map input abbreviations to OSIS bookIds:
+- Mt → MAT
+- Gn → GEN
+- Iz → ISA
+
+A minimal inline mapping is acceptable for MVP. A dedicated mapping module is planned in Task 4.
 
 Parser must be independent of Obsidian API.
 

@@ -20,7 +20,8 @@ Date: 2026-03-04
 
 ## D003 – BibleRef shape: flat object, no verse range as separate type
 Decision: BibleRef uses a flat object with optional chapterEnd/verseEnd fields rather than a nested range type.
-Reason: simplicity for MVP; avoids premature abstraction.
+The book field is named `bookId` (canonical internal identifier, not the raw input abbreviation).
+Reason: simplicity for MVP; avoids premature abstraction; `bookId` makes the distinction between input and internal representation explicit.
 Revisit: when adding parallel texts or morphology that need richer reference models.
 Date: 2026-03-04
 
@@ -40,4 +41,14 @@ Consequences:
 - No `.test.ts` files until a unit test runner is introduced.
 - TESTPLAN.md is the single source of truth for test cases.
 Revisit: when adding a unit test runner (e.g., vitest).
+Date: 2026-03-04
+
+## D006 – bookId as canonical internal book identifier in OSIS format
+Decision: The `BibleRef.book` field is renamed to `bookId`. Input abbreviations (e.g., "Mt", "Gn", "Iz") are mapped to a canonical `bookId` string in OSIS format (e.g., "MAT", "GEN", "ISA") before being stored in `BibleRef`.
+Reason: separates user-facing notation from the internal representation; OSIS is a well-established standard for Bible book identifiers, enabling interoperability with future data providers; enables future support for multiple abbreviation systems without changing downstream consumers.
+Consequences:
+- `src/types.ts` defines `bookId: string` in BibleRef (not `book`); values are OSIS IDs.
+- Task 2 parser must perform abbreviation → OSIS bookId mapping (even if minimal for MVP).
+- Task 4 (Internal Abbreviation Mapping) formalises the full mapping module.
+Revisit: when abbreviation systems become configurable.
 Date: 2026-03-04
