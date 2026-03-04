@@ -1,11 +1,11 @@
 export class PopoverManager {
 	private el: HTMLElement | null = null;
 
-	show(anchor: HTMLElement, content: string): void {
+	show(anchor: HTMLElement, content: HTMLElement): void {
 		this.hide();
 		const popover = document.createElement('div');
 		popover.addClass('biblens-popover');
-		popover.textContent = content;
+		popover.appendChild(content);
 
 		document.body.appendChild(popover);
 		this.el = popover;

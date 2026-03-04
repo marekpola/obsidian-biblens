@@ -5,11 +5,26 @@ export type VerseEntry = { label: string; text: string };
 export type TranslationData = Record<string, string>;
 
 export function getVerses(data: TranslationData, ref: BibleRef): VerseEntry[] {
-  if (ref.verseStart === undefined) return [];
-
-  const verseEnd = ref.verseEnd ?? ref.verseStart;
   const entries: VerseEntry[] = [];
 
+  if (ref.verseStart === undefined) {
+    // Chapter-only ref: collect all verses in the chapter from data keys
+    const prefix = `${ref.bookId}.${ref.chapterStart}.`;
+    const verseNums = Object.keys(data)
+      .filter(k => k.startsWith(prefix))
+      .map(k => parseInt(k.slice(prefix.length), 10))
+      .filter(n => !isNaN(n))
+      .sort((a, b) => a - b);
+    for (const v of verseNums) {
+      const text = data[`${prefix}${v}`];
+      if (text === undefined) continue;
+      const label = entries.length === 0 ? formatRef(ref) : String(v);
+      entries.push({ label, text });
+    }
+    return entries;
+  }
+
+  const verseEnd = ref.verseEnd ?? ref.verseStart;
   for (let v = ref.verseStart; v <= verseEnd; v++) {
     const key = `${ref.bookId}.${ref.chapterStart}.${v}`;
     const text = data[key];
@@ -19,4 +34,22 @@ export function getVerses(data: TranslationData, ref: BibleRef): VerseEntry[] {
   }
 
   return entries;
+}
+
+export function buildVerseDOM(entries: VerseEntry[]): HTMLElement {
+  const container = document.createElement('span');
+  if (entries.length === 0) {
+    const em = document.createElement('em');
+    em.appendChild(document.createTextNode('Verš nenalezen'));
+    container.appendChild(em);
+    return container;
+  }
+  for (const entry of entries) {
+    if (container.hasChildNodes()) container.appendChild(document.createTextNode(' '));
+    const sup = document.createElement('sup');
+    sup.appendChild(document.createTextNode(entry.label));
+    container.appendChild(sup);
+    container.appendChild(document.createTextNode(' ' + entry.text));
+  }
+  return container;
 }

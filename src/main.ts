@@ -1,9 +1,10 @@
 import { MarkdownPostProcessorContext, Notice, Plugin } from 'obsidian';
-import { scanRefs, formatRef } from './parser';
+import { scanRefs } from './parser';
 import { PopoverManager } from './ui/hover';
 import { refDecorationsExtension } from './editor/refDecorations';
 import { refTooltipExtension } from './editor/refTooltip';
 import type { TranslationData } from './provider';
+import { getVerses, buildVerseDOM } from './provider';
 import { loadTranslation } from './translationLoader';
 
 const EXCLUDED_TAGS = new Set(['A', 'CODE', 'PRE', 'SCRIPT', 'STYLE', 'BUTTON', 'INPUT', 'TEXTAREA']);
@@ -82,8 +83,10 @@ export default class BibLensPlugin extends Plugin {
 			span.addClass('biblens-ref');
 			span.textContent = match.matchText;
 
-			const label = `Detected reference: ${formatRef(match.ref)}`;
-			this.registerDomEvent(span, 'mouseenter', (e) => this.popover.show(e.target as HTMLElement, label));
+			const ref = match.ref;
+			const data = this.translationData;
+			this.registerDomEvent(span, 'mouseenter', (e) =>
+				this.popover.show(e.target as HTMLElement, buildVerseDOM(getVerses(data, ref))));
 			this.registerDomEvent(span, 'mouseleave', () => this.popover.hide());
 
 			fragment.appendChild(span);
