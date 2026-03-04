@@ -33,7 +33,10 @@ a popover appears displaying a preview.
 
 For MVP:
 
-- The popover may initially display a canonical form of the location (properties of object BibleRef) message.
+- The popover displays the actual verse text from a locally bundled translation (Czech CEP).
+- Formatting: verse location (e.g. `Gn 1,1`) as superscript, verse text in normal font.
+  For ranges, subsequent verses begin with their verse number in superscript.
+- Translation data is loaded from `translations/cep.json` in the plugin directory at startup.
 - No external services are allowed.
 - No external backend is allowed.
 - Reference detection must work reliably for basic Czech notation.

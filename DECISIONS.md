@@ -1,12 +1,12 @@
 # Decisions
 
-## D001 – MVP scope: placeholder only, no Bible text data
+## D001 – MVP scope: placeholder only, no Bible text data *(superseded by D009)*
 Decision: MVP will only detect references and show placeholder content (no real Bible text retrieval).
 Reason: keep initial release small, avoid data licensing/storage questions, and validate UX first.
 Consequences:
 - Task 3 hover preview shows "Detected reference: …" only.
 - Data provider work is deferred to Future section in TASKS.md.
-Revisit: when starting "Local text provider" work.
+Superseded by: D009 (Tasks 6–7 promote real verse text to MVP scope).
 Date: 2026-03-04
 
 ## D002 – Reference format for MVP: Czech abbreviations and comma notation
@@ -73,3 +73,27 @@ Consequences:
 Revisit: if a richer tooltip (with Bible text) is added later; tooltip content creation may need to be extracted.
 Date: 2026-03-04
 
+## D009 – Translation data stored in plugin directory, loaded at startup via vault adapter
+Decision: Bible translation files (e.g. `cep.json`) are stored as JSON files in
+`.obsidian/plugins/biblens/translations/`. The plugin loads them asynchronously at startup
+via `app.vault.adapter.read()`. Files are not bundled into `main.js`.
+Reason: supports multiple translations and manual import by dropping a file into the folder,
+without requiring a plugin rebuild. `DataAdapter` is mobile-compatible. Keeps vault content clean.
+Consequences:
+- `src/translationLoader.ts` handles Obsidian adapter access; `src/provider.ts` remains pure.
+- `main.ts` awaits `loadTranslation()` in `onload()` and stores the result.
+- `cep.json` must be included in plugin release artifacts under `translations/`.
+- Loading is async; UI falls back to "Verš nenalezen" if data is not yet available.
+Revisit: if a translation manager UI (import, select, delete) is added.
+Date: 2026-03-04
+
+## D010 – Verse popup content built via DOM construction, not innerHTML
+Decision: Verse content in popovers and tooltips is built using `createElement` / `appendChild` /
+`createTextNode`, never via `innerHTML` or `insertAdjacentHTML`.
+Reason: prevents XSS if verse text ever contains HTML-like characters; aligns with Obsidian
+security conventions.
+Consequences:
+- `PopoverManager.show()` accepts `HTMLElement` instead of `string`.
+- Both `hover.ts` and `refTooltip.ts` build DOM trees explicitly.
+Revisit: if a sanitizing markdown renderer is introduced for verse formatting.
+Date: 2026-03-04

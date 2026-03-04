@@ -125,10 +125,104 @@ Expected:
 - A tooltip appears on hover over each reference.
 - Tooltip text is exactly: "Detected reference: <bookId> <chapter>[,<verse>[-<verseEnd>]]"
   e.g. "Detected reference: MAT 1,3", "Detected reference: GEN 22,1-19", "Detected reference: ISA 11"
-- Tooltip disappears when mouse leaves the reference.
+- Tooltip disappears when mouse leaves the refeyerence.
 - Cursor placement and text selection are not disrupted by hovering.
 - No tooltip appears over plain text.
 - No console errors during any of the above steps.
+
+---
+
+## Task 6 – Bible Text Data Provider
+
+### 6a – Translation file loading
+
+Setup:
+- Ensure `translations/cep.json` exists in the plugin directory.
+
+Steps:
+1. Enable BibLens.
+2. Open developer console.
+
+Expected:
+- No errors on plugin load.
+- No "file not found" or JSON parse errors in console.
+
+### 6b – Provider unit check (developer console)
+
+Steps:
+1. In developer console, verify `getVerses` resolves correctly by inspecting hover output (see Task 7 tests).
+2. Temporarily rename `translations/cep.json` to trigger missing file.
+3. Reload plugin.
+
+Expected:
+- Plugin does not crash on missing translation file.
+- Console shows a descriptive error (not an unhandled promise rejection).
+- Hover shows fallback "Verš nenalezen".
+
+---
+
+## Task 7 – Display Bible Text in Popovers
+
+Setup:
+- Create a note with:
+  `Test Gn 1,1 a Gn 1,1-3 a Mt 1,3 a XYZ 99,99.`
+- Ensure `translations/cep.json` is present and loaded.
+
+### 7a – Single verse, Reading View
+
+Steps:
+1. Open note in Reading View.
+2. Hover over `Gn 1,1`.
+
+Expected:
+- Popover appears.
+- Content: `Gn 1,1` in superscript, followed by `Na počátku stvořil Bůh nebe a zemi…` in normal font.
+- No placeholder "Detected reference" text.
+
+### 7b – Verse range, Reading View
+
+Steps:
+1. Hover over `Gn 1,1-3`.
+
+Expected:
+- Popover shows three verses inline.
+- First label: `Gn 1,1` (superscript). Second label: `2` (superscript). Third label: `3` (superscript).
+- All verse texts follow their respective labels.
+
+### 7c – Unknown reference, Reading View
+
+Steps:
+1. Hover over `XYZ 99,99` (if detected) or any ref not in cep.json.
+
+Expected:
+- Popover shows `Verš nenalezen` in italics.
+- No console errors.
+
+### 7d – Single verse, Live Preview editor
+
+Steps:
+1. Open note in Live Preview.
+2. Hover over `Mt 1,3`.
+
+Expected:
+- Editor tooltip appears with `Mt 1,3` (superscript) + verse text.
+
+### 7e – Verse range, Live Preview editor
+
+Steps:
+1. Hover over `Gn 1,1-3` in Live Preview.
+
+Expected:
+- Tooltip shows all three verses with superscript labels, same format as Reading View.
+
+### 7f – No innerHTML in DOM (security check)
+
+Steps:
+1. In developer console, inspect the popover or tooltip DOM element.
+
+Expected:
+- No `innerHTML` assignment visible in stack traces.
+- Content nodes are text nodes and element nodes only.
 
 ---
 

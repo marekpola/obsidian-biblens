@@ -14,14 +14,20 @@ All source files live under `src/`:
 - src/types.ts
 - src/settings.ts
 - src/books.ts
+- src/provider.ts          *(planned – Task 6)*
+- src/translationLoader.ts *(planned – Task 6)*
 - src/ui/hover.ts
 - src/editor/refDecorations.ts
 - src/editor/refTooltip.ts
+
+Translation data files live under `translations/` in the plugin directory (not in `src/`):
+- translations/cep.json
 
 ## Modules
 - src/main.ts
   - Obsidian integration: plugin lifecycle, commands, registrations
   - Registers CM6 extensions via `this.registerEditorExtension([...])`
+  - Calls `loadTranslation` on `onload()`; stores `translationData`; passes it to UI layers
 - src/parser.ts
   - Pure parsing functions (no Obsidian imports)
   - Exports: `parseCzechBibleRef`, `scanRefs`, `formatRef`, `RefMatch`
@@ -31,24 +37,39 @@ All source files live under `src/`:
   - Settings placeholder — do not modify until a settings task is active
 - src/books.ts
   - Definition of standard representation of biblical books and mapping
+- src/provider.ts *(planned – Task 6)*
+  - Pure data-access module (no Obsidian imports)
+  - `type VerseEntry = { label: string; text: string }`
+  - `type TranslationData = Record<string, string>`
+  - Exports: `getVerses(data: TranslationData, ref: BibleRef): VerseEntry[]`
+  - Key format: `${bookId}.${chapterStart}.${verse}` matching cep.json keys
+- src/translationLoader.ts *(planned – Task 6)*
+  - Obsidian-aware loader; may import from 'obsidian'
+  - Exports: `loadTranslation(adapter: DataAdapter, pluginDir: string, name: string): Promise<TranslationData>`
+  - Reads `${pluginDir}/translations/${name}.json` via `adapter.read()`
 - src/ui/hover.ts
   - `PopoverManager` class: DOM popover creation, positioning, and teardown
+  - Current: `show(anchor: HTMLElement, content: string): void`
+  - Target (Task 7): `show(anchor: HTMLElement, content: HTMLElement): void` — accepts DOM element, not string
   - Used in Reading View only
 - src/editor/refDecorations.ts
   - CM6 ViewPlugin that scans visible ranges and applies underline decorations to detected references
   - Exports: `refDecorationsExtension` (an `Extension`)
   - Uses `scanRefs` from parser.ts; may import from `@codemirror/*`
 - src/editor/refTooltip.ts
-  - CM6 `hoverTooltip` extension that shows a normalized reference label on hover in the editor
+  - CM6 `hoverTooltip` extension that shows verse content on hover in the editor
   - Exports: `refTooltipExtension` (an `Extension`)
-  - Uses `formatRef` from parser.ts; may import from `@codemirror/*`
+  - Uses `formatRef`, `scanRefs` from parser.ts; `getVerses` from provider.ts; may import from `@codemirror/*`
 
 ## Boundaries
 - parser.ts must not import from 'obsidian'
+- provider.ts must not import from 'obsidian'
 - ui/hover.ts must not import from 'obsidian'
 - editor/*.ts must not import from 'obsidian'; may import from `@codemirror/*` (provided by Obsidian host)
-- main.ts may import parser.ts, ui/hover.ts, and editor/*.ts
+- translationLoader.ts may import from 'obsidian'
+- main.ts may import any src/ module
 - `@codemirror/*` packages are external (provided by Obsidian) — do not bundle them
+- Do not use `innerHTML` for verse content — use DOM construction only (see D010)
 
 ## Key Types (from src/types.ts)
 
