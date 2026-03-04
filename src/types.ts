@@ -1,7 +1,7 @@
-export type BibleBookAbbrev = string;
+import type { BookId} from "./books";
 
 export type BibleRef = {
-  book: BibleBookAbbrev;
+  bookId: BookId;
   chapterStart: number;
   verseStart?: number;
   chapterEnd?: number;
