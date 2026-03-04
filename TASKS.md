@@ -7,19 +7,19 @@ Each task must include a clear Definition of Done (DoD).
 
 ## Active
 
-
-
 ## Next
 
+## Future (Not MVP)
+- Local text provider
+- Parallel text support
+- Morphology
+- Configurable abbreviation systems
 
 ---
 ## Done
-
 ### Task 1 – Remove Sample Logic & Add Diagnostics Command
-
 #### Goal
 Clean the sample plugin code and replace it with a minimal BibLens structure.
-
 #### Scope
 - Remove sample commands and example logic.
 - Keep minimal plugin bootstrap.
@@ -27,7 +27,6 @@ Clean the sample plugin code and replace it with a minimal BibLens structure.
 - The command should display a Notice with:
   - Plugin version
   - Confirmation that plugin is active
-
 #### Definition of Done
 - No sample plugin commands remain.
 - Command palette contains: "BibLens: Show Diagnostics".
@@ -35,26 +34,14 @@ Clean the sample plugin code and replace it with a minimal BibLens structure.
 - No build errors.
 - Works after Reload app.
 
-
-## Future (Not MVP)
-
-- Local text provider
-- Parallel text support
-- Morphology
-- Configurable abbreviation systems
-- Editor (Live Preview) support
-
 ### Task 2 – Create Reference Parser (Czech MVP)
-
 #### Goal
 Implement minimal reference parsing for Czech-style notation.
-
 #### Scope
 Support:
 - Mt 1,3
 - Gn 22,1-19
 - Iz 11
-
 Parsing must produce a structured object (see `src/types.ts` for canonical definition):
 
 {

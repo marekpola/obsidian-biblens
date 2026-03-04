@@ -85,6 +85,53 @@ Expected:
 
 ---
 
+## Task 4 – Editor (Live Preview): Reference Decorations
+
+Setup:
+- Create a note with:
+  "Test Mt 1,3 and Gn 22,1-19 and Iz 11."
+- Open the note in **Live Preview** (editor) mode.
+
+Steps:
+1. Open the note in Live Preview.
+2. Observe the reference text in the editor.
+3. Type new text before and after a reference.
+4. Scroll in a long note (>100 lines) containing references scattered throughout.
+
+Expected:
+- Each detected reference (Mt 1,3, Gn 22,1-19, Iz 11) is underlined with the `biblens-ref` CSS class.
+- Non-reference text has no decoration.
+- Decorations update immediately after typing without noticeable lag.
+- Decorations appear on references that scroll into the visible viewport.
+- No console errors during any of the above steps.
+- Text selection and cursor placement are not affected.
+
+---
+
+## Task 5 – Editor Tooltip (Live Preview)
+
+Setup:
+- Same note as Task 4, open in Live Preview.
+
+Steps:
+1. Hover over "Mt 1,3" in the editor.
+2. Move mouse away.
+3. Hover over "Gn 22,1-19".
+4. Hover over "Iz 11".
+5. Click inside a reference to place the cursor; then hover over it.
+6. Hover over plain text with no reference.
+
+Expected:
+- A tooltip appears on hover over each reference.
+- Tooltip text is exactly: "Detected reference: <bookId> <chapter>[,<verse>[-<verseEnd>]]"
+  e.g. "Detected reference: MAT 1,3", "Detected reference: GEN 22,1-19", "Detected reference: ISA 11"
+- Tooltip disappears when mouse leaves the reference.
+- Cursor placement and text selection are not disrupted by hovering.
+- No tooltip appears over plain text.
+- No console errors during any of the above steps.
+
+---
+
 ## Mobile Compatibility (Periodic Check)
 
 Note:

@@ -43,6 +43,16 @@ Consequences:
 Revisit: when adding a unit test runner (e.g., vitest).
 Date: 2026-03-04
 
+## D006 – bookId as canonical internal book identifier in OSIS format
+Decision: The `BibleRef.book` field is renamed to `bookId`. Input abbreviations (e.g., "Mt", "Gn", "Iz") are mapped to a canonical `bookId` string in OSIS format (e.g., "MAT", "GEN", "ISA") before being stored in `BibleRef`.
+Reason: separates user-facing notation from the internal representation; OSIS is a well-established standard for Bible book identifiers, enabling interoperability with future data providers; enables future support for multiple abbreviation systems without changing downstream consumers.
+Consequences:
+- `src/types.ts` defines `bookId: string` in BibleRef (not `book`); values are OSIS IDs.
+- Task 2 parser must perform abbreviation → OSIS bookId mapping (even if minimal for MVP).
+- Task 4 (Internal Abbreviation Mapping) formalises the full mapping module.
+Revisit: when abbreviation systems become configurable.
+Date: 2026-03-04
+
 ## D007 – Use CM6 ViewPlugin for editor reference decorations (Task 4)
 Decision: Implement editor reference decorations as a CodeMirror 6 `ViewPlugin` in `src/editor/refDecorations.ts`, registered via `registerEditorExtension` in main.ts.
 Reason: `ViewPlugin` has direct access to `view.visibleRanges`, allowing decoration computation to be limited to the visible viewport on each update. This satisfies Task 4's "no lag on large notes" requirement. A `StateField`-based approach would compute decorations across the entire document on every change, which is less appropriate for large notes.
@@ -63,12 +73,3 @@ Consequences:
 Revisit: if a richer tooltip (with Bible text) is added later; tooltip content creation may need to be extracted.
 Date: 2026-03-04
 
-## D006 – bookId as canonical internal book identifier in OSIS format
-Decision: The `BibleRef.book` field is renamed to `bookId`. Input abbreviations (e.g., "Mt", "Gn", "Iz") are mapped to a canonical `bookId` string in OSIS format (e.g., "MAT", "GEN", "ISA") before being stored in `BibleRef`.
-Reason: separates user-facing notation from the internal representation; OSIS is a well-established standard for Bible book identifiers, enabling interoperability with future data providers; enables future support for multiple abbreviation systems without changing downstream consumers.
-Consequences:
-- `src/types.ts` defines `bookId: string` in BibleRef (not `book`); values are OSIS IDs.
-- Task 2 parser must perform abbreviation → OSIS bookId mapping (even if minimal for MVP).
-- Task 4 (Internal Abbreviation Mapping) formalises the full mapping module.
-Revisit: when abbreviation systems become configurable.
-Date: 2026-03-04
