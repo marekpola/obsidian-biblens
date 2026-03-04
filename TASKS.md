@@ -7,46 +7,6 @@ Each task must include a clear Definition of Done (DoD).
 
 ## Active
 
-
-### Task 2 – Create Reference Parser (Czech MVP)
-
-#### Goal
-Implement minimal reference parsing for Czech-style notation.
-
-#### Scope
-Support:
-- Mt 1,3
-- Gn 22,1-19
-- Iz 11
-
-Parsing must produce a structured object (see `src/types.ts` for canonical definition):
-
-{
-  bookId: BookId,      // OSIS book identifier mapped from input abbreviation (e.g. "Mt" → "MAT")
-  chapterStart: number,
-  verseStart?: number,
-  chapterEnd?: number,
-  verseEnd?: number
-}
-
-The parser must map input abbreviations to OSIS bookIds:
-- Mt → MAT
-- Gn → GEN
-- Iz → ISA
-
-A minimal inline mapping is acceptable for MVP. A dedicated mapping module is planned in Task 4.
-
-Parser must be independent of Obsidian API.
-
-#### Definition of Done
-- Parser implemented in separate module (e.g., parser.ts).
-- Basic unit tests or test cases documented.
-- Correct parsing of the 3 example formats.
-- No UI integration yet.
-
----
-## Next
-
 ### Task 3 – Reading View Hover Detection
 
 #### Goal
@@ -68,7 +28,10 @@ No real Bible data yet.
 - Works on desktop.
 - Does not break mobile compatibility.
 
+
 ---
+## Next
+
 
 ### Task 4 – Internal Abbreviation Mapping (Czech)
 
@@ -117,3 +80,39 @@ Clean the sample plugin code and replace it with a minimal BibLens structure.
 - Morphology
 - Configurable abbreviation systems
 - Editor (Live Preview) support
+
+### Task 2 – Create Reference Parser (Czech MVP)
+
+#### Goal
+Implement minimal reference parsing for Czech-style notation.
+
+#### Scope
+Support:
+- Mt 1,3
+- Gn 22,1-19
+- Iz 11
+
+Parsing must produce a structured object (see `src/types.ts` for canonical definition):
+
+{
+  bookId: BookId,      // OSIS book identifier mapped from input abbreviation (e.g. "Mt" → "MAT")
+  chapterStart: number,
+  verseStart?: number,
+  chapterEnd?: number,
+  verseEnd?: number
+}
+
+The parser must map input abbreviations to OSIS bookIds:
+- Mt → MAT
+- Gn → GEN
+- Iz → ISA
+
+A minimal inline mapping is acceptable for MVP. A dedicated mapping module is planned in Task 4.
+
+Parser must be independent of Obsidian API.
+
+#### Definition of Done
+- Parser implemented in separate module (e.g., parser.ts).
+- Basic unit tests or test cases documented.
+- Correct parsing of the 3 example formats.
+- No UI integration yet.
