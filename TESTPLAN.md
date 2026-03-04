@@ -66,16 +66,22 @@ Expected:
 Setup:
 - Create a note with:
   "Test Mt 1,3 and Gn 22,1-19 and Iz 11."
+- Also include a Markdown link, e.g. `[Mt 1,3](https://example.com)`.
 
 Steps:
 1. Open the note in Reading View.
-2. Hover over each reference.
+2. Hover over each plain-text reference (Mt 1,3, Gn 22,1-19, Iz 11).
+3. Move mouse away.
+4. Hover over the Markdown link that contains a reference.
 
 Expected:
-- A popover appears.
-- It shows: "Detected reference: <normalized>"
-- Popover disappears on mouse out (unless pinned, if implemented later).
-- No console errors.
+- A popover appears on hover over each plain-text reference.
+- Popover text is exactly: "Detected reference: <bookId> <chapter>[,<verse>[-<verseEnd>]]"
+  e.g. "Detected reference: MAT 1,3"
+- Popover is fully visible within the viewport (does not clip at edges).
+- Popover disappears when mouse leaves the span.
+- The Markdown link remains clickable; no popover appears when hovering it.
+- No console errors during any of the above steps.
 
 ---
 

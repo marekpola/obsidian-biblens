@@ -1,8 +1,18 @@
-/*
+.biblens-ref {
+	border-bottom: 1px dotted var(--text-accent);
+	cursor: default;
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
-
-If your plugin does not need CSS, delete this file.
-
-*/
+.biblens-popover {
+	position: fixed;
+	z-index: 1000;
+	padding: 6px 10px;
+	background-color: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m, 4px);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	box-shadow: var(--shadow-s);
+	pointer-events: none;
+	max-width: 320px;
+}
