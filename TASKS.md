@@ -22,7 +22,7 @@ Support:
 Parsing must produce a structured object (see `src/types.ts` for canonical definition):
 
 {
-  bookId: string,      // OSIS book identifier mapped from input abbreviation (e.g. "Mt" → "MAT")
+  bookId: BookId,      // OSIS book identifier mapped from input abbreviation (e.g. "Mt" → "MAT")
   chapterStart: number,
   verseStart?: number,
   chapterEnd?: number,

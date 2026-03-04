@@ -24,7 +24,7 @@ function parseChapterVersePart(restRaw: string): Omit<BibleRef, "bookId"> | null
   return { chapterStart, verseStart, verseEnd };
 }
 
-export function parseBibleRef(input: string): ParseResult {
+export function parseCzechBibleRef(input: string): ParseResult {
   const s = input.trim();
   if (!s) return { ok: false, error: "Empty input" };
 
@@ -38,8 +38,8 @@ export function parseBibleRef(input: string): ParseResult {
   const m = /^(.+?)\s+(.+)$/.exec(s);
   if (!m) return { ok: false, error: "Missing chapter/verse part" };
 
-  const rawBook = m[1].trim();
-  const rest = m[2].trim();
+  const rawBook = m[1]!.trim();
+  const rest = m[2]!.trim();
 
   const bookId = resolveBookId(rawBook);
   if (!bookId) return { ok: false, error: `Unknown book abbreviation: ${rawBook}` };

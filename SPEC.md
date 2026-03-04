@@ -33,7 +33,7 @@ a popover appears displaying a preview.
 
 For MVP:
 
-- The popover may initially display a placeholder message.
+- The popover may initially display a canonical form of the location (properties of object BibleRef) message.
 - No external services are allowed.
 - No external backend is allowed.
 - Reference detection must work reliably for basic Czech notation.

@@ -23,6 +23,7 @@ All source files live under `src/`:
   - Shared types (BibleRef, ParseResult, etc.)
 - src/settings.ts
   - Settings placeholder — do not modify until a settings task is active
+- src/books.ts - definition of standard representation of biblical books and mapping
 
 ## Boundaries
 - parser.ts must not import from 'obsidian'
@@ -35,7 +36,7 @@ Canonical type definitions live in `src/types.ts`. The snippet below is kept her
 
 ```ts
 type BibleRef = {
-  bookId: string;      // OSIS book identifier (e.g. "MAT", "GEN", "ISA"), not the raw input abbreviation
+  bookId: BookId; //BookId contains all known books      
   chapterStart: number;
   verseStart?: number;
   chapterEnd?: number;
