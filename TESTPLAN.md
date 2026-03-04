@@ -56,8 +56,8 @@ Test cases:
 - "Iz 11" -> book=Iz, chapterStart=11, verseStart=undefined
 
 Expected:
-- Parser returns structured object for valid inputs.
-- Parser returns null/undefined (or an error result) for invalid inputs.
+- Parser returns `{ ok: true, ref: BibleRef }` for valid inputs.
+- Parser returns `{ ok: false, error: string }` for invalid inputs (never throws, never returns null).
 
 ---
 

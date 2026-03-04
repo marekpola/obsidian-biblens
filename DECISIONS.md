@@ -4,7 +4,7 @@
 Decision: MVP will only detect references and show placeholder content (no real Bible text retrieval).
 Reason: keep initial release small, avoid data licensing/storage questions, and validate UX first.
 Consequences:
-- Task 3 popover shows "Detected reference: …" only.
+- Task 3 hover preview shows "Detected reference: …" only.
 - Data provider work is deferred to Future section in TASKS.md.
 Revisit: when starting "Local text provider" work.
 Date: 2026-03-04
@@ -18,11 +18,26 @@ Consequences:
 Revisit: when adding configurable abbreviation systems and separators.
 Date: 2026-03-04
 
-## D003 – Development workflow: AI-agent assisted with controlled documents
-Decision: Use control documents (CLAUDE.md, SPEC.md, TASKS.md, TESTPLAN.md, AGENTS.md, ARCHITECTURE.md) as the primary source of truth for agents.
-Reason: reduces prompt length, limits scope creep, and improves reproducibility of agent work.
+## D003 – BibleRef shape: flat object, no verse range as separate type
+Decision: BibleRef uses a flat object with optional chapterEnd/verseEnd fields rather than a nested range type.
+Reason: simplicity for MVP; avoids premature abstraction.
+Revisit: when adding parallel texts or morphology that need richer reference models.
+Date: 2026-03-04
+
+## D004 – ParseResult as discriminated union, not exceptions
+Decision: `parseCzechBibleRef` returns `ParseResult` (ok/error union) and never throws.
+Reason: predictable error handling without try/catch at call sites; consistent with the existing types.ts definition.
 Consequences:
-- Tasks must have DoD and be implementable without additional clarification.
-- Agents should be instructed to read these documents before modifying code.
-Revisit: if documents become redundant or too heavy; simplify instead of expanding.
+- Callers must check `result.ok` before accessing `result.ref`.
+- Parser must not throw on invalid input — return `{ ok: false, error: '...' }` instead.
+Revisit: if a richer error model (error codes, positions) is needed later.
+Date: 2026-03-04
+
+## D005 – Task 2 test cases documented in TESTPLAN.md, not a separate test file
+Decision: Parser test cases for Task 2 are added to TESTPLAN.md as manual verification steps.
+Reason: no test runner is configured for MVP; keeps testing lightweight and consistent with Task 1 approach.
+Consequences:
+- No `.test.ts` files until a unit test runner is introduced.
+- TESTPLAN.md is the single source of truth for test cases.
+Revisit: when adding a unit test runner (e.g., vitest).
 Date: 2026-03-04

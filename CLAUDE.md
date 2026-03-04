@@ -4,12 +4,12 @@ This file provides persistent context and workflow rules for Claude when working
 
 Claude should always read and follow:
 
-- SPEC.md
-- TASKS.md
-- TESTPLAN.md
-- AGENTS.md
-
-These documents define the project specification, development tasks, testing procedures, and engineering rules.
+- SPEC.md — project specification and MVP boundaries
+- TASKS.md — active task and Definition of Done
+- TESTPLAN.md — manual test steps and test cases
+- AGENTS.md — coding conventions and Obsidian plugin rules
+- ARCHITECTURE.md — module structure, types, and boundaries
+- DECISIONS.md — recorded design decisions (do not contradict without a new decision)
 
 ---
 
@@ -17,30 +17,9 @@ These documents define the project specification, development tasks, testing pro
 
 BibLens is an Obsidian plugin that provides instant Bible passage previews when hovering over references.
 
-Example references:
+The project is currently in **MVP phase**. MVP goal: detect references and display a hover preview.
 
-- Mt 1,3
-- Gn 22,1-19
-- Iz 11
-
-Initial development focuses on Czech Bible notation.
-
-The project is currently in **MVP phase**.
-
-MVP goal:
-detect references and display a hover preview.
-
----
-
-# Key Constraints
-
-All implementations must follow these constraints:
-
-- Plugin must work on **desktop and mobile**.
-- Avoid **Node-only runtime APIs**.
-- No external services during MVP.
-- Keep code **incremental and minimal**.
-- Do not introduce unnecessary dependencies.
+See SPEC.md for full specification and reference format details.
 
 ---
 
@@ -50,8 +29,8 @@ Development is organized through TASKS.md.
 
 Structure:
 
-Active → task currently being implemented  
-Next → upcoming tasks  
+Active → task currently being implemented
+Next → upcoming tasks
 Done → completed tasks
 
 Claude should always work on the **Active task** unless instructed otherwise.
@@ -68,18 +47,19 @@ Responsible for implementing tasks.
 
 Process:
 
-1. Read the Active task in TASKS.md
-2. Implement the minimal solution
-3. Keep changes small and isolated
-4. Run build if possible
-5. Show `git diff`
-6. Provide manual test steps from TESTPLAN.md
+1. Read TASKS.md (Active task + DoD)
+2. Read ARCHITECTURE.md and DECISIONS.md
+3. Implement the minimal solution
+4. Keep changes small and isolated
+5. Run build if possible
+6. Show `git diff`
+7. Provide manual test steps from TESTPLAN.md
 
 Rules:
 
 - Do not refactor unrelated code
-- Do not change project architecture without reason
-- Respect AGENTS.md
+- Do not change project architecture without a new DECISIONS.md entry
+- Respect AGENTS.md and ARCHITECTURE.md boundaries
 
 ---
 
@@ -91,6 +71,8 @@ Check:
 
 - compliance with SPEC.md
 - compliance with AGENTS.md
+- compliance with ARCHITECTURE.md (module boundaries, type shapes)
+- compliance with DECISIONS.md (no silent overrides)
 - mobile compatibility
 - minimal scope
 - clarity of code
@@ -137,59 +119,17 @@ Responsibilities:
 
 ---
 
-# Coding Guidelines
-
-Use TypeScript.
-
-General rules:
-
-- prefer small modules
-- avoid global state
-- separate parsing logic from UI
-- keep pure logic independent from Obsidian API
-
-Example architecture:
-
-src/
-main.ts  
-parser.ts  
-types.ts  
-settings.ts
-
-Parser code must remain **independent from Obsidian** so it can be tested easily.
-
----
-
-# Reference Parsing (MVP)
-
-Supported formats:
-
-- Mt 1,3
-- Gn 22,1-19
-- Iz 11
-
-Normalized representation example:
-
-Mt 1,3 → Mt 1:3
-
-
-Parser must produce a structured object:
-
-
-{
-book: string,
-chapterStart: number,
-verseStart?: number,
-chapterEnd?: number,
-verseEnd?: number
-}
-
-
----
-
 # Important Notes for Claude
 
 - Do not expand project scope beyond SPEC.md.
 - Prefer minimal changes over architectural redesign.
 - When uncertain, ask before making large changes.
 - Always show `git diff` before committing changes.
+
+## Development workflow: AI-agent assisted with controlled documents
+Decision: Use control documents (CLAUDE.md, SPEC.md, TASKS.md, TESTPLAN.md, AGENTS.md, ARCHITECTURE.md, DECISIONS.md) as the primary source of truth for agents.
+Reason: reduces prompt length, limits scope creep, and improves reproducibility of agent work.
+Consequences:
+- Tasks must have DoD and be implementable without additional clarification.
+- Agents should be instructed to read these documents before modifying code.
+Revisit: if documents become redundant or too heavy; simplify instead of expanding.
