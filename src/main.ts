@@ -3,6 +3,8 @@ import { scanRefs, formatRef } from './parser';
 import { PopoverManager } from './ui/hover';
 import { refDecorationsExtension } from './editor/refDecorations';
 import { refTooltipExtension } from './editor/refTooltip';
+import type { TranslationData } from './provider';
+import { loadTranslation } from './translationLoader';
 
 const EXCLUDED_TAGS = new Set(['A', 'CODE', 'PRE', 'SCRIPT', 'STYLE', 'BUTTON', 'INPUT', 'TEXTAREA']);
 
@@ -27,8 +29,19 @@ function collectTextNodes(root: HTMLElement): Text[] {
 
 export default class BibLensPlugin extends Plugin {
 	private popover = new PopoverManager();
+	translationData: TranslationData = {};
 
 	async onload() {
+		try {
+			this.translationData = await loadTranslation(
+				this.app.vault.adapter,
+				this.manifest.dir!,
+				'cep'
+			);
+		} catch (e) {
+			console.error('BibLens: failed to load translation', e);
+		}
+
 		this.addCommand({
 			id: 'show-diagnostics',
 			name: 'Show Diagnostics',
