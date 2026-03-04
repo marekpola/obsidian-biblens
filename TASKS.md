@@ -7,47 +7,14 @@ Each task must include a clear Definition of Done (DoD).
 
 ## Active
 
-### Task 3 – Reading View Hover Detection
-
-#### Goal
-Detect Bible references in Reading View and display a popover.
-
-#### Scope
-- Use simple regex detection.
-- When hovering a detected reference:
-  - Show popover.
-  - Display placeholder text:
-    "Detected reference: <normalized reference>"
-
-No real Bible data yet.
-
-#### Definition of Done
-- Hover works in Reading View.
-- No errors in console.
-- No interference with normal Markdown links.
-- Works on desktop.
-- Does not break mobile compatibility.
-
-
----
 ## Next
 
+### Task 4 – Editor (Live Preview): detect references with CodeMirror decorations
+DoD: underline refs in editor, no lag on large notes, no console errors
 
-### Task 4 – Internal Abbreviation Mapping (Czech)
+## Task 5 – Editor tooltip
+DoD: hover shows tooltip with normalized ref, works after edits, doesn’t break selection/cursor
 
-#### Goal
-Introduce internal mapping of Czech abbreviations to canonical book IDs.
-
-Example:
-Mt -> Matthew
-Gn -> Genesis
-Iz -> Isaiah
-
-#### Definition of Done
-- Mapping stored in dedicated module.
-- Parser uses mapping.
-- Unknown abbreviations handled gracefully.
-- Test cases updated.
 
 ---
 ## Done
@@ -116,3 +83,27 @@ Parser must be independent of Obsidian API.
 - Basic unit tests or test cases documented.
 - Correct parsing of the 3 example formats.
 - No UI integration yet.
+
+
+### Task 3 – Reading View Hover Detection
+
+#### Goal
+Detect Bible references in Reading View and display a popover.
+
+#### Scope
+- Use simple regex detection.
+- When hovering a detected reference:
+  - Show popover.
+  - Display placeholder text:
+    "Detected reference: <normalized reference>"
+
+No real Bible data yet.
+
+#### Definition of Done
+- Hover works in Reading View.
+- No errors in console.
+- No interference with normal Markdown links.
+- Works on desktop.
+- Does not break mobile compatibility.
+
+

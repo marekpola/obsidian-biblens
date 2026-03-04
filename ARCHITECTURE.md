@@ -13,22 +13,27 @@ All source files live under `src/`:
 - src/parser.ts
 - src/types.ts
 - src/settings.ts
+- src/ui/hover.ts
 
 ## Modules
 - src/main.ts
   - Obsidian integration: plugin lifecycle, commands, registrations
 - src/parser.ts
   - Pure parsing functions (no Obsidian imports)
+  - Exports: `parseCzechBibleRef`, `scanRefs`, `formatRef`, `RefMatch`
 - src/types.ts
   - Shared types (BibleRef, ParseResult, etc.)
 - src/settings.ts
   - Settings placeholder — do not modify until a settings task is active
-- src/books.ts - definition of standard representation of biblical books and mapping
+- src/books.ts
+  - Definition of standard representation of biblical books and mapping
+- src/ui/hover.ts
+  - `PopoverManager` class: DOM popover creation, positioning, and teardown
 
 ## Boundaries
 - parser.ts must not import from 'obsidian'
-- main.ts may import parser.ts
-- UI/hover logic lives in main.ts or a dedicated ui module (future)
+- ui/hover.ts must not import from 'obsidian'
+- main.ts may import parser.ts and ui/hover.ts
 
 ## Key Types (from src/types.ts)
 
@@ -51,13 +56,9 @@ type ParseResult =
 ## Existing stubs (do not rename)
 
 - `src/parser.ts` exports: `parseCzechBibleRef(input: string): ParseResult`
-
-
-## Hover / UI
-For MVP (Task 3), hover detection logic should be implemented in:
-src/main.ts
-If the logic grows significantly (> ~50 lines), it may later be extracted to:
-src/ui/hover.ts
+- `src/parser.ts` exports: `scanRefs(text: string): RefMatch[]`
+- `src/parser.ts` exports: `formatRef(ref: BibleRef): string`
+- `src/ui/hover.ts` exports: `PopoverManager` (methods: `show`, `hide`)
 
 ## Build
 - esbuild bundles to main.js

@@ -1,6 +1,40 @@
 import type { ParseResult, BibleRef } from "./types";
 import { resolveBookId } from "./books";
 
+export type RefMatch = {
+  start: number;
+  end: number;
+  matchText: string;
+  ref: BibleRef;
+};
+
+function candidateRegex() {
+  return /\b((?:[1-3])?[A-ZÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ][a-záčďéěíňóřšťůúýž]{0,10})\s+(\d+(?:[,:](?:\d+)(?:-\d+)?)?)/g;
+}
+
+export function scanRefs(text: string): RefMatch[] {
+  const matches: RefMatch[] = [];
+  const re = candidateRegex();
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const matchText = m[0];
+    const result = parseCzechBibleRef(matchText);
+    if (result.ok) {
+      matches.push({ start: m.index, end: m.index + matchText.length, matchText, ref: result.ref });
+    }
+  }
+  return matches;
+}
+
+export function formatRef(ref: BibleRef): string {
+  let s = `${ref.bookId} ${ref.chapterStart}`;
+  if (ref.verseStart !== undefined) {
+    s += `,${ref.verseStart}`;
+    if (ref.verseEnd !== undefined) s += `-${ref.verseEnd}`;
+  }
+  return s;
+}
+
 function parseChapterVersePart(restRaw: string): Omit<BibleRef, "bookId"> | null {
   const rest = restRaw.trim();
 
