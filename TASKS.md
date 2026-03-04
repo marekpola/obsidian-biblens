@@ -38,6 +38,7 @@ Parser must be independent of Obsidian API.
 - No UI integration yet.
 
 ---
+## Next
 
 ### Task 3 – Reading View Hover Detection
 
