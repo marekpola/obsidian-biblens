@@ -97,3 +97,13 @@ Consequences:
 - Both `hover.ts` and `refTooltip.ts` build DOM trees explicitly.
 Revisit: if a sanitizing markdown renderer is introduced for verse formatting.
 Date: 2026-03-04
+
+## D011 – Chapter-only refs return all verses in the chapter
+Decision: When a `BibleRef` has no `verseStart` (e.g. `Gn 22`), `getVerses` returns all verses found in `TranslationData` for that chapter, sorted by verse number.
+Reason: A chapter-only hover should show the full chapter content, not an empty result. This is the most useful behavior for readers navigating by chapter.
+Consequences:
+- `provider.ts` scans `TranslationData` keys with prefix `${bookId}.${chapter}.` to collect available verses.
+- First entry label uses `formatRef` (e.g. `Gn 22`); subsequent labels are verse numbers.
+- An unknown chapter (no matching keys) still returns `[]`, triggering the "Verš nenalezen" fallback.
+Supersedes: the "chapter-only returns []" clause from Task 6 DoD.
+Date: 2026-03-04

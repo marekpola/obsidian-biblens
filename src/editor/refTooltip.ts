@@ -1,6 +1,7 @@
 import { EditorView, hoverTooltip, Tooltip } from "@codemirror/view";
 import { scanRefs } from "../parser";
-import { getVerses, buildVerseDOM, type TranslationData } from "../provider";
+import { getVerses, type TranslationData } from "../provider";
+import { buildVerseDOM } from "../ui/verseDOM";
 
 export function refTooltipExtension(data: TranslationData) {
 	return hoverTooltip(

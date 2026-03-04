@@ -4,7 +4,8 @@ import { PopoverManager } from './ui/hover';
 import { refDecorationsExtension } from './editor/refDecorations';
 import { refTooltipExtension } from './editor/refTooltip';
 import type { TranslationData } from './provider';
-import { getVerses, buildVerseDOM } from './provider';
+import { getVerses } from './provider';
+import { buildVerseDOM } from './ui/verseDOM';
 import { loadTranslation } from './translationLoader';
 
 const EXCLUDED_TAGS = new Set(['A', 'CODE', 'PRE', 'SCRIPT', 'STYLE', 'BUTTON', 'INPUT', 'TEXTAREA']);

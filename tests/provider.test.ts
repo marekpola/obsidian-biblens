@@ -41,8 +41,17 @@ describe("getVerses", () => {
     expect(entries[0]!.text).toBe("Blahoslavení chudí duchem.");
   });
 
-  it("returns [] for chapter-only ref (no verseStart)", () => {
+  it("returns all chapter verses for chapter-only ref (no verseStart)", () => {
     const ref: BibleRef = { bookId: "GEN", chapterStart: 1 };
+    const entries = getVerses(data, ref);
+    expect(entries).toHaveLength(3);
+    expect(entries[0]!.label).toBe("Gn 1");
+    expect(entries[1]!.label).toBe("2");
+    expect(entries[2]!.label).toBe("3");
+  });
+
+  it("returns [] for chapter-only ref when chapter has no data", () => {
+    const ref: BibleRef = { bookId: "GEN", chapterStart: 99 };
     expect(getVerses(data, ref)).toEqual([]);
   });
 

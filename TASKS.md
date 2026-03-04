@@ -6,33 +6,6 @@ Each task must include a clear Definition of Done (DoD).
 ---
 
 ## Active
-### Task 7 – Display Bible Text in Popovers
-
-#### Goal
-Replace placeholder text with actual verse content in both the Reading View popover and the Editor tooltip,
-using the formatted output from `getVerses`.
-
-#### Scope
-- Update `src/ui/hover.ts`:
-  - Change `PopoverManager.show(anchor, content)` to accept `HTMLElement` instead of `string`.
-  - Build the verse DOM from `getVerses` result: each entry renders as `<sup>label</sup> text`.
-  - Entries are separated by a single space (inline, not block).
-  - When `getVerses` returns `[]`: show `<em>Verš nenalezen</em>`.
-- Update `src/editor/refTooltip.ts`:
-  - Call `getVerses` to build the same formatted DOM inside `div.biblens-editor-tooltip`.
-  - Same fallback as above.
-- Do not use `innerHTML` for security — build DOM via `createElement` / `appendChild` / `createTextNode`.
-- `translationData` is passed into both modules from `main.ts` (no module-level singleton).
-
-#### Definition of Done
-- Hover over `Gn 1,1` in Reading View shows: `Gn 1,1` (superscript) + `Na počátku stvořil Bůh nebe a zemi…`
-- Hover over `Gn 1,1-3` shows all three verses inline: `Gn 1,1 … ²… ³…`
-- Hover over an unknown ref shows `Verš nenalezen` in italics.
-- Works in both Reading View and Live Preview editor.
-- No `innerHTML` usage for verse content.
-- No console errors.
-- Build passes.
-
 
 ---
 
@@ -160,5 +133,32 @@ and a separate Obsidian-aware loader that reads translation JSON files from the 
 - `loadTranslation` reads and parses `translations/cep.json` without error.
 - `src/provider.ts` has no Obsidian imports.
 - Build passes, no console errors on plugin load.
+
+### Task 7 – Display Bible Text in Popovers
+
+#### Goal
+Replace placeholder text with actual verse content in both the Reading View popover and the Editor tooltip,
+using the formatted output from `getVerses`.
+
+#### Scope
+- Update `src/ui/hover.ts`:
+  - Change `PopoverManager.show(anchor, content)` to accept `HTMLElement` instead of `string`.
+  - Build the verse DOM from `getVerses` result: each entry renders as `<sup>label</sup> text`.
+  - Entries are separated by a single space (inline, not block).
+  - When `getVerses` returns `[]`: show `<em>Verš nenalezen</em>`.
+- Update `src/editor/refTooltip.ts`:
+  - Call `getVerses` to build the same formatted DOM inside `div.biblens-editor-tooltip`.
+  - Same fallback as above.
+- Do not use `innerHTML` for security — build DOM via `createElement` / `appendChild` / `createTextNode`.
+- `translationData` is passed into both modules from `main.ts` (no module-level singleton).
+
+#### Definition of Done
+- Hover over `Gn 1,1` in Reading View shows: `Gn 1,1` (superscript) + `Na počátku stvořil Bůh nebe a zemi…`
+- Hover over `Gn 1,1-3` shows all three verses inline: `Gn 1,1 … ²… ³…`
+- Hover over an unknown ref shows `Verš nenalezen` in italics.
+- Works in both Reading View and Live Preview editor.
+- No `innerHTML` usage for verse content.
+- No console errors.
+- Build passes.
 
 

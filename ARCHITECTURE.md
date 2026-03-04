@@ -14,8 +14,8 @@ All source files live under `src/`:
 - src/types.ts
 - src/settings.ts
 - src/books.ts
-- src/provider.ts          *(planned – Task 6)*
-- src/translationLoader.ts *(planned – Task 6)*
+- src/provider.ts
+- src/translationLoader.ts
 - src/ui/hover.ts
 - src/editor/refDecorations.ts
 - src/editor/refTooltip.ts
@@ -37,16 +37,21 @@ Translation data files live under `translations/` in the plugin directory (not i
   - Settings placeholder — do not modify until a settings task is active
 - src/books.ts
   - Definition of standard representation of biblical books and mapping
-- src/provider.ts *(planned – Task 6)*
-  - Pure data-access module (no Obsidian imports)
+- src/provider.ts
+  - Pure data-access module (no Obsidian imports, no DOM)
   - `type VerseEntry = { label: string; text: string }`
   - `type TranslationData = Record<string, string>`
   - Exports: `getVerses(data: TranslationData, ref: BibleRef): VerseEntry[]`
   - Key format: `${bookId}.${chapterStart}.${verse}` matching cep.json keys
-- src/translationLoader.ts *(planned – Task 6)*
+  - Chapter-only refs (no `verseStart`) return all verses found in the chapter (see D011)
+- src/translationLoader.ts
   - Obsidian-aware loader; may import from 'obsidian'
   - Exports: `loadTranslation(adapter: DataAdapter, pluginDir: string, name: string): Promise<TranslationData>`
   - Reads `${pluginDir}/translations/${name}.json` via `adapter.read()`
+- src/ui/verseDOM.ts
+  - DOM builder for verse content (no Obsidian imports)
+  - Exports: `buildVerseDOM(entries: VerseEntry[]): HTMLElement`
+  - Used by both `hover.ts` (via main.ts) and `refTooltip.ts`
 - src/ui/hover.ts
   - `PopoverManager` class: DOM popover creation, positioning, and teardown
   - Current: `show(anchor: HTMLElement, content: string): void`
@@ -63,8 +68,9 @@ Translation data files live under `translations/` in the plugin directory (not i
 
 ## Boundaries
 - parser.ts must not import from 'obsidian'
-- provider.ts must not import from 'obsidian'
+- provider.ts must not import from 'obsidian' or use DOM APIs
 - ui/hover.ts must not import from 'obsidian'
+- ui/verseDOM.ts must not import from 'obsidian'
 - editor/*.ts must not import from 'obsidian'; may import from `@codemirror/*` (provided by Obsidian host)
 - translationLoader.ts may import from 'obsidian'
 - main.ts may import any src/ module

@@ -76,8 +76,7 @@ Steps:
 
 Expected:
 - A popover appears on hover over each plain-text reference.
-- Popover text is exactly: "Detected reference: <bookId> <chapter>[,<verse>[-<verseEnd>]]"
-  e.g. "Detected reference: MAT 1,3"
+- Popover shows verse content (superscript label + verse text), or `Verš nenalezen` in italics if not found.
 - Popover is fully visible within the viewport (does not clip at edges).
 - Popover disappears when mouse leaves the span.
 - The Markdown link remains clickable; no popover appears when hovering it.
@@ -123,9 +122,8 @@ Steps:
 
 Expected:
 - A tooltip appears on hover over each reference.
-- Tooltip text is exactly: "Detected reference: <bookId> <chapter>[,<verse>[-<verseEnd>]]"
-  e.g. "Detected reference: MAT 1,3", "Detected reference: GEN 22,1-19", "Detected reference: ISA 11"
-- Tooltip disappears when mouse leaves the refeyerence.
+- Tooltip shows verse content (superscript label + verse text), or `Verš nenalezen` in italics if not found.
+- Tooltip disappears when mouse leaves the reference.
 - Cursor placement and text selection are not disrupted by hovering.
 - No tooltip appears over plain text.
 - No console errors during any of the above steps.
