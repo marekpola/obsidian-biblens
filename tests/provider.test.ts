@@ -20,7 +20,7 @@ describe("getVerses", () => {
   it("first entry label is formatted ref, subsequent are verse numbers", () => {
     const ref: BibleRef = { bookId: "GEN", chapterStart: 1, verseStart: 1, verseEnd: 3 };
     const entries = getVerses(data, ref);
-    expect(entries[0]!.label).toBe("GEN 1,1-3");
+    expect(entries[0]!.label).toBe("Gn 1,1-3");
     expect(entries[1]!.label).toBe("2");
     expect(entries[2]!.label).toBe("3");
   });
@@ -37,7 +37,7 @@ describe("getVerses", () => {
     const ref: BibleRef = { bookId: "MAT", chapterStart: 5, verseStart: 3 };
     const entries = getVerses(data, ref);
     expect(entries).toHaveLength(1);
-    expect(entries[0]!.label).toBe("MAT 5,3");
+    expect(entries[0]!.label).toBe("Mt 5,3");
     expect(entries[0]!.text).toBe("Blahoslavení chudí duchem.");
   });
 

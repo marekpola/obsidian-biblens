@@ -1,5 +1,5 @@
 import type { ParseResult, BibleRef } from "./types";
-import { resolveBookId } from "./books";
+import { resolveBookId, getDisplayAbbr } from "./books";
 
 export type RefMatch = {
   start: number;
@@ -27,7 +27,7 @@ export function scanRefs(text: string): RefMatch[] {
 }
 
 export function formatRef(ref: BibleRef): string {
-  let s = `${ref.bookId} ${ref.chapterStart}`;
+  let s = `${getDisplayAbbr(ref.bookId)} ${ref.chapterStart}`;
   if (ref.verseStart !== undefined) {
     s += `,${ref.verseStart}`;
     if (ref.verseEnd !== undefined) s += `-${ref.verseEnd}`;

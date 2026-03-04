@@ -29,7 +29,7 @@ function collectTextNodes(root: HTMLElement): Text[] {
 
 export default class BibLensPlugin extends Plugin {
 	private popover = new PopoverManager();
-	translationData: TranslationData = {};
+	private translationData: TranslationData = {};
 
 	async onload() {
 		try {
@@ -52,7 +52,7 @@ export default class BibLensPlugin extends Plugin {
 			(el: HTMLElement, _ctx: MarkdownPostProcessorContext) => this.processElement(el)
 		);
 
-		this.registerEditorExtension([refDecorationsExtension, refTooltipExtension]);
+		this.registerEditorExtension([refDecorationsExtension, refTooltipExtension(this.translationData)]);
 	}
 
 	onunload() {

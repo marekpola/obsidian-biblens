@@ -257,6 +257,32 @@ export const BOOK_ALIASES: Record<string, BookId> = Object.fromEntries([
 ]);
 
 /*
+Preferred Czech display abbreviation for each BookId.
+Used by formatRef to produce human-readable references (e.g. "Gn 1,1" not "GEN 1,1").
+Falls back to the OSIS ID for books without a Czech abbreviation.
+*/
+export const BOOK_DISPLAY: Partial<Record<BookId, string>> = {
+  GEN: "Gn", EXO: "Ex", LEV: "Lv", NUM: "Nu", DEU: "Dt",
+  JOS: "Joz", JDG: "Sd", RUT: "Rt",
+  "1SA": "1S", "2SA": "2S", "1KI": "1Kr", "2KI": "2Kr", "1CH": "1Pa", "2CH": "2Pa",
+  EZR: "Ezdr", NEH: "Neh", EST: "Est",
+  JOB: "Jb", PSA: "Žl", PRO: "Př", ECC: "Kaz", SNG: "Pís",
+  ISA: "Iz", JER: "Jer", LAM: "Pl", EZK: "Ez", DAN: "Dan",
+  HOS: "Oz", JOL: "Jl", AMO: "Am", OBA: "Abd", JON: "Jon",
+  MIC: "Mi", NAM: "Nah", HAB: "Hab", ZEP: "Sof", HAG: "Ag", ZEC: "Zach", MAL: "Mal",
+  MAT: "Mt", MRK: "Mk", LUK: "Lk", JHN: "Jan", ACT: "Sk",
+  ROM: "Ř", "1CO": "1Kor", "2CO": "2Kor", GAL: "Gal", EPH: "Ef",
+  PHP: "Fp", COL: "Kol", "1TH": "1Tes", "2TH": "2Tes",
+  "1TI": "1Tim", "2TI": "2Tim", TIT: "Tit", PHM: "Flm",
+  HEB: "Žid", JAS: "Jak", "1PE": "1Pt", "2PE": "2Pt",
+  "1JN": "1Jan", "2JN": "2Jan", "3JN": "3Jan", JUD: "Jud", REV: "Zj",
+};
+
+export function getDisplayAbbr(bookId: BookId): string {
+  return BOOK_DISPLAY[bookId] ?? bookId;
+}
+
+/*
 Resolve a raw book token into BookId using aliases.
 Optionally, allow direct BookId input (e.g., user types "GEN 1,1").
 */
