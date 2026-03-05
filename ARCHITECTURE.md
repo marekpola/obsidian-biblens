@@ -10,6 +10,7 @@ This document describes the minimal architecture of the BibLens plugin used by A
 
 All source files live under `src/`:
 - src/main.ts
+- src/settingsTab.ts
 - src/parser.ts
 - src/types.ts
 - src/settings.ts
@@ -35,11 +36,16 @@ Translation data files live under `translations/` in the plugin directory (not i
 ## Modules
 - src/main.ts
   - Obsidian integration: plugin lifecycle, commands, registrations
+  - Exposes `reloadTranslation()` — mutates `translationData` in-place so all consumers (editor extensions, hover) see updated data without re-registration
   - Registers CM6 extensions via `this.registerEditorExtension([...])`
   - Calls `loadTranslation` on `onload()`; stores `translationData`; passes it to UI layers
   - Builds active abbreviation map via `buildAbbreviationMap(settings.customAbbreviations)`
   - Builds `RefScanner` via `buildRefScanner(map)` and passes it to editor extension factories
   - Registers `biblens-insert-verse` command via `this.addCommand(...)`
+- src/settingsTab.ts
+  - `BibLensSettingTab` class: Obsidian settings UI; imported and registered by `main.ts`
+  - Discovers available translations via `listAvailableTranslations` and renders a dropdown
+  - On change: saves settings, calls `plugin.reloadTranslation()`, shows Notice
 - src/parser.ts
   - Pure parsing functions (no Obsidian imports)
   - Exports: `parseCzechBibleRef`, `scanRefs`, `formatRef`, `RefMatch`

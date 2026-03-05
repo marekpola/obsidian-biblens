@@ -76,11 +76,13 @@ export default class BibLensPlugin extends Plugin {
 
 	async reloadTranslation() {
 		try {
-			this.translationData = await loadTranslation(
+			const newData = await loadTranslation(
 				this.app.vault.adapter,
 				this.manifest.dir!,
 				this.settings.preferredTranslation
 			);
+			for (const k of Object.keys(this.translationData)) delete this.translationData[k];
+			Object.assign(this.translationData, newData);
 		} catch (e) {
 			console.error('BibLens: failed to reload translation', e);
 		}

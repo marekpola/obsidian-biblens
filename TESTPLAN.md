@@ -224,6 +224,61 @@ Expected:
 
 ---
 
+## Task 9 – Translation Selection in Settings
+
+### 9a – Dropdown populated from translations/
+
+Setup:
+- Ensure at least one `.json` file exists in the plugin's `translations/` folder (e.g. `cep.json`).
+
+Steps:
+1. Open Obsidian → Settings → Community Plugins → BibLens.
+
+Expected:
+- A `Preferred translation` dropdown appears.
+- The dropdown lists each `.json` file found in `translations/` (e.g. `CEP`).
+- The current value matches `settings.preferredTranslation`.
+
+### 9b – Switching translation updates hover immediately
+
+Setup:
+- At least two translation `.json` files present in `translations/`.
+- A note open in Reading View with a known reference (e.g. `Gn 1,1`).
+
+Steps:
+1. Open BibLens settings and switch to a different translation.
+2. Close settings without reloading the plugin.
+3. Hover over `Gn 1,1` in Reading View.
+
+Expected:
+- Verse text shown in the popover comes from the newly selected translation.
+- No plugin restart required.
+- A Notice confirms the switch (e.g. "BibLens: switched to BKR").
+
+### 9c – Switching translation updates editor tooltip immediately
+
+Steps:
+1. Open a note in Live Preview.
+2. Switch translation in settings (as above).
+3. Hover over a reference in the editor.
+
+Expected:
+- Editor tooltip shows verse text from the new translation.
+
+### 9d – No translations found fallback
+
+Setup:
+- Temporarily move all files out of `translations/`.
+
+Steps:
+1. Open BibLens settings.
+
+Expected:
+- Settings shows a disabled text field (not a dropdown) with a message that no translation files were found.
+- No console errors.
+
+---
+
 ## Mobile Compatibility (Periodic Check)
 
 Note:
