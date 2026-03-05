@@ -16,6 +16,10 @@ All source files live under `src/`:
 - src/books.ts
 - src/provider.ts
 - src/translationLoader.ts
+- src/translationRegistry.ts
+- src/translationDownloader.ts
+- src/translationRegistry.ts
+- src/translationDownloader.ts
 - src/ui/hover.ts
 - src/editor/refDecorations.ts
 - src/editor/refTooltip.ts
