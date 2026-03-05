@@ -152,6 +152,37 @@ Constraints:
 
 ---
 
+## Version 0.3 – Translation Source Management
+
+### Goal
+
+Allow the user to discover and download Bible translations from a curated catalog of known HTTP providers, and manage downloaded translations from the settings UI.
+
+### Features
+
+- Plugin contains a built-in **source catalog**: a static list of known HTTP providers, each with a display name, base URL, adapter type, and list of available translations (language, name, remote identifier).
+- The settings UI exposes a **Translation Sources** panel:
+  - User selects a provider from the catalog.
+  - User sees the list of translations available from that provider, with download status (downloaded / not downloaded).
+  - Per-translation actions: **Download**, **Delete**, **Update** (= delete + re-download).
+- On Download, BibLens:
+  1. Fetches raw data from the provider using `requestUrl`.
+  2. Transforms the raw response to the canonical `Record<string, string>` key format (`${OSIS_BOOK}.${chapter}.${verse}`) using a per-provider **adapter**.
+  3. Writes the result to `translations/${id}.json`.
+- Download status is derived from the `translations/` directory listing (no separate tracking file).
+- A separate **Installed Translations** panel lists locally available translations with a Delete button.
+
+### Constraints
+
+- The source catalog is bundled in plugin source code; no external catalog service is contacted.
+- Translation lists per provider are bundled in code (dynamic fetching from providers is a future option).
+- All network access is an **explicit user action**; no background downloads.
+- Transformation to canonical format happens before writing to disk; corrupt or non-conforming data is rejected.
+- Once downloaded, the plugin operates fully offline.
+- New providers and adapters are added by extending the catalog and adapter registry in code.
+
+---
+
 ## Technical Constraints
 
 - Must support mobile Obsidian.

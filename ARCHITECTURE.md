@@ -18,6 +18,9 @@ All source files live under `src/`:
 - src/translationLoader.ts
 - src/translationRegistry.ts
 - src/translationDownloader.ts
+- src/translationManager.ts
+- src/sources/catalog.ts
+- src/sources/adapters.ts
 - src/ui/hover.ts
 - src/ui/verseDOM.ts
 - src/editor/refDecorations.ts
@@ -73,6 +76,22 @@ Translation data files live under `translations/` in the plugin directory (not i
   - Obsidian-aware; may import from 'obsidian' (uses `requestUrl`)
   - Exports: `downloadTranslation(adapter: DataAdapter, pluginDir: string, url: string, name: string): Promise<void>`
   - Fetches JSON from `url`, validates format, writes to `${pluginDir}/translations/${name}.json`
+- src/sources/catalog.ts
+  - Pure module (no Obsidian imports)
+  - Exports: `type SourceProvider = { id: string; displayName: string; baseUrl: string; adapterType: string; translations: RemoteTranslationEntry[] }`
+  - Exports: `type RemoteTranslationEntry = { id: string; displayName: string; language: string; remoteId: string }`
+  - Exports: `KNOWN_PROVIDERS: SourceProvider[]` — static list of bundled providers
+- src/sources/adapters.ts
+  - Pure module (no Obsidian imports, no DOM)
+  - Exports: `interface SourceAdapter { buildUrl(provider: SourceProvider, entry: RemoteTranslationEntry): string; transform(raw: unknown): TranslationData }`
+  - Exports: `getAdapter(adapterType: string): SourceAdapter` — registry lookup; throws on unknown type
+  - Each adapter is responsible for: URL construction, raw-to-`TranslationData` transformation, OSIS book ID mapping
+- src/translationManager.ts
+  - Obsidian-aware; may import from 'obsidian' (uses `requestUrl` and `DataAdapter`)
+  - Orchestrates the full download pipeline: `requestUrl` → `getAdapter().transform()` → validate → `adapter.write()`
+  - Exports: `downloadFromSource(vaultAdapter: DataAdapter, pluginDir: string, provider: SourceProvider, entry: RemoteTranslationEntry): Promise<void>`
+  - Exports: `deleteTranslation(vaultAdapter: DataAdapter, pluginDir: string, id: string): Promise<void>`
+  - Wraps and supersedes `translationDownloader.ts` for source-catalog flows; raw-URL download remains in `translationDownloader.ts`
 - src/ui/verseDOM.ts
   - DOM builder for verse content (no Obsidian imports)
   - Exports: `buildVerseDOM(entries: VerseEntry[]): HTMLElement`
@@ -106,6 +125,9 @@ Translation data files live under `translations/` in the plugin directory (not i
 - translationLoader.ts may import from 'obsidian'
 - translationRegistry.ts may import from 'obsidian'
 - translationDownloader.ts may import from 'obsidian'
+- translationManager.ts may import from 'obsidian'
+- sources/catalog.ts must not import from 'obsidian'
+- sources/adapters.ts must not import from 'obsidian' or use DOM APIs
 - main.ts may import any src/ module
 - `@codemirror/*` packages are external (provided by Obsidian) — do not bundle them
 - Do not use `innerHTML` for verse content — use DOM construction only (see D010)
@@ -166,11 +188,28 @@ main.ts / settings UI
 → translationRegistry.ts
 → TranslationMeta[]
 
-Translation download (explicit user action):
+Translation download from URL (explicit user action, legacy):
 
 settings UI
 → translationDownloader.ts (requestUrl)
 → translations/${name}.json (written to disk)
+
+Translation download from source catalog (explicit user action):
+
+settings UI
+→ sources/catalog.ts (KNOWN_PROVIDERS, RemoteTranslationEntry selection)
+→ translationManager.ts
+  → sources/adapters.ts: getAdapter(provider.adapterType).buildUrl()
+  → requestUrl (Obsidian API)
+  → sources/adapters.ts: getAdapter(provider.adapterType).transform(raw)
+  → validate TranslationData
+  → DataAdapter.write → translations/${entry.id}.json
+
+Translation delete (explicit user action):
+
+settings UI
+→ translationManager.ts: deleteTranslation()
+→ DataAdapter.remove → translations/${id}.json
 
 Abbreviation map + scanner construction:
 
@@ -231,13 +270,13 @@ Typical editor update cost:
 
 
 
-## Key Types (from src/types.ts)
+## Key Types (from src/types.ts and src/sources/catalog.ts)
 
 Canonical type definitions live in `src/types.ts`. The snippet below is kept here for quick reference — `src/types.ts` is the source of truth.
 
 ```ts
 type BibleRef = {
-  bookId: BookId; //BookId contains all known books      
+  bookId: BookId; //BookId contains all known books
   chapterStart: number;
   verseStart?: number;
   chapterEnd?: number;
@@ -247,6 +286,25 @@ type BibleRef = {
 type ParseResult =
   | { ok: true; ref: BibleRef }
   | { ok: false; error: string };
+```
+
+Source catalog types live in `src/sources/catalog.ts`:
+
+```ts
+type RemoteTranslationEntry = {
+  id: string;          // local file id, e.g. "bkr"
+  displayName: string; // e.g. "Bible Kralická"
+  language: string;    // BCP 47, e.g. "cs"
+  remoteId: string;    // provider-specific key used in URL construction
+};
+
+type SourceProvider = {
+  id: string;                          // e.g. "getbible-net"
+  displayName: string;                 // e.g. "GetBible (getbible.net)"
+  baseUrl: string;
+  adapterType: string;                 // key into adapter registry
+  translations: RemoteTranslationEntry[];
+};
 ```
 
 ## Existing stubs (do not rename)
