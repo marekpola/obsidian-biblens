@@ -41,7 +41,7 @@ Claude should always work on the **Active task** unless instructed otherwise.
 
 Claude may operate in different roles.
 
-## Implementer
+## Developer
 
 Responsible for implementing tasks.
 
@@ -106,7 +106,7 @@ Output:
 
 ---
 
-## Orchestrator
+## Manager
 
 Responsible for development coordination.
 
@@ -125,7 +125,6 @@ Responsibilities:
 - Prefer minimal changes over architectural redesign.
 - When uncertain, ask before making large changes.
 - Always show `git diff` before committing changes.
-- Parsing produces `bookId` in OSIS format (e.g. "MAT", "GEN", "ISA"), not the raw input abbreviation. See D006 in DECISIONS.md and `src/types.ts`.
 
 ## Development workflow: AI-agent assisted with controlled documents
 Decision: Use control documents (CLAUDE.md, SPEC.md, TASKS.md, TESTPLAN.md, AGENTS.md, ARCHITECTURE.md, DECISIONS.md) as the primary source of truth for agents.
@@ -134,3 +133,10 @@ Consequences:
 - Tasks must have DoD and be implementable without additional clarification.
 - Agents should be instructed to read these documents before modifying code.
 Revisit: if documents become redundant or too heavy; simplify instead of expanding.
+
+## Definition of Done:
+
+1. npm run check passes
+2. npm run ci passes
+3. All tests green
+4. Plugin builds successfully

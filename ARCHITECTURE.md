@@ -77,6 +77,99 @@ Translation data files live under `translations/` in the plugin directory (not i
 - `@codemirror/*` packages are external (provided by Obsidian) — do not bundle them
 - Do not use `innerHTML` for verse content — use DOM construction only (see D010)
 
+## Performance Constraints
+
+BibLens must not introduce typing lag in large notes.
+
+### Editor processing
+
+Reference detection must never scan the entire document on every update.
+
+Rules:
+
+- CodeMirror extensions must operate only on `view.visibleRanges`.
+- Parsing must be limited to visible viewport ranges.
+- Avoid scanning `view.state.doc.toString()` or equivalent full-document operations.
+- Avoid heavy synchronous computation in editor update handlers.
+
+### Decorations
+
+Editor decorations must be computed incrementally.
+
+Rules:
+
+- Decorations must be implemented using a CM6 `ViewPlugin`.
+- Decoration computation must iterate only over `visibleRanges`.
+- Recompute decorations only when relevant document changes occur.
+- Avoid allocating large temporary objects inside update loops.
+
+### Translation data
+
+Translation data must be loaded once and reused.
+
+Rules:
+
+- `translationLoader.ts` loads the translation file during plugin initialization.
+- The loaded `TranslationData` must be cached in memory.
+- `provider.ts` must perform only in-memory lookups.
+
+Expected complexity:
+
+- Verse lookup: O(1)
+- Chapter lookup: O(n) within the chapter only.
+
+### Data Flow
+
+Translation loading:
+
+main.ts
+→ translationLoader.ts
+→ TranslationData
+
+Reference detection:
+
+editor/refDecorations.ts
+→ scanRefs (parser.ts)
+
+Verse retrieval:
+
+hover.ts / refTooltip.ts
+→ getVerses (provider.ts)
+→ TranslationData
+
+
+
+### Regular expressions
+
+Reference detection relies on regex scanning.
+
+Rules:
+
+- Regex patterns must be precompiled.
+- Avoid creating new regex objects inside hot loops.
+- Avoid running regex over entire documents.
+
+### DOM safety
+
+Verse content must be constructed using DOM APIs.
+
+Rules:
+
+- Never use `innerHTML` for verse rendering.
+- Build DOM nodes explicitly (`createElement`, `textContent`).
+- Prevent injection issues from translation data.
+
+### Performance targets
+
+Typical editor update cost:
+
+- Target: <5 ms
+- Hard limit: <10 ms
+
+
+
+
+
 ## Key Types (from src/types.ts)
 
 Canonical type definitions live in `src/types.ts`. The snippet below is kept here for quick reference — `src/types.ts` is the source of truth.
