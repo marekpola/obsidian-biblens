@@ -192,13 +192,17 @@ Rules:
 - Do not write code.
 - You may propose extending the current product scope.
 - Changes must be expressed as updates to SPEC.md, ARCHITECTURE.md, or DECISIONS.md.
+- **Architect owns README.md** — keep it aligned with SPEC.md and the current product state.
+  - Update README.md when SPEC.md changes.
+  - Review README.md after a major feature ships (Tester moves task to Done).
+  - Developer and Reviewer do not touch README.md unless Architect delegates explicitly.
 
 Output format:
-- Strategic idea  
-- Reasoning  
+- Strategic idea
+- Reasoning
 - Possible future implementation direction
-- Changes to ARCHITECTURE.md SPEC.md DECISION.md
-- show `git diff` 
+- Changes to ARCHITECTURE.md SPEC.md DECISION.md README.md
+- show `git diff`
 
 # Important Notes for Claude
 
@@ -223,7 +227,7 @@ Control documents:
 
 Roles interact with these documents as follows:
 
-- Architect proposes changes to SPEC.md, ARCHITECTURE.md, DECISIONS.md
+- Architect proposes changes to SPEC.md, ARCHITECTURE.md, DECISIONS.md, README.md
 - Analyst converts design changes into TASKS.md
 - Developer implements tasks
 - Reviewer validates implementation against SPEC and ARCHITECTURE
