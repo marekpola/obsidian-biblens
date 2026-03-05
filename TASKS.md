@@ -7,12 +7,6 @@ Each task must include a clear Definition of Done (DoD).
 
 ## Active
 
----
-
-## Next
-
-
-
 ### Task 9 – Translation Selection in Settings
 
 #### Goal
@@ -31,6 +25,8 @@ Allow the user to choose which locally available translation is active.
 - `npm run check` and `npm run ci` pass
 
 ---
+
+## Next
 
 ### Task 10 – Translation Download
 

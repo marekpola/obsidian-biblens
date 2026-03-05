@@ -1,5 +1,10 @@
 import type { BookId} from "./books";
 
+export type TranslationMeta = {
+  id: string;
+  displayName: string;
+};
+
 export type BibleRef = {
   bookId: BookId;
   chapterStart: number;

@@ -1,4 +1,4 @@
-import { MarkdownPostProcessorContext, Notice, Plugin, PluginSettingTab, App, Setting } from 'obsidian';
+import { MarkdownPostProcessorContext, Notice, Plugin } from 'obsidian';
 import { scanRefs } from './parser';
 import { PopoverManager } from './ui/hover';
 import { refDecorationsExtension } from './editor/refDecorations';
@@ -9,6 +9,7 @@ import { buildVerseDOM } from './ui/verseDOM';
 import { loadTranslation } from './translationLoader';
 import type { BibLensSettings } from './settings';
 import { DEFAULT_SETTINGS } from './settings';
+import { BibLensSettingTab } from './settingsTab';
 
 const EXCLUDED_TAGS = new Set(['A', 'CODE', 'PRE', 'SCRIPT', 'STYLE', 'BUTTON', 'INPUT', 'TEXTAREA']);
 
@@ -73,6 +74,18 @@ export default class BibLensPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
+	async reloadTranslation() {
+		try {
+			this.translationData = await loadTranslation(
+				this.app.vault.adapter,
+				this.manifest.dir!,
+				this.settings.preferredTranslation
+			);
+		} catch (e) {
+			console.error('BibLens: failed to reload translation', e);
+		}
+	}
+
 	private processElement(el: HTMLElement) {
 		for (const node of collectTextNodes(el)) this.processTextNode(node);
 	}
@@ -97,9 +110,8 @@ export default class BibLensPlugin extends Plugin {
 			span.textContent = match.matchText;
 
 			const ref = match.ref;
-			const data = this.translationData;
 			this.registerDomEvent(span, 'mouseenter', (e) =>
-				this.popover.show(e.target as HTMLElement, buildVerseDOM(getVerses(data, ref))));
+				this.popover.show(e.target as HTMLElement, buildVerseDOM(getVerses(this.translationData, ref))));
 			this.registerDomEvent(span, 'mouseleave', () => this.popover.hide());
 
 			fragment.appendChild(span);
@@ -110,27 +122,5 @@ export default class BibLensPlugin extends Plugin {
 			fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
 
 		parent.replaceChild(fragment, textNode);
-	}
-}
-
-class BibLensSettingTab extends PluginSettingTab {
-	private plugin: BibLensPlugin;
-
-	constructor(app: App, plugin: BibLensPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		const { containerEl } = this;
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName('Preferred translation')
-			.setDesc('Translation used for hover previews and verse insertion. More options coming in later tasks.')
-			.addText(text => text
-				.setValue(this.plugin.settings.preferredTranslation)
-				.setDisabled(true)
-			);
 	}
 }
