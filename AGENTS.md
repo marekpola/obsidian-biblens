@@ -1,5 +1,8 @@
 # Obsidian community plugin
 
+> **BibLens agents:** Jump to [BibLens Project Layer](#biblens-project-layer) for project-specific rules.
+> Primary control docs: **SPEC.md** (scope) · **ARCHITECTURE.md** (modules & boundaries) · **DECISIONS.md** (rationale) · **TASKS.md** (active work)
+
 ## Project overview
 
 - Target: Obsidian Community Plugin (TypeScript → bundled JavaScript).
@@ -71,11 +74,22 @@ npm run build
 
 ## Testing
 
-- Manual install for testing: copy `main.js`, `manifest.json`, `styles.css` (if any) to:
-  ```
-  <Vault>/.obsidian/plugins/<plugin-id>/
-  ```
-- Reload Obsidian and enable the plugin in **Settings → Community plugins**.
+### Automated tests (run before every commit)
+
+```bash
+npm run ci       # lint + typecheck + vitest (full CI gate)
+npm run check    # lint + typecheck only
+```
+
+Test files live in `tests/`. Use **vitest**. All tests must pass before a task is considered done.
+
+### Manual install
+
+Copy `main.js`, `manifest.json`, `styles.css` (if any) to:
+```
+<Vault>/.obsidian/plugins/<plugin-id>/
+```
+Reload Obsidian and enable the plugin in **Settings → Community plugins**.
 
 ## Commands & settings
 
@@ -86,10 +100,7 @@ npm run build
 
 ## Versioning & releases
 
-- Bump `version` in `manifest.json` (SemVer) and update `versions.json` to map plugin version → minimum app version.
-- Create a GitHub release whose tag exactly matches `manifest.json`'s `version`. Do not use a leading `v`.
-- Attach `manifest.json`, `main.js`, and `styles.css` (if present) to the release as individual assets.
-- After the initial release, follow the process to add/update your plugin in the community catalog as required.
+Not applicable during active MVP development. See Obsidian plugin guidelines when preparing a release.
 
 ## Security, privacy, and compliance
 
@@ -141,89 +152,35 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 - Add commands with stable IDs (don't rename once released).
 - Provide defaults and validation in settings.
 - Write idempotent code paths so reload/unload doesn't leak listeners or intervals.
-- Use `this.register*` helpers for everything that needs cleanup.
+- Use `this.register*` helpers for everything that needs cleanup (`registerDomEvent`, `registerEditorExtension`, `registerEvent`, `registerInterval`).
 
 **Don't**
 - Introduce network calls without an obvious user-facing reason and documentation.
 - Ship features that require cloud services without clear disclosure and explicit opt-in.
 - Store or transmit vault contents unless essential and consented.
+- Add raw `addEventListener` calls — always use `this.registerDomEvent` so listeners are cleaned up on unload.
 
-## Common tasks
+## Common patterns
 
-### Organize code across multiple files
+### Settings — load and persist
 
-**main.ts** (minimal, lifecycle only):
+Always merge with defaults so new fields don't lose their default value:
 ```ts
-import { Plugin } from "obsidian";
-import { MySettings, DEFAULT_SETTINGS } from "./settings";
-import { registerCommands } from "./commands";
-
-export default class MyPlugin extends Plugin {
-  settings: MySettings;
-
-  async onload() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-    registerCommands(this);
-  }
-}
+this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+// ...
+await this.saveData(this.settings);
 ```
-
-**settings.ts**:
-```ts
-export interface MySettings {
-  enabled: boolean;
-  apiKey: string;
-}
-
-export const DEFAULT_SETTINGS: MySettings = {
-  enabled: true,
-  apiKey: "",
-};
-```
-
-**commands/index.ts**:
-```ts
-import { Plugin } from "obsidian";
-import { doSomething } from "./my-command";
-
-export function registerCommands(plugin: Plugin) {
-  plugin.addCommand({
-    id: "do-something",
-    name: "Do something",
-    callback: () => doSomething(plugin),
-  });
-}
-```
-
-### Add a command
-
-```ts
-this.addCommand({
-  id: "your-command-id",
-  name: "Do the thing",
-  callback: () => this.doTheThing(),
-});
-```
-
-### Persist settings
-
-```ts
-interface MySettings { enabled: boolean }
-const DEFAULT_SETTINGS: MySettings = { enabled: true };
-
-async onload() {
-  this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-  await this.saveData(this.settings);
-}
-```
+Never overwrite with a partial object directly from `loadData()`.
 
 ### Register listeners safely
 
 ```ts
 this.registerEvent(this.app.workspace.on("file-open", f => { /* ... */ }));
-this.registerDomEvent(window, "resize", () => { /* ... */ });
+this.registerDomEvent(el, "mouseenter", () => { /* ... */ });
 this.registerInterval(window.setInterval(() => { /* ... */ }, 1000));
 ```
+
+For BibLens-specific patterns (CM6 extensions, translation loading, scanner construction) read `src/main.ts` as the reference implementation.
 
 ## Troubleshooting
 
@@ -262,6 +219,40 @@ Agents MUST:
 - Avoid Node-only runtime features.
 - Avoid external services or cloud APIs.
 - Avoid introducing large dependencies.
+
+## Module Boundaries
+
+See **ARCHITECTURE.md → Boundaries** for the full list. Summary of hard rules:
+
+| Module | May import from obsidian? | May import from @codemirror/*? |
+|---|---|---|
+| `parser.ts`, `provider.ts`, `books.ts` | No | No |
+| `ui/hover.ts`, `ui/verseDOM.ts` | No | No |
+| `editor/*.ts` | No | Yes |
+| `translationLoader.ts`, `translationRegistry.ts`, `translationDownloader.ts` | Yes | No |
+| `main.ts` | Yes | Yes (via register) |
+
+Violating these boundaries breaks mobile compatibility and testability.
+
+## `main.ts` Size Rule
+
+`main.ts` must stay focused on plugin lifecycle only: `onload`, `onunload`, `addCommand`, `registerEditorExtension`, `addSettingTab`. Any class or logic beyond lifecycle wiring belongs in a dedicated `src/` module. If `main.ts` grows beyond ~100 lines of business logic, extract.
+
+## Settings Pattern
+
+Always load settings as:
+```ts
+this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+```
+This ensures new fields introduced in future versions always get their default value when the saved data predates them.
+
+## BibLens-Specific Don'ts
+
+- **Don't use `innerHTML`** for verse content — build DOM via `createElement`/`textContent` (D010).
+- **Don't scan the full document** — CM6 extensions must operate only on `view.visibleRanges` (ARCHITECTURE.md Performance).
+- **Don't import `obsidian`** in `parser.ts`, `provider.ts`, `books.ts`, `ui/*.ts`, or `editor/*.ts`.
+- **Don't compile regex inside update loops** — precompile at startup via `buildRefScanner` (D013).
+- **Don't add raw `addEventListener`** — use `this.registerDomEvent` so listeners are cleaned up on unload.
 
 ## Architectural Direction
 
