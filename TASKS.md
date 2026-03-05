@@ -7,23 +7,6 @@ Each task must include a clear Definition of Done (DoD).
 
 ## Active
 
-### Task 9 – Translation Selection in Settings
-
-#### Goal
-Allow the user to choose which locally available translation is active.
-
-#### Scope
-- `src/translationRegistry.ts`: implement `listAvailableTranslations(adapter, pluginDir): Promise<TranslationMeta[]>` — scans `translations/` via `adapter.list()`
-- Extract `BibLensSettingTab` from `main.ts` into `src/settingsTab.ts` to keep `main.ts` focused on plugin lifecycle
-- Settings tab: add `Preferred translation` dropdown populated from discovered translations
-- `main.ts`: read `settings.preferredTranslation` on load and reload `translationData` on settings change (no plugin restart required)
-
-#### Definition of Done
-- Switching preferred translation in settings causes hover/tooltip to immediately show text from the new translation
-- `src/translationRegistry.ts` is Obsidian-aware; `provider.ts` and `parser.ts` unchanged
-- `BibLensSettingTab` lives in `src/settingsTab.ts`; `main.ts` only imports and registers it
-- `npm run check` and `npm run ci` pass
-
 ---
 
 ## Next
@@ -93,6 +76,25 @@ Allow the user to insert verse text for a detected reference at the cursor into 
 
 ---
 ## Done
+
+### Task 9 – Translation Selection in Settings
+
+#### Goal
+Allow the user to choose which locally available translation is active.
+
+#### Scope
+- `src/translationRegistry.ts`: implement `listAvailableTranslations(adapter, pluginDir): Promise<TranslationMeta[]>` — scans `translations/` via `adapter.list()`
+- Extract `BibLensSettingTab` from `main.ts` into `src/settingsTab.ts` to keep `main.ts` focused on plugin lifecycle
+- Settings tab: add `Preferred translation` dropdown populated from discovered translations
+- `main.ts`: read `settings.preferredTranslation` on load and reload `translationData` on settings change (no plugin restart required)
+
+#### Definition of Done
+- Switching preferred translation in settings causes hover/tooltip to immediately show text from the new translation
+- `src/translationRegistry.ts` is Obsidian-aware; `provider.ts` and `parser.ts` unchanged
+- `BibLensSettingTab` lives in `src/settingsTab.ts`; `main.ts` only imports and registers it
+- `npm run check` and `npm run ci` pass
+
+
 
 ### Task 1 – Remove Sample Logic & Add Diagnostics Command
 #### Goal
