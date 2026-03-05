@@ -147,6 +147,39 @@ Supersedes: D002 (hardcoded Czech abbreviations become the built-in default set,
 Revisit: when a UI editor for abbreviation lists is built.
 Date: 2026-03-05
 
+## D016 – Remote catalog update from GitHub; fallback to bundled catalog
+Decision: The source provider catalog (`SourceProvider[]`) can be refreshed from a hardcoded
+GitHub raw URL without releasing a new plugin version. The update mechanism separates two concerns:
+(a) **catalog data** — which providers exist and which translations they list — can be updated remotely;
+(b) **adapter code** — how to fetch and transform a provider's data — always requires a plugin release.
+The local resolution order is: cached `catalog.json` (from last successful update) → bundled
+`KNOWN_PROVIDERS` (release-time snapshot). The bundled snapshot ensures the plugin always has a
+working catalog offline even on first install.
+Manual update: a "Update catalog" button in settings triggers `fetchCatalogUpdate()`, which calls
+`requestUrl(CATALOG_REMOTE_URL)`, validates schema, filters providers with unknown `adapterType`
+(forward-compatibility — a newer catalog entry won't crash an older plugin), then writes the result
+to `catalog.json` in the plugin directory. The timestamp is saved to `settings.catalogLastUpdated`
+and shown in the settings UI.
+Auto-update: an opt-in toggle (`settings.autoUpdateCatalog`, default false) causes the plugin to
+silently refresh the catalog on startup when the cache is stale. This is disabled by default to
+comply with Obsidian's expectation that plugins do not make unsolicited network calls. When enabled,
+it is functionally equivalent to pressing the button; no background polling occurs.
+`CATALOG_REMOTE_URL` is a hardcoded constant (not user-configurable) to prevent SSRF. It points to
+`catalog/providers.json` at a specific path in the official BibLens GitHub repository.
+The remote catalog file includes a `schemaVersion` integer; the plugin rejects catalogs with an
+unrecognised version rather than silently misinterpreting them.
+Reason: Without this, every provider addition or removal requires users to update the plugin.
+The adapter boundary ensures the remote file cannot introduce executable logic — it is pure data.
+Consequences:
+- `src/sources/catalogManager.ts` — Obsidian-aware; exports `loadCatalog`, `fetchCatalogUpdate`
+- `CATALOG_REMOTE_URL` is a compile-time constant in `catalogManager.ts`; not exposed in settings
+- `src/settings.ts` gains `autoUpdateCatalog: boolean` and `catalogLastUpdated: string`
+- `catalog/providers.json` is added to the BibLens repository as the source-of-truth catalog file
+- `src/sources/catalog.ts` `KNOWN_PROVIDERS` is regenerated from `catalog/providers.json` at each plugin release
+- Settings UI gains: last-updated label, "Update Now" button, "Auto-update on startup" toggle
+Revisit: if catalog size grows enough that full replacement is wasteful (consider delta updates).
+Date: 2026-03-05
+
 ## D015 – Translation source catalog and per-provider adapter pattern
 Decision: Bible translation downloads are structured around a **source catalog** (`src/sources/catalog.ts`)
 and a **per-provider adapter registry** (`src/sources/adapters.ts`).

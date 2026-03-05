@@ -21,6 +21,7 @@ All source files live under `src/`:
 - src/translationManager.ts
 - src/sources/catalog.ts
 - src/sources/adapters.ts
+- src/sources/catalogManager.ts
 - src/ui/hover.ts
 - src/ui/verseDOM.ts
 - src/editor/refDecorations.ts
@@ -53,6 +54,8 @@ Translation data files live under `translations/` in the plugin directory (not i
   - `preferredTranslation: string` (default: `"cep"`)
   - `customAbbreviations: CustomAbbreviations` (default: `{}`)
   - `verseInsertionFormat: 'inline' | 'blockquote'` (default: `'inline'`)
+  - `autoUpdateCatalog: boolean` (default: `false`) — fetch catalog from GitHub on plugin load if cache is stale
+  - `catalogLastUpdated: string` (default: `""`) — ISO timestamp of last successful catalog fetch; shown in settings UI
 - src/books.ts
   - Definition of standard representation of biblical books and mapping
   - Exports: `type CustomAbbreviations = Record<string, BookId>`
@@ -92,6 +95,13 @@ Translation data files live under `translations/` in the plugin directory (not i
   - Exports: `downloadFromSource(vaultAdapter: DataAdapter, pluginDir: string, provider: SourceProvider, entry: RemoteTranslationEntry): Promise<void>`
   - Exports: `deleteTranslation(vaultAdapter: DataAdapter, pluginDir: string, id: string): Promise<void>`
   - Wraps and supersedes `translationDownloader.ts` for source-catalog flows; raw-URL download remains in `translationDownloader.ts`
+- src/sources/catalogManager.ts
+  - Obsidian-aware; may import from 'obsidian' (uses `requestUrl` and `DataAdapter`)
+  - Constant: `CATALOG_REMOTE_URL` — hardcoded GitHub raw URL pointing to `catalog/providers.json` in the BibLens repo; not user-configurable
+  - Exports: `loadCatalog(adapter: DataAdapter, pluginDir: string): Promise<SourceProvider[]>` — returns cached `catalog.json` if present and parseable, falls back to bundled `KNOWN_PROVIDERS`
+  - Exports: `fetchCatalogUpdate(adapter: DataAdapter, pluginDir: string): Promise<CatalogUpdateResult>` — fetches remote catalog, validates `SourceProvider[]` schema, filters entries with unknown `adapterType`, writes to `catalog.json`, returns result with `updatedAt` timestamp
+  - `type CatalogUpdateResult = { ok: true; updatedAt: string; providerCount: number } | { ok: false; error: string }`
+  - Providers with unknown `adapterType` are silently filtered (forward-compatibility: newer catalog entries don't crash older plugin versions)
 - src/ui/verseDOM.ts
   - DOM builder for verse content (no Obsidian imports)
   - Exports: `buildVerseDOM(entries: VerseEntry[]): HTMLElement`
@@ -128,6 +138,7 @@ Translation data files live under `translations/` in the plugin directory (not i
 - translationManager.ts may import from 'obsidian'
 - sources/catalog.ts must not import from 'obsidian'
 - sources/adapters.ts must not import from 'obsidian' or use DOM APIs
+- sources/catalogManager.ts may import from 'obsidian'
 - main.ts may import any src/ module
 - `@codemirror/*` packages are external (provided by Obsidian) — do not bundle them
 - Do not use `innerHTML` for verse content — use DOM construction only (see D010)
@@ -193,6 +204,25 @@ Translation download from URL (explicit user action, legacy):
 settings UI
 → translationDownloader.ts (requestUrl)
 → translations/${name}.json (written to disk)
+
+Catalog load (on plugin startup and settings tab open):
+
+main.ts / settings UI
+→ sources/catalogManager.ts: loadCatalog()
+  → catalog.json (if cached in plugin dir)      [priority 1]
+  OR → sources/catalog.ts: KNOWN_PROVIDERS      [bundled fallback]
+→ SourceProvider[] (active in memory)
+
+Catalog update (explicit user action OR opt-in auto on startup):
+
+settings UI / main.ts (if autoUpdateCatalog = true and cache is stale)
+→ sources/catalogManager.ts: fetchCatalogUpdate()
+  → requestUrl(CATALOG_REMOTE_URL)
+  → validate SourceProvider[] schema
+  → filter entries with unknown adapterType (forward-compat)
+  → DataAdapter.write → catalog.json
+→ CatalogUpdateResult { ok, updatedAt, providerCount }
+→ settings UI: display last updated date
 
 Translation download from source catalog (explicit user action):
 
@@ -306,6 +336,26 @@ type SourceProvider = {
   translations: RemoteTranslationEntry[];
 };
 ```
+
+Catalog manager types live in `src/sources/catalogManager.ts`:
+
+```ts
+type CatalogUpdateResult =
+  | { ok: true;  updatedAt: string; providerCount: number }
+  | { ok: false; error: string };
+```
+
+Remote catalog file shape (stored in repo at `catalog/providers.json` and cached locally as `catalog.json`):
+
+```json
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-03-05",
+  "providers": [ /* SourceProvider[] */ ]
+}
+```
+
+`schemaVersion` allows future breaking changes to the catalog format to be detected and handled gracefully by older plugin versions.
 
 ## Existing stubs (do not rename)
 

@@ -172,14 +172,35 @@ Allow the user to discover and download Bible translations from a curated catalo
 - Download status is derived from the `translations/` directory listing (no separate tracking file).
 - A separate **Installed Translations** panel lists locally available translations with a Delete button.
 
+### Catalog Update from GitHub
+
+The source catalog (list of providers and their translations) can be refreshed independently from the plugin itself, without requiring a new plugin release. This allows adding or removing providers when sources become available or go offline.
+
+Update modes:
+
+- **Manual** (always available): a "Update catalog" button in settings fetches the current catalog from a hardcoded GitHub URL and caches it locally as `catalog.json` in the plugin directory.
+- **Auto-update on startup** (opt-in, default off): if the cached catalog is older than a configurable threshold, the plugin fetches a fresh copy silently on load. The user enables this via a settings toggle.
+
+Fallback chain (in priority order):
+
+1. `plugins/biblens/catalog.json` — locally cached catalog (result of a previous update)
+2. Bundled `KNOWN_PROVIDERS` — static snapshot baked into the plugin at release time; always available offline
+
+Constraints:
+
+- The remote catalog URL is a hardcoded constant pointing to the BibLens GitHub repository. It is not user-configurable.
+- The remote catalog can only update **data** (providers, translations, URLs). It cannot add new adapter types — those require a plugin release.
+- Providers in the fetched catalog that reference an unknown adapter type are silently ignored (forward-compatibility: a newer catalog entry won't crash an older plugin).
+- Schema validation is performed before accepting any fetched catalog.
+- The settings UI shows the date of the last successful catalog update.
+
 ### Constraints
 
-- The source catalog is bundled in plugin source code; no external catalog service is contacted.
-- Translation lists per provider are bundled in code (dynamic fetching from providers is a future option).
-- All network access is an **explicit user action**; no background downloads.
+- The source catalog is bundled in plugin source code as an offline fallback.
+- All network access is an **explicit user action** or opt-in auto behavior; no silent background activity by default.
 - Transformation to canonical format happens before writing to disk; corrupt or non-conforming data is rejected.
-- Once downloaded, the plugin operates fully offline.
-- New providers and adapters are added by extending the catalog and adapter registry in code.
+- Once translations are downloaded, the plugin operates fully offline.
+- New providers and adapters are added by extending the catalog (data) and adapter registry (code) in the plugin; new adapter types always require a plugin release.
 
 ---
 
