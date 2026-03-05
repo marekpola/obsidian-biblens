@@ -7,11 +7,98 @@ Each task must include a clear Definition of Done (DoD).
 
 ## Active
 
+### Task 8 – Plugin Settings Foundation
+
+#### Goal
+Add the Obsidian settings infrastructure needed by all 0.2 features.
+
+#### Scope
+- `src/settings.ts`: `BibLensSettings` type with fields `preferredTranslation: string`, `customAbbreviations: CustomAbbreviations`, `verseInsertionFormat: 'inline' | 'blockquote'`, and `DEFAULT_SETTINGS`
+- `main.ts`: load/save settings via `loadData`/`saveData`
+- Register a settings tab in Obsidian (basic layout scaffold, no functional controls yet)
+
+#### Definition of Done
+- Settings tab opens from Obsidian → Settings → Community Plugins → BibLens
+- Values persist across plugin reload
+- `npm run check` and `npm run ci` pass
+
 ---
 
 ## Next
 
 
+
+### Task 9 – Translation Selection in Settings
+
+#### Goal
+Allow the user to choose which locally available translation is active.
+
+#### Scope
+- `src/translationRegistry.ts`: implement `listAvailableTranslations(adapter, pluginDir): Promise<TranslationMeta[]>` — scans `translations/` via `adapter.list()`
+- Settings tab: add `Preferred translation` dropdown populated from discovered translations
+- `main.ts`: read `settings.preferredTranslation` on load and reload `translationData` on settings change (no plugin restart required)
+
+#### Definition of Done
+- Switching preferred translation in settings causes hover/tooltip to immediately show text from the new translation
+- `src/translationRegistry.ts` is Obsidian-aware; `provider.ts` and `parser.ts` unchanged
+- `npm run check` and `npm run ci` pass
+
+---
+
+### Task 10 – Translation Download
+
+#### Goal
+Allow the user to download a translation JSON file from a URL directly into `translations/`.
+
+#### Scope
+- `src/translationDownloader.ts`: implement `downloadTranslation(adapter, pluginDir, url, name): Promise<void>` using `requestUrl` (mobile-compatible, no Node)
+- Validate downloaded JSON: must be a non-empty `Record<string, string>`
+- Settings tab: add URL input and "Download" button; show success/error as Obsidian Notice
+
+#### Definition of Done
+- Downloaded file appears in `translations/` and shows up in the preferred translation dropdown on settings reopen
+- No Node runtime features used; works on mobile
+- `npm run check` and `npm run ci` pass
+
+---
+
+### Task 11 – Custom Book Abbreviations
+
+#### Goal
+Allow users to define custom abbreviations that supplement or override built-in Czech defaults.
+
+#### Scope
+- `src/books.ts`: implement `buildAbbreviationMap(custom: CustomAbbreviations): AbbreviationMap` — merges built-in defaults with custom; custom wins on conflict; keys are regex-escaped
+- `src/parser.ts`: implement `buildRefScanner(map: AbbreviationMap): RefScanner` — compiles regex once from map keys; `scanRefs` delegates to a default scanner built from the built-in map
+- `refDecorationsExtension(scanner)` and `refTooltipExtension(scanner, data)` become factory functions; `main.ts` wires them with the built scanner
+- Settings tab: add `Custom abbreviations` text area (one `KEY → OSIS_ID` entry per line)
+- Scanner rebuilt after settings save
+
+#### Definition of Done
+- Custom abbreviation is detected in hover preview and editor decorations after settings save
+- Regex compiled once at startup/settings change, not per keystroke
+- `npm run check` and `npm run ci` pass
+
+---
+
+### Task 12 – Insert Verse Text Command
+
+#### Goal
+Allow the user to insert verse text for a detected reference at the cursor into the editor.
+
+#### Scope
+- `src/editor/insertVerse.ts`: implement `insertVerseCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat): Command` — no Obsidian imports; uses CM6 transaction dispatch
+- Inline format: appends ` — <verse text>` after the reference on the same line
+- Blockquote format: inserts `> <verse text>` on the next line
+- Command is no-op if cursor is not on a detected reference
+- `main.ts`: register command id `biblens-insert-verse` via `this.addCommand(...)`
+- Settings tab: expose `verseInsertionFormat` toggle (Inline / Blockquote)
+
+#### Definition of Done
+- Command appears in Obsidian command palette as `BibLens: Insert verse text`
+- Inline and blockquote insertion formats both work correctly
+- No `innerHTML` usage; CM6 transaction only
+- `npm run check` and `npm run ci` pass
 
 ---
 

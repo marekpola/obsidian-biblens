@@ -85,6 +85,73 @@ This separation allows multiple abbreviation systems to map to the same internal
 
 ---
 
+## Version 0.2 – Translation Management
+
+### Goal
+
+Allow the user to work with multiple Bible translations stored locally.
+
+Features:
+
+- Plugin settings include a `Preferred translation` selector listing all files found in `translations/`.
+- User can add a translation by dropping a JSON file into `translations/` and reloading the plugin.
+- Plugin can download a translation file from a URL directly into `translations/` using Obsidian's
+  `requestUrl` API (mobile-compatible; no Node runtime required).
+- Changing the preferred translation reloads the active translation data without a plugin restart.
+
+Constraints:
+
+- All translation files must follow the same key format as `cep.json` (`${bookId}.${chapter}.${verse}`).
+- No external services are contacted at startup — download is an explicit user action.
+- Offline operation is preserved; the preferred translation must already be on disk.
+
+---
+
+## Version 0.2 – Book Abbreviation Configuration
+
+### Goal
+
+Allow users to define custom book abbreviations that supplement or override the built-in Czech defaults.
+
+Features:
+
+- Settings include a `Custom abbreviations` field where the user maps input strings to OSIS book IDs.
+  Example: `Jr, Jer, Jeremiáš → JER`
+- Custom abbreviations are merged with built-in defaults; custom entries win on conflict.
+- The parser regex is compiled from the active merged map at plugin startup.
+- Reference detection and hover previews respect the active abbreviation set.
+
+Constraints:
+
+- Built-in abbreviations remain as the default; the user does not need to redefine them.
+- Abbreviation keys are validated to prevent broken regex patterns.
+- Parser performance is unaffected: regex is compiled once, not on every keystroke.
+
+---
+
+## Version 0.2 – Insert Verse Text Command
+
+### Goal
+
+Allow the user to insert the text of a detected Bible reference directly into the editor.
+
+Features:
+
+- Command `Insert verse text` available in the Obsidian command palette.
+- When the cursor is positioned on a detected reference, the command fetches the verse(s) and
+  inserts the text into the editor.
+- Default insertion format: append verse text on the same line, separated by ` `.
+  Example: `Jr 1,1 Slova Jeremjáše, syna Chilkijášova…`
+- Future option: insert as a blockquote on the next line.
+
+Constraints:
+
+- Command is a no-op if the cursor is not on a detected reference.
+- Insertion uses a CM6 transaction (no `innerHTML`, no clipboard manipulation).
+- Works in editing mode only (not Reading View).
+
+---
+
 ## Technical Constraints
 
 - Must support mobile Obsidian.

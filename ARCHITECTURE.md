@@ -18,29 +18,42 @@ All source files live under `src/`:
 - src/translationLoader.ts
 - src/translationRegistry.ts
 - src/translationDownloader.ts
-- src/translationRegistry.ts
-- src/translationDownloader.ts
 - src/ui/hover.ts
+- src/ui/verseDOM.ts
 - src/editor/refDecorations.ts
 - src/editor/refTooltip.ts
+- src/editor/insertVerse.ts
 
 Translation data files live under `translations/` in the plugin directory (not in `src/`):
 - translations/cep.json
+- translations/*.json  (additional translations dropped by user or downloaded)
 
 ## Modules
 - src/main.ts
   - Obsidian integration: plugin lifecycle, commands, registrations
   - Registers CM6 extensions via `this.registerEditorExtension([...])`
   - Calls `loadTranslation` on `onload()`; stores `translationData`; passes it to UI layers
+  - Builds active abbreviation map via `buildAbbreviationMap(settings.customAbbreviations)`
+  - Builds `RefScanner` via `buildRefScanner(map)` and passes it to editor extension factories
+  - Registers `biblens-insert-verse` command via `this.addCommand(...)`
 - src/parser.ts
   - Pure parsing functions (no Obsidian imports)
   - Exports: `parseCzechBibleRef`, `scanRefs`, `formatRef`, `RefMatch`
+  - Exports: `type RefScanner = { scan(text: string): RefMatch[] }`
+  - Exports: `buildRefScanner(map: AbbreviationMap): RefScanner` — compiles regex once from map keys (keys are regex-escaped)
+  - `scanRefs` remains as a convenience default using the built-in map
 - src/types.ts
-  - Shared types (BibleRef, ParseResult, etc.)
+  - Shared types (BibleRef, ParseResult, TranslationMeta, etc.)
+  - `type TranslationMeta = { id: string; displayName: string }`
 - src/settings.ts
-  - Settings placeholder — do not modify until a settings task is active
+  - Plugin settings shape and defaults
+  - `preferredTranslation: string` (default: `"cep"`)
+  - `customAbbreviations: CustomAbbreviations` (default: `{}`)
+  - `verseInsertionFormat: 'inline' | 'blockquote'` (default: `'inline'`)
 - src/books.ts
   - Definition of standard representation of biblical books and mapping
+  - Exports: `type CustomAbbreviations = Record<string, BookId>`
+  - Exports: `buildAbbreviationMap(custom: CustomAbbreviations): AbbreviationMap` — merges built-in + custom; custom wins
 - src/provider.ts
   - Pure data-access module (no Obsidian imports, no DOM)
   - `type VerseEntry = { label: string; text: string }`
@@ -52,31 +65,47 @@ Translation data files live under `translations/` in the plugin directory (not i
   - Obsidian-aware loader; may import from 'obsidian'
   - Exports: `loadTranslation(adapter: DataAdapter, pluginDir: string, name: string): Promise<TranslationData>`
   - Reads `${pluginDir}/translations/${name}.json` via `adapter.read()`
+- src/translationRegistry.ts
+  - Obsidian-aware; may import from 'obsidian'
+  - Exports: `listAvailableTranslations(adapter: DataAdapter, pluginDir: string): Promise<TranslationMeta[]>`
+  - Scans `${pluginDir}/translations/` via `adapter.list()` and returns metadata for each `.json` file found
+- src/translationDownloader.ts
+  - Obsidian-aware; may import from 'obsidian' (uses `requestUrl`)
+  - Exports: `downloadTranslation(adapter: DataAdapter, pluginDir: string, url: string, name: string): Promise<void>`
+  - Fetches JSON from `url`, validates format, writes to `${pluginDir}/translations/${name}.json`
 - src/ui/verseDOM.ts
   - DOM builder for verse content (no Obsidian imports)
   - Exports: `buildVerseDOM(entries: VerseEntry[]): HTMLElement`
   - Used by both `hover.ts` (via main.ts) and `refTooltip.ts`
 - src/ui/hover.ts
   - `PopoverManager` class: DOM popover creation, positioning, and teardown
-  - Current: `show(anchor: HTMLElement, content: string): void`
-  - Target (Task 7): `show(anchor: HTMLElement, content: HTMLElement): void` — accepts DOM element, not string
+  - `show(anchor: HTMLElement, content: HTMLElement): void` — accepts DOM element
   - Used in Reading View only
 - src/editor/refDecorations.ts
   - CM6 ViewPlugin that scans visible ranges and applies underline decorations to detected references
-  - Exports: `refDecorationsExtension` (an `Extension`)
-  - Uses `scanRefs` from parser.ts; may import from `@codemirror/*`
+  - Exports: `refDecorationsExtension(scanner: RefScanner): Extension` — factory function
+  - Uses `scanner.scan()`; may import from `@codemirror/*`
 - src/editor/refTooltip.ts
   - CM6 `hoverTooltip` extension that shows verse content on hover in the editor
-  - Exports: `refTooltipExtension` (an `Extension`)
-  - Uses `formatRef`, `scanRefs` from parser.ts; `getVerses` from provider.ts; may import from `@codemirror/*`
+  - Exports: `refTooltipExtension(scanner: RefScanner, data: TranslationData): Extension` — factory function
+  - Uses `formatRef`, `scanner.scan()` from parser.ts; `getVerses` from provider.ts; may import from `@codemirror/*`
+- src/editor/insertVerse.ts
+  - CM6 command factory; no Obsidian imports
+  - Exports: `insertVerseCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat): Command`
+  - Logic: find reference spanning cursor on current line → `getVerses` → format text → CM6 transaction dispatch
+  - No-op if cursor is not on a detected reference
+  - `InsertionFormat = 'inline' | 'blockquote'`
 
 ## Boundaries
 - parser.ts must not import from 'obsidian'
 - provider.ts must not import from 'obsidian' or use DOM APIs
+- books.ts must not import from 'obsidian'
 - ui/hover.ts must not import from 'obsidian'
 - ui/verseDOM.ts must not import from 'obsidian'
 - editor/*.ts must not import from 'obsidian'; may import from `@codemirror/*` (provided by Obsidian host)
 - translationLoader.ts may import from 'obsidian'
+- translationRegistry.ts may import from 'obsidian'
+- translationDownloader.ts may import from 'obsidian'
 - main.ts may import any src/ module
 - `@codemirror/*` packages are external (provided by Obsidian) — do not bundle them
 - Do not use `innerHTML` for verse content — use DOM construction only (see D010)
@@ -127,19 +156,47 @@ Expected complexity:
 Translation loading:
 
 main.ts
+→ settings.preferredTranslation
 → translationLoader.ts
-→ TranslationData
+→ TranslationData (cached in memory)
+
+Translation discovery:
+
+main.ts / settings UI
+→ translationRegistry.ts
+→ TranslationMeta[]
+
+Translation download (explicit user action):
+
+settings UI
+→ translationDownloader.ts (requestUrl)
+→ translations/${name}.json (written to disk)
+
+Abbreviation map + scanner construction:
+
+main.ts
+→ settings.customAbbreviations
+→ books.ts: buildAbbreviationMap()
+→ parser.ts: buildRefScanner(map)
+→ RefScanner (passed to editor extensions and insert command)
 
 Reference detection:
 
 editor/refDecorations.ts
-→ scanRefs (parser.ts)
+→ scanner.scan() (RefScanner from parser.ts)
 
 Verse retrieval:
 
-hover.ts / refTooltip.ts
+hover.ts / refTooltip.ts / insertVerse.ts
 → getVerses (provider.ts)
 → TranslationData
+
+Verse insertion:
+
+editor/insertVerse.ts
+→ scanner.scan() on current line
+→ getVerses (provider.ts)
+→ CM6 transaction dispatch
 
 
 
@@ -197,9 +254,13 @@ type ParseResult =
 - `src/parser.ts` exports: `parseCzechBibleRef(input: string): ParseResult`
 - `src/parser.ts` exports: `scanRefs(text: string): RefMatch[]`
 - `src/parser.ts` exports: `formatRef(ref: BibleRef): string`
+- `src/parser.ts` exports: `buildRefScanner(map: AbbreviationMap): RefScanner`
 - `src/ui/hover.ts` exports: `PopoverManager` (methods: `show`, `hide`)
-- `src/editor/refDecorations.ts` exports: `refDecorationsExtension: Extension`
-- `src/editor/refTooltip.ts` exports: `refTooltipExtension: Extension`
+- `src/editor/refDecorations.ts` exports: `refDecorationsExtension(scanner: RefScanner): Extension`
+- `src/editor/refTooltip.ts` exports: `refTooltipExtension(scanner: RefScanner, data: TranslationData): Extension`
+- `src/editor/insertVerse.ts` exports: `insertVerseCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat): Command`
+- `src/translationRegistry.ts` exports: `listAvailableTranslations(adapter: DataAdapter, pluginDir: string): Promise<TranslationMeta[]>`
+- `src/translationDownloader.ts` exports: `downloadTranslation(adapter: DataAdapter, pluginDir: string, url: string, name: string): Promise<void>`
 
 ## Build
 - esbuild bundles to main.js

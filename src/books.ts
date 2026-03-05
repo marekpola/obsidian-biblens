@@ -36,6 +36,10 @@ export const ALL_BOOK_IDS = [
 
 export type BookId = (typeof ALL_BOOK_IDS)[number];
 
+export type CustomAbbreviations = Record<string, BookId>;
+
+export type AbbreviationMap = Record<string, BookId>;
+
 const BOOK_ID_SET: ReadonlySet<string> = new Set(ALL_BOOK_IDS);
 
 /*
@@ -296,4 +300,8 @@ export function resolveBookId(rawBook: string): BookId | undefined {
   if (BOOK_ID_SET.has(upper)) return upper as BookId;
 
   return undefined;
+}
+
+export function buildAbbreviationMap(custom: CustomAbbreviations): AbbreviationMap {
+  return { ...BOOK_ALIASES, ...custom };
 }

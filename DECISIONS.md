@@ -107,3 +107,59 @@ Consequences:
 - An unknown chapter (no matching keys) still returns `[]`, triggering the "Verš nenalezen" fallback.
 Supersedes: the "chapter-only returns []" clause from Task 6 DoD.
 Date: 2026-03-04
+
+## D012 – Translation registry and selection via settings
+Decision: Available translations are discovered at runtime by listing the `translations/` directory.
+The active translation is selected via `settings.preferredTranslation` (default: `"cep"`).
+A new `src/translationRegistry.ts` module handles discovery; a new `src/translationDownloader.ts` handles
+fetching translation files from external URLs using Obsidian's `requestUrl` (mobile-compatible, no Node).
+Reason: D009 established the `translations/` directory pattern. This decision completes it by adding
+selection and optional download without requiring plugin rebuilds.
+Consequences:
+- `src/translationRegistry.ts` (Obsidian-aware): exports `listAvailableTranslations(adapter, pluginDir): Promise<TranslationMeta[]>`
+- `src/translationDownloader.ts` (Obsidian-aware): exports `downloadTranslation(adapter, pluginDir, url, name): Promise<void>`
+- `src/types.ts` adds `type TranslationMeta = { id: string; displayName: string }`
+- `src/settings.ts` gains `preferredTranslation: string`
+- `main.ts` reads `settings.preferredTranslation` on load and reloads on settings change
+- `translationLoader.ts` interface is unchanged
+Revisit: when a full settings UI with translation manager (list, download, delete) is built.
+Date: 2026-03-05
+
+## D013 – Abbreviation map parameterization: scanner factory pattern
+Decision: The parser regex is compiled from the active abbreviation map at startup via a new
+`buildRefScanner(map: AbbreviationMap): RefScanner` factory in `src/parser.ts`.
+Editor extensions (`refDecorationsExtension`, `refTooltipExtension`) change from exported values
+to exported factory functions that accept the scanner as a parameter, removing the static import of `scanRefs`.
+User-defined abbreviations are stored in `settings.customAbbreviations` and merged with built-in
+defaults by `buildAbbreviationMap(custom)` in `src/books.ts`. Custom entries win on conflict.
+Reason: D006 deferred this; D002 hardcoded Czech abbreviations. This is the minimal generalization
+that enables user configuration without redesigning the parser internals. Compiling once at startup
+satisfies the performance constraint (no regex allocation in hot loops).
+Consequences:
+- `src/books.ts` exports `type CustomAbbreviations = Record<string, BookId>` and `buildAbbreviationMap(custom)`
+- `src/parser.ts` exports `type RefScanner = { scan(text: string): RefMatch[] }` and `buildRefScanner(map): RefScanner`
+- Abbreviation keys are regex-escaped before insertion into the compiled pattern
+- `refDecorationsExtension(scanner): Extension` — factory function
+- `refTooltipExtension(scanner, data): Extension` — factory function
+- `src/settings.ts` gains `customAbbreviations: CustomAbbreviations`
+- `main.ts` builds the scanner on load and after settings change
+Supersedes: D002 (hardcoded Czech abbreviations become the built-in default set, not the only set).
+Revisit: when a UI editor for abbreviation lists is built.
+Date: 2026-03-05
+
+## D014 – Verse insertion as a CM6 command; insertion format configurable
+Decision: A new `src/editor/insertVerse.ts` module exports a CM6 command factory
+`insertVerseCommand(scanner: RefScanner, data: TranslationData): Command`.
+The command finds the reference spanning the cursor on the current line, retrieves verses via `getVerses`,
+and inserts the formatted text via a CM6 transaction dispatch.
+The exact insertion format (inline append / blockquote on next line / replace reference) is deferred
+to a `settings.verseInsertionFormat` option defined in a later task.
+Reason: All required machinery (parser, provider, CM6 editor access) already exists.
+A command factory pattern keeps the module free of Obsidian imports and independently testable.
+Consequences:
+- `src/editor/insertVerse.ts` — no Obsidian imports; uses CM6 only
+- `main.ts` registers the command via `this.addCommand({ id: 'biblens-insert-verse', ... })`
+- Insertion format default: append verse text on the same line separated by ` — `
+- No insertion occurs if the cursor is not on a detected reference
+Revisit: when settings UI exposes the insertion format option.
+Date: 2026-03-05

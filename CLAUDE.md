@@ -53,6 +53,7 @@ Process:
 5. Run build if possible
 6. Show `git diff`
 7. Provide manual test steps from TESTPLAN.md
+8. Write automatic unit tests
 
 Rules:
 
@@ -155,8 +156,8 @@ Output format:
 Task title  
 Short description  
 Definition of Done
-
-
+- Changes to TASKS.md
+- show `git diff` 
 
 
 ---
