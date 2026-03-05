@@ -1,10 +1,10 @@
 {
-  "id": "biblens",
-  "name": "BibLens",
-  "version": "0.0.1",
-  "minAppVersion": "1.5.0",
-  "description": "Preview Bible passages on hover from local vault sources.",
-  "author": "Marek Polášek",
-  "authorUrl": "https://github.com/marekpola",
-  "isDesktopOnly": false
+	"id": "biblens",
+	"name": "BibLens",
+	"version": "1.0.0",
+	"minAppVersion": "1.5.0",
+	"description": "Preview Bible passages on hover from local vault sources.",
+	"author": "Marek Polášek",
+	"authorUrl": "https://github.com/marekpola",
+	"isDesktopOnly": false
 }
