@@ -103,6 +103,7 @@ Output:
 
 - test results
 - reproduction steps for failures
+- after test succesfully passed move tested task from secton Active to section Done 
 
 ---
 

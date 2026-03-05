@@ -7,21 +7,6 @@ Each task must include a clear Definition of Done (DoD).
 
 ## Active
 
-### Task 8 – Plugin Settings Foundation
-
-#### Goal
-Add the Obsidian settings infrastructure needed by all 0.2 features.
-
-#### Scope
-- `src/settings.ts`: `BibLensSettings` type with fields `preferredTranslation: string`, `customAbbreviations: CustomAbbreviations`, `verseInsertionFormat: 'inline' | 'blockquote'`, and `DEFAULT_SETTINGS`
-- `main.ts`: load/save settings via `loadData`/`saveData`
-- Register a settings tab in Obsidian (basic layout scaffold, no functional controls yet)
-
-#### Definition of Done
-- Settings tab opens from Obsidian → Settings → Community Plugins → BibLens
-- Values persist across plugin reload
-- `npm run check` and `npm run ci` pass
-
 ---
 
 ## Next
@@ -110,6 +95,7 @@ Allow the user to insert verse text for a detected reference at the cursor into 
 
 ---
 ## Done
+
 ### Task 1 – Remove Sample Logic & Add Diagnostics Command
 #### Goal
 Clean the sample plugin code and replace it with a minimal BibLens structure.
@@ -248,4 +234,18 @@ using the formatted output from `getVerses`.
 - No console errors.
 - Build passes.
 
+### Task 8 – Plugin Settings Foundation
+
+#### Goal
+Add the Obsidian settings infrastructure needed by all 0.2 features.
+
+#### Scope
+- `src/settings.ts`: `BibLensSettings` type with fields `preferredTranslation: string`, `customAbbreviations: CustomAbbreviations`, `verseInsertionFormat: 'inline' | 'blockquote'`, and `DEFAULT_SETTINGS`
+- `main.ts`: load/save settings via `loadData`/`saveData`
+- Register a settings tab in Obsidian (basic layout scaffold, no functional controls yet)
+
+#### Definition of Done
+- Settings tab opens from Obsidian → Settings → Community Plugins → BibLens
+- Values persist across plugin reload
+- `npm run check` and `npm run ci` pass
 
