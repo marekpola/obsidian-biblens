@@ -147,6 +147,50 @@ Supersedes: D002 (hardcoded Czech abbreviations become the built-in default set,
 Revisit: when a UI editor for abbreviation lists is built.
 Date: 2026-03-05
 
+## D014 – Verse insertion as a CM6 command; insertion format configurable
+Decision: A new `src/editor/insertVerse.ts` module exports a CM6 command factory
+`insertVerseCommand(scanner: RefScanner, data: TranslationData): Command`.
+The command finds the reference spanning the cursor on the current line, retrieves verses via `getVerses`,
+and inserts the formatted text via a CM6 transaction dispatch.
+The exact insertion format (inline append / blockquote on next line / replace reference) is deferred
+to a `settings.verseInsertionFormat` option defined in a later task.
+Reason: All required machinery (parser, provider, CM6 editor access) already exists.
+A command factory pattern keeps the module free of Obsidian imports and independently testable.
+Consequences:
+- `src/editor/insertVerse.ts` — no Obsidian imports; uses CM6 only
+- `main.ts` registers the command via `this.addCommand({ id: 'biblens-insert-verse', ... })`
+- Insertion format default: append verse text on the same line separated by ` — `
+- No insertion occurs if the cursor is not on a detected reference
+Revisit: when settings UI exposes the insertion format option.
+Date: 2026-03-05
+
+## D015 – Translation source catalog and per-provider adapter pattern
+Decision: Bible translation downloads are structured around a **source catalog** (`src/sources/catalog.ts`)
+and a **per-provider adapter registry** (`src/sources/adapters.ts`).
+The catalog is a static list of `SourceProvider` objects bundled in plugin source. Each provider
+declares its available translations (`RemoteTranslationEntry[]`) and an `adapterType` string.
+Each `SourceAdapter` implementation is responsible for two things: constructing the fetch URL
+and transforming the provider's raw response into the canonical `TranslationData` format
+(`Record<string, string>` with `${OSIS_BOOK}.${chapter}.${verse}` keys, matching cep.json).
+A new `src/translationManager.ts` module (Obsidian-aware) orchestrates the full pipeline:
+URL build → `requestUrl` → adapter transform → validate → write to `translations/${id}.json`.
+Download status is derived from the `translations/` directory listing; no separate tracking file.
+Delete is a file removal via `DataAdapter`. Update = delete + download.
+Reason: The raw-URL download in D012/Task 10 places the burden of knowing API URLs and response
+formats on the user. This abstraction makes download a discoverable, guided UI action, and
+isolates provider-specific logic behind a clean interface so new providers can be added without
+touching existing modules.
+Consequences:
+- `src/sources/catalog.ts` — pure; no Obsidian imports; exports `KNOWN_PROVIDERS` and types
+- `src/sources/adapters.ts` — pure; exports `SourceAdapter` interface and `getAdapter(type)`
+- `src/translationManager.ts` — Obsidian-aware; exports `downloadFromSource`, `deleteTranslation`
+- `src/translationDownloader.ts` remains for direct-URL download (Task 10); not removed
+- `src/translationRegistry.ts` and `src/translationLoader.ts` are unchanged (local-only concern)
+- Settings UI gains a Translation Sources panel and an Installed Translations panel
+- New providers require: a new `SourceProvider` entry in catalog + a new adapter in adapters.ts
+Revisit: if a provider offers a dynamic catalog endpoint (then translations[] may be fetched on demand).
+Date: 2026-03-05
+
 ## D016 – Remote catalog update from GitHub; fallback to bundled catalog
 Decision: The source provider catalog (`SourceProvider[]`) can be refreshed from a hardcoded
 GitHub raw URL without releasing a new plugin version. The update mechanism separates two concerns:
@@ -178,48 +222,4 @@ Consequences:
 - `src/sources/catalog.ts` `KNOWN_PROVIDERS` is regenerated from `catalog/providers.json` at each plugin release
 - Settings UI gains: last-updated label, "Update Now" button, "Auto-update on startup" toggle
 Revisit: if catalog size grows enough that full replacement is wasteful (consider delta updates).
-Date: 2026-03-05
-
-## D015 – Translation source catalog and per-provider adapter pattern
-Decision: Bible translation downloads are structured around a **source catalog** (`src/sources/catalog.ts`)
-and a **per-provider adapter registry** (`src/sources/adapters.ts`).
-The catalog is a static list of `SourceProvider` objects bundled in plugin source. Each provider
-declares its available translations (`RemoteTranslationEntry[]`) and an `adapterType` string.
-Each `SourceAdapter` implementation is responsible for two things: constructing the fetch URL
-and transforming the provider's raw response into the canonical `TranslationData` format
-(`Record<string, string>` with `${OSIS_BOOK}.${chapter}.${verse}` keys, matching cep.json).
-A new `src/translationManager.ts` module (Obsidian-aware) orchestrates the full pipeline:
-URL build → `requestUrl` → adapter transform → validate → write to `translations/${id}.json`.
-Download status is derived from the `translations/` directory listing; no separate tracking file.
-Delete is a file removal via `DataAdapter`. Update = delete + download.
-Reason: The raw-URL download in D012/Task 10 places the burden of knowing API URLs and response
-formats on the user. This abstraction makes download a discoverable, guided UI action, and
-isolates provider-specific logic behind a clean interface so new providers can be added without
-touching existing modules.
-Consequences:
-- `src/sources/catalog.ts` — pure; no Obsidian imports; exports `KNOWN_PROVIDERS` and types
-- `src/sources/adapters.ts` — pure; exports `SourceAdapter` interface and `getAdapter(type)`
-- `src/translationManager.ts` — Obsidian-aware; exports `downloadFromSource`, `deleteTranslation`
-- `src/translationDownloader.ts` remains for direct-URL download (Task 10); not removed
-- `src/translationRegistry.ts` and `src/translationLoader.ts` are unchanged (local-only concern)
-- Settings UI gains a Translation Sources panel and an Installed Translations panel
-- New providers require: a new `SourceProvider` entry in catalog + a new adapter in adapters.ts
-Revisit: if a provider offers a dynamic catalog endpoint (then translations[] may be fetched on demand).
-Date: 2026-03-05
-
-## D014 – Verse insertion as a CM6 command; insertion format configurable
-Decision: A new `src/editor/insertVerse.ts` module exports a CM6 command factory
-`insertVerseCommand(scanner: RefScanner, data: TranslationData): Command`.
-The command finds the reference spanning the cursor on the current line, retrieves verses via `getVerses`,
-and inserts the formatted text via a CM6 transaction dispatch.
-The exact insertion format (inline append / blockquote on next line / replace reference) is deferred
-to a `settings.verseInsertionFormat` option defined in a later task.
-Reason: All required machinery (parser, provider, CM6 editor access) already exists.
-A command factory pattern keeps the module free of Obsidian imports and independently testable.
-Consequences:
-- `src/editor/insertVerse.ts` — no Obsidian imports; uses CM6 only
-- `main.ts` registers the command via `this.addCommand({ id: 'biblens-insert-verse', ... })`
-- Insertion format default: append verse text on the same line separated by ` — `
-- No insertion occurs if the cursor is not on a detected reference
-Revisit: when settings UI exposes the insertion format option.
 Date: 2026-03-05

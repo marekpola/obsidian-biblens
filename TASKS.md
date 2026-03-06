@@ -148,6 +148,7 @@ Parser must be independent of Obsidian API.
 
 
 ### Task 3 – Reading View Hover Detection
+Issue: #1
 
 #### Goal
 Detect Bible references in Reading View and display a popover.
@@ -169,9 +170,11 @@ No real Bible data yet.
 - Does not break mobile compatibility.
 
 ### Task 4 – Editor (Live Preview): detect references with CodeMirror decorations
+Issue: #1
 DoD: underline refs in editor, no lag on large notes, no console errors
 
 ### Task 5 – Editor tooltip
+Issue: #1
 DoD: hover shows tooltip with normalized ref, works after edits, doesn’t break selection/cursor
 
 ### Task 6 – Bible Text Data Provider
@@ -208,6 +211,7 @@ and a separate Obsidian-aware loader that reads translation JSON files from the 
 - Build passes, no console errors on plugin load.
 
 ### Task 7 – Display Bible Text in Popovers
+Issue: #1
 
 #### Goal
 Replace placeholder text with actual verse content in both the Reading View popover and the Editor tooltip,

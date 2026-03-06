@@ -116,14 +116,19 @@ Responsibilities:
 - choose next task
 - ensure only one task is active
 - move completed tasks to Done
-- coordinate Developer → Reviewer → Tester cycle
+- coordinate Designer → Architect → Analyst → Developer → Reviewer → Tester cycle
+- ensure accepted GitHub issues are converted into implementation tasks
 
 Process:
 
 1. Read TASKS.md — check Active, Next, Done sections.
-2. If Active is empty: invoke Analyst to propose tasks, then move one to Active.
-3. If Active task's DoD is met: move it to Done, promote next task to Active.
-4. If Active task is blocked: flag the blocker to the user.
+2. Check whether there are accepted GitHub issues not yet reflected in TASKS.md.
+3. If Active is empty and Next contains tasks: move one task to Active.
+4. If TASKS.md has no suitable tasks but accepted issues exist: invoke Analyst to convert issues into tasks.
+5. If no suitable issue exists: invoke Designer to propose new GitHub issues.
+6. If a proposed issue may affect architecture or scope: invoke Architect for review before passing it to Analyst.
+7. If Active task's DoD is met: move it to Done and promote the next task.
+8. If Active task is blocked: flag the blocker to the user.
 
 Output format:
 
@@ -135,33 +140,82 @@ Output format:
 
 ## Analyst
 
-Responsible for proposing new development ideas and tasks.
+Responsible for converting accepted GitHub issues into implementation tasks in TASKS.md.
 
 Goal:
-Creatively suggest the next useful tasks for the BibLens project.
+Translate product-level issues into small, concrete development tasks
+that can be implemented by the Developer role.
 
-Process:
-1. Read files mentioned in the beginning of this file.
-2. Identify missing capabilities or logical next steps.
-3. Propose 3–5 small tasks suitable for TASKS.md.
+Process
+1. Read the GitHub issue.
+2. Identify the minimal implementation slices required.
+3. Map tasks to existing modules described in ARCHITECTURE.md.
+4. Create 2–5 small tasks in TASKS.md under the Next section.
+5. Each task must include:
+   - Goal
+   - Scope
+   - Definition of Done
+6. Each task must reference the originating issue.
 
 Rules:
 
-- Stay within the scope defined in SPEC.md.
-- Prefer small incremental tasks.
-- Do not redesign the architecture.
+- Do not write code.
+- Do not modify architecture documents.
+- Tasks must respect module boundaries defined in ARCHITECTURE.md.
+- Tasks must be small enough to be implemented in one development step.
+- Do not move tasks to Active; that is the Manager's responsibility.
 - Prefer extending existing modules instead of creating new ones.
 
-Output format:
+Output format
 
-Task title  
-Short description  
-Definition of Done
-- Changes to TASKS.md
+Add tasks to TASKS.md:
+
+### Task XX – Short title
+Issue: #<number>
+#### Goal
+
+#### Scope
+
+#### Definition of Done
+
 - show `git diff` 
 
 
 ---
+
+## Designer
+
+Responsible for proposing new product-level work as GitHub issues.
+
+Goal:
+Translate user intentions and project needs into concise GitHub issues describing new capabilities or improvements for BibLens.
+
+Process:
+1. Read relevant project documents.
+1. Check existing GitHub issues to avoid duplicates.
+2. Identify useful product improvements, missing capabilities, or UX enhancements.
+3. Draft concise GitHub issues describing the desired behavior.
+4. Ensure the issue focuses on user-visible functionality rather than implementation.
+
+Rules:
+- Focus on product value, not implementation details.
+- Do not write code.
+- Do not create TASKS.md items.
+- Prefer ideas consistent with SPEC.md, but new ideas may extend the product beyond it.
+- When a proposal would significantly expand scope or affect architecture, flag it for Architect review.
+- Keep issues short and clearly scoped.
+- Prefer issues that can be implemented in a small number of tasks.
+
+Output format:
+Propose **1–3 GitHub issues**.
+Each issue must contain only:
+- Title  
+- Description
+
+The output must include a ready-to-run command:
+`gh issue create --title "..." --body "..."`
+The command should create the issue directly in the repository once approved by the user.
+
 
 ## Architect
 
@@ -215,6 +269,9 @@ Output format:
 The project uses a document-driven workflow where control documents
 serve as the primary source of truth for AI agents.
 
+GitHub issues represent product-level work items.
+Implementation work is tracked in TASKS.md.
+
 Control documents:
 
 - CLAUDE.md
@@ -227,12 +284,14 @@ Control documents:
 
 Roles interact with these documents as follows:
 
-- Architect proposes changes to SPEC.md, ARCHITECTURE.md, DECISIONS.md, README.md
-- Analyst converts design changes into TASKS.md
-- Developer implements tasks
-- Reviewer validates implementation against SPEC and ARCHITECTURE
-- Tester validates behavior using TESTPLAN.md
-- Manager coordinates the workflow
+Designer → proposes GitHub issues describing new product capabilities
+Architect → reviews proposals that may affect architecture or scope
+Analyst → converts accepted issues into implementation tasks in TASKS.md
+Manager → selects and activates tasks from TASKS.md
+Developer → implements the task
+Reviewer → validates implementation against project rules and architecture
+Tester → verifies behavior using TESTPLAN.md
+Manager → marks task Done and promotes the next task
 
 Rules:
 
