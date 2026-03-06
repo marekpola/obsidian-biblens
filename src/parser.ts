@@ -8,6 +8,8 @@ export type RefMatch = {
   ref: BibleRef;
 };
 
+export type RefScanner = { scan(text: string): RefMatch[] };
+
 function candidateRegex() {
   return /\b((?:[1-3])?[A-ZÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ][a-záčďéěíňóřšťůúýž]{0,10})\s+(\d+(?:[,:](?:\d+)(?:-\d+)?)?)/g;
 }

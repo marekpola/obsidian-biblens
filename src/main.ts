@@ -1,8 +1,10 @@
 import { MarkdownPostProcessorContext, Notice, Plugin } from 'obsidian';
+import { EditorView } from '@codemirror/view';
 import { scanRefs } from './parser';
 import { PopoverManager } from './ui/hover';
 import { refDecorationsExtension } from './editor/refDecorations';
 import { refTooltipExtension } from './editor/refTooltip';
+import { insertAfterLastRefCommand } from './editor/insertVerse';
 import type { TranslationData } from './provider';
 import { getVerses } from './provider';
 import { buildVerseDOM } from './ui/verseDOM';
@@ -57,6 +59,16 @@ export default class BibLensPlugin extends Plugin {
 			id: 'show-diagnostics',
 			name: 'Show diagnostics',
 			callback: () => new Notice(`BibLens v${this.manifest.version} is active.`)
+		});
+
+		const scanner = { scan: scanRefs };
+		this.addCommand({
+			id: 'insert-verse-after-last',
+			name: 'Insert verse after last reference',
+			editorCallback: (editor) => {
+				const view = (editor as unknown as { cm: EditorView }).cm;
+				if (view) insertAfterLastRefCommand(scanner, this.translationData, this.settings.verseInsertionFormat)(view);
+			}
 		});
 
 		this.registerMarkdownPostProcessor(
