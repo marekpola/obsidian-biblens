@@ -129,7 +129,31 @@ Constraints:
 
 ---
 
+## Version 0.2 – Copy Verse Text to Clipboard
+
+Issue: #2
+
+### Goal
+
+Allow the user to copy the full displayed verse text to the clipboard directly from the hover popover or editor tooltip.
+
+Features:
+
+- Both the Reading View popover and the editor tooltip display a copy button alongside the verse content.
+- Clicking the button copies all verse entries as plain text to the clipboard via `navigator.clipboard.writeText()`.
+- Plain-text format: first entry as `<ref label> <text>`, subsequent entries as `<verse number> <text>`, separated by spaces.
+
+Constraints:
+
+- `navigator.clipboard` is standard Web API; no Obsidian import is required. Mobile-compatible in Obsidian's webview.
+- The copy button is rendered inside `buildVerseDOM` via an option flag. Call sites (`hover.ts`, `refTooltip.ts`) pass the flag; no signature changes elsewhere.
+- No additional feedback mechanism beyond the button itself.
+
+---
+
 ## Version 0.2 – Insert Verse Text Command
+
+Issue: N/A (existing scope)
 
 ### Goal
 
@@ -137,17 +161,40 @@ Allow the user to insert the text of a detected Bible reference directly into th
 
 Features:
 
-- Command `Insert verse text` available in the Obsidian command palette.
+- Command `BibLens: Insert verse text` available in the Obsidian command palette.
 - When the cursor is positioned on a detected reference, the command fetches the verse(s) and
   inserts the text into the editor.
-- Default insertion format: append verse text on the same line, separated by ` `.
-  Example: `Jr 1,1 Slova Jeremjáše, syna Chilkijášova…`
-- Future option: insert as a blockquote on the next line.
+- Default insertion format: append verse text on the same line, separated by ` — `.
+  Example: `Jr 1,1 — Slova Jeremjáše, syna Chilkijášova…`
+- Alternative: insert as a blockquote on the next line (configurable via settings).
 
 Constraints:
 
 - Command is a no-op if the cursor is not on a detected reference.
 - Insertion uses a CM6 transaction (no `innerHTML`, no clipboard manipulation).
+- Works in editing mode only (not Reading View).
+
+---
+
+## Version 0.2 – Insert Verse After Last Reference
+
+Issue: #3
+
+### Goal
+
+Allow the user to insert verse text after the last detected Bible reference in the note, without requiring the cursor to be positioned on that reference.
+
+Features:
+
+- Command `BibLens: Insert verse text after last reference` available in the Obsidian command palette.
+- Scans the entire document, finds the last detected Bible reference by document position, and inserts its verse text immediately after it.
+- Uses the same insertion format as `BibLens: Insert verse text` (inline or blockquote, per settings).
+- Command is a no-op if no references are detected in the note.
+
+Constraints:
+
+- Full-document scan is permitted for user-triggered commands (single one-time operation, not an automatic update handler).
+- Insertion uses a CM6 transaction; no `innerHTML`.
 - Works in editing mode only (not Reading View).
 
 ---

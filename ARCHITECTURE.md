@@ -110,8 +110,12 @@ Translation data files live under `translations/` in the plugin directory (not i
   - Providers with unknown `adapterType` are silently filtered (forward-compatibility: newer catalog entries don't crash older plugin versions)
 - src/ui/verseDOM.ts
   - DOM builder for verse content (no Obsidian imports)
-  - Exports: `buildVerseDOM(entries: VerseEntry[]): HTMLElement`
-  - Used by both `hover.ts` (via main.ts) and `refTooltip.ts`
+  - Exports: `buildVerseDOM(entries: VerseEntry[], options?: { copyButton?: boolean }): HTMLElement`
+    - If `copyButton` is true, appends a button that calls `navigator.clipboard.writeText(formatVerseText(entries))`
+    - `navigator.clipboard` is Web API — no Obsidian import required; mobile-compatible
+  - Exports: `formatVerseText(entries: VerseEntry[]): string` — plain-text representation for clipboard
+    - Format: `<label> <text>` for first entry; `<label> <text>` for subsequent entries; joined by single space
+  - Used by both `hover.ts` (via main.ts) and `refTooltip.ts`; both pass `{ copyButton: true }`
 - src/ui/hover.ts
   - `PopoverManager` class: DOM popover creation, positioning, and teardown
   - `show(anchor: HTMLElement, content: HTMLElement): void` — accepts DOM element
@@ -126,10 +130,14 @@ Translation data files live under `translations/` in the plugin directory (not i
   - Uses `formatRef`, `scanner.scan()` from parser.ts; `getVerses` from provider.ts; may import from `@codemirror/*`
 - src/editor/insertVerse.ts
   - CM6 command factory; no Obsidian imports
-  - Exports: `insertVerseCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat): Command`
-  - Logic: find reference spanning cursor on current line → `getVerses` → format text → CM6 transaction dispatch
-  - No-op if cursor is not on a detected reference
   - `InsertionFormat = 'inline' | 'blockquote'`
+  - Exports: `insertVerseCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat): Command`
+    - Finds reference spanning cursor on current line → `getVerses` → format text → CM6 transaction dispatch
+    - No-op if cursor is not on a detected reference
+  - Exports: `insertAfterLastRefCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat): Command`
+    - Scans full document via `view.state.doc.toString()` — permitted for user-triggered commands (see D018)
+    - Finds last `RefMatch` by document offset → `getVerses` → format text → CM6 transaction dispatch at match end position
+    - No-op if no references are found in the document
 
 ## Boundaries
 - parser.ts must not import from 'obsidian'
@@ -163,6 +171,9 @@ Rules:
 - Parsing must be limited to visible viewport ranges.
 - Avoid scanning `view.state.doc.toString()` or equivalent full-document operations.
 - Avoid heavy synchronous computation in editor update handlers.
+
+**Exception — user-triggered commands:**
+Commands invoked explicitly by the user (via command palette or keybinding) may scan the full document once. This is a single operation in response to a deliberate user action, not a recurring update handler. `view.state.doc.toString()` is acceptable inside a CM6 `Command` function for this purpose.
 
 ### Decorations
 
@@ -370,9 +381,12 @@ Remote catalog file shape (stored in repo at `catalog/providers.json` and cached
 - `src/parser.ts` exports: `formatRef(ref: BibleRef): string`
 - `src/parser.ts` exports: `buildRefScanner(map: AbbreviationMap): RefScanner`
 - `src/ui/hover.ts` exports: `PopoverManager` (methods: `show`, `hide`)
+- `src/ui/verseDOM.ts` exports: `buildVerseDOM(entries: VerseEntry[], options?: { copyButton?: boolean }): HTMLElement`
+- `src/ui/verseDOM.ts` exports: `formatVerseText(entries: VerseEntry[]): string`
 - `src/editor/refDecorations.ts` exports: `refDecorationsExtension(scanner: RefScanner): Extension`
 - `src/editor/refTooltip.ts` exports: `refTooltipExtension(scanner: RefScanner, data: TranslationData): Extension`
 - `src/editor/insertVerse.ts` exports: `insertVerseCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat): Command`
+- `src/editor/insertVerse.ts` exports: `insertAfterLastRefCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat): Command`
 - `src/translationRegistry.ts` exports: `listAvailableTranslations(adapter: DataAdapter, pluginDir: string): Promise<TranslationMeta[]>`
 - `src/translationDownloader.ts` exports: `downloadTranslation(adapter: DataAdapter, pluginDir: string, url: string, name: string): Promise<void>`
 

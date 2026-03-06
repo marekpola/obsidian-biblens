@@ -191,6 +191,44 @@ Consequences:
 Revisit: if a provider offers a dynamic catalog endpoint (then translations[] may be fetched on demand).
 Date: 2026-03-05
 
+## D018 – Full-document scan permitted for user-triggered commands
+Decision: The performance constraint "never scan the entire document on every update" applies
+exclusively to automatic editor handlers (CM6 `ViewPlugin` update callbacks, `hoverTooltip` handlers).
+User-triggered commands — invoked explicitly via the command palette or a keybinding — may perform
+a single full-document scan via `view.state.doc.toString()`. This is a deliberate, one-time user
+action; latency is acceptable and expected.
+Reason: `insertAfterLastRefCommand` (Issue #3) must locate the last detected reference anywhere in the
+note. Restricting it to `visibleRanges` would silently miss references outside the viewport, producing
+wrong results. The correct behavior requires a full scan. Because it runs only when the user explicitly
+invokes the command, it does not affect typing performance.
+Consequences:
+- `insertAfterLastRefCommand` in `src/editor/insertVerse.ts` uses `view.state.doc.toString()`
+- The performance exception is documented in ARCHITECTURE.md under "Editor processing"
+- No other automatic extensions may use this exception
+Revisit: if full-document scans become a source of latency complaints on very large notes; consider
+caching the last-known ref list from the viewport scanner.
+Date: 2026-03-06
+
+## D017 – Copy button in verse DOM via Web API; no Obsidian import
+Decision: The copy-to-clipboard button (Issue #2) is rendered inside `buildVerseDOM` when
+`options.copyButton` is true. Clicking it calls `navigator.clipboard.writeText(formatVerseText(entries))`.
+`navigator.clipboard` is standard Web API available in Electron (desktop) and Obsidian's mobile
+WKWebView — no Obsidian import is required, preserving the `verseDOM.ts` purity boundary.
+A new `formatVerseText(entries: VerseEntry[]): string` export in `verseDOM.ts` produces the
+plain-text clipboard string independently of DOM construction; it can be unit-tested without a browser.
+Both `hover.ts` and `refTooltip.ts` pass `{ copyButton: true }` when calling `buildVerseDOM`.
+Reason: Centralising the button in `verseDOM.ts` means both Reading View and editor tooltip get the
+feature with no duplication and no changes to caller signatures beyond adding the option flag.
+Using Web API instead of a platform abstraction keeps the module pure and avoids Obsidian deprecation risk.
+Consequences:
+- `buildVerseDOM` signature gains `options?: { copyButton?: boolean }` (backwards-compatible)
+- New export: `formatVerseText(entries: VerseEntry[]): string` from `src/ui/verseDOM.ts`
+- `hover.ts` and `refTooltip.ts` pass `{ copyButton: true }` — no other changes to those modules
+- `verseDOM.ts` boundary unchanged: still no Obsidian imports
+Revisit: if `navigator.clipboard` requires a permission prompt on some platforms; fall back to
+`document.execCommand('copy')` as a degradation path.
+Date: 2026-03-06
+
 ## D016 – Remote catalog update from GitHub; fallback to bundled catalog
 Decision: The source provider catalog (`SourceProvider[]`) can be refreshed from a hardcoded
 GitHub raw URL without releasing a new plugin version. The update mechanism separates two concerns:
