@@ -191,22 +191,28 @@ Consequences:
 Revisit: if a provider offers a dynamic catalog endpoint (then translations[] may be fetched on demand).
 Date: 2026-03-05
 
-## D018 – Full-document scan permitted for user-triggered commands
+## D018 – Full-document scan permitted for user-triggered commands; cursor-relative "last" reference
 Decision: The performance constraint "never scan the entire document on every update" applies
 exclusively to automatic editor handlers (CM6 `ViewPlugin` update callbacks, `hoverTooltip` handlers).
 User-triggered commands — invoked explicitly via the command palette or a keybinding — may perform
 a single full-document scan via `view.state.doc.toString()`. This is a deliberate, one-time user
 action; latency is acceptable and expected.
-Reason: `insertAfterLastRefCommand` (Issue #3) must locate the last detected reference anywhere in the
-note. Restricting it to `visibleRanges` would silently miss references outside the viewport, producing
-wrong results. The correct behavior requires a full scan. Because it runs only when the user explicitly
-invokes the command, it does not affect typing performance.
+`insertAfterLastRefCommand` scans the full document but inserts after the **last reference whose end
+position is at or before the cursor**. References beyond the cursor are ignored. This is the intended
+UX: the command acts on the reference the user has most recently passed, not on a reference that may
+be far ahead in the document.
+Reason: Scanning the full document is needed because the target reference may be outside the visible
+viewport. Filtering by cursor position makes the command predictable and cursor-aware — the user
+controls which reference is "last" by placing the cursor. A purely document-order "last" would
+produce surprising insertions when the cursor is near the top of a long note.
 Consequences:
-- `insertAfterLastRefCommand` in `src/editor/insertVerse.ts` uses `view.state.doc.toString()`
+- `insertAfterLastRefCommand` in `src/editor/insertVerse.ts` uses `view.state.doc.toString()` for
+  the scan, then filters to `m.end <= cursor` before selecting the last match
+- Returns `false` (no-op) when the cursor precedes all references in the document
 - The performance exception is documented in ARCHITECTURE.md under "Editor processing"
 - No other automatic extensions may use this exception
-Revisit: if full-document scans become a source of latency complaints on very large notes; consider
-caching the last-known ref list from the viewport scanner.
+Revisit: if users find cursor-relative behavior confusing; could add a separate "insert after last
+reference in document" variant that ignores cursor position.
 Date: 2026-03-06
 
 ## D017 – Copy button in verse DOM via Web API; no Obsidian import

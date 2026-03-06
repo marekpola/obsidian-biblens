@@ -136,8 +136,8 @@ Translation data files live under `translations/` in the plugin directory (not i
     - No-op if cursor is not on a detected reference
   - Exports: `insertAfterLastRefCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat): Command`
     - Scans full document via `view.state.doc.toString()` — permitted for user-triggered commands (see D018)
-    - Finds last `RefMatch` by document offset → `getVerses` → format text → CM6 transaction dispatch at match end position
-    - No-op if no references are found in the document
+    - Finds last `RefMatch` whose end position is at or before the cursor → `getVerses` → format text → CM6 transaction dispatch at match end position
+    - No-op if no references exist before the cursor
 
 ## Boundaries
 - parser.ts must not import from 'obsidian'

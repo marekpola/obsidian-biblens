@@ -102,13 +102,13 @@ Issue: #3
 Add a command that finds the last Bible reference anywhere in the current note and inserts its verse text immediately after it, without requiring the cursor to be positioned on the reference.
 
 #### Scope
-- `src/editor/insertVerse.ts`: implement `insertAfterLastRefCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat): Command` — scans full document via `view.state.doc.toString()` (permitted for user-triggered commands per D018), finds last `RefMatch` by document offset, calls `getVerses`, dispatches CM6 transaction inserting formatted text at match end position; no-op if no references found
+- `src/editor/insertVerse.ts`: implement `insertAfterLastRefCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat): Command` — scans full document via `view.state.doc.toString()` (permitted for user-triggered commands per D018), finds last `RefMatch` whose end position is at or before the cursor, calls `getVerses`, dispatches CM6 transaction inserting formatted text at match end position; no-op if no references exist before the cursor
 - `main.ts`: register command id `biblens-insert-verse-after-last` via `this.addCommand(...)`
 
 #### Definition of Done
 - Command appears in palette as `BibLens: Insert verse after last reference`
-- Verse text is inserted immediately after the last detected reference in the note
-- Command is a no-op when no references are present in the document
+- Verse text is inserted immediately after the last detected reference at or before the cursor
+- Command is a no-op when no references exist before the cursor
 - `npm run check` and `npm run ci` pass
 
 ---
