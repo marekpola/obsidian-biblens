@@ -19,6 +19,7 @@ export async function listAvailableTranslations(
 		const id = filename.replace(/\.json$/, '');
 		let displayName = id.toUpperCase();
 		let lang: string | undefined;
+		let source: string | undefined;
 		try {
 			const raw = await adapter.read(f);
 			const parsed = JSON.parse(raw) as Record<string, unknown>;
@@ -28,10 +29,13 @@ export async function listAvailableTranslations(
 			if (typeof parsed.lang === 'string') {
 				lang = parsed.lang;
 			}
+			if (typeof parsed.source === 'string') {
+				source = parsed.source;
+			}
 		} catch {
 			// fall back to filename-derived displayName
 		}
-		results.push(lang !== undefined ? { id, displayName, lang } : { id, displayName });
+		results.push({ id, displayName, ...(lang !== undefined && { lang }), ...(source !== undefined && { source }) });
 	}
 	return results;
 }

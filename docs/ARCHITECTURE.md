@@ -54,7 +54,7 @@ Translation data files live under `translations/` in the plugin directory (not i
   - `scanRefs` remains as a convenience default using the built-in map
 - src/types.ts
   - Shared types (BibleRef, ParseResult, TranslationMeta, etc.)
-  - `type TranslationMeta = { id: string; displayName: string }`
+  - `type TranslationMeta = { id: string; displayName: string; lang?: string; source?: string }`
 - src/settings.ts
   - Plugin settings shape and defaults
   - `preferredTranslation: string` (default: `"cep"`)

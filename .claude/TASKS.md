@@ -7,59 +7,7 @@ Each task must include a clear Definition of Done (DoD).
 
 ## Active
 
-
 ## Next
-
-
-### Task 19 – Settings UI Restructure
-Issue: #9
-
-#### Goal
-Restructure the settings panel to match the layout defined in issue #9: four named sections in the correct order, with updated Installed Translations entries and a simplified Get Translations panel.
-
-#### Scope
-
-**Section ordering and headings** — `src/settingsTab.ts`:
-- Render sections in this order: General → Installed Translations → Get Translations → Advanced
-- Add heading: "General" (before verse insertion format and preferred translation)
-- Rename "Installed translations" heading → "Installed Translations"
-- Rename "Translation sources" heading → "Get Translations"
-- Rename "Translation catalog" heading → "Advanced"
-
-**Installed Translations section** — `src/settingsTab.ts`:
-- Each entry displays: Name, Language (`lang`), Source (`source`)
-- Each entry has two buttons: [Set as default] (hidden when already default) and [Delete]
-- [Delete] is available for all translations, including the currently active one; if the deleted translation is active:
-  - If other translations remain: set `preferredTranslation` to the first remaining translation's `id`, call `reloadTranslation()`
-  - If no translations remain: set `preferredTranslation` to `""`, set `translationData` to `{}` (no load attempted)
-  - In both cases save settings and re-render; `reloadTranslation()` must be guarded: skip load and set empty data when `preferredTranslation` is `""`
-- [Set as default] saves `settings.preferredTranslation`, calls `reloadTranslation()`, shows Notice, re-renders settings tab; the Preferred Translation dropdown in General must reflect the new value on re-render
-- Keep the Preferred Translation dropdown in General; both dropdown and [Set as default] write `settings.preferredTranslation`; changes in one are reflected in the other via re-render
-
-**Get Translations section** — `src/settingsTab.ts`:
-- Replace per-row Download/Update buttons with: Provider dropdown + Translation dropdown + one [Download] button
-- Both dropdowns and button render on a single `Setting` row
-- Translation dropdown is populated when provider is selected; populated with translations not yet installed
-- [Download] button is disabled until a translation is selected in the Translation dropdown
-- On download success: re-render settings tab; no Update button
-
-**`TranslationMeta` and registry** — `src/types.ts`, `src/translationRegistry.ts`, `docs/ARCHITECTURE.md`:
-- Add optional `source?: string` to `TranslationMeta` in `src/types.ts`
-- `listAvailableTranslations`: read `source` field from v1 translation files (same pattern as `lang`)
-- Update `TranslationMeta` type definition in the Key Types section of `docs/ARCHITECTURE.md`
-
-#### Definition of Done
-- Settings tab renders four sections in order: General, Installed Translations, Get Translations, Advanced
-- General section retains Preferred Translation dropdown; its value stays in sync with [Set as default] actions
-- Each installed translation shows Name, Language, Source (if present) and [Set as default] + [Delete] buttons
-- [Set as default] immediately switches the active translation (hover/tooltip update)
-- [Delete] works for all translations including the active one; deleting the active translation auto-selects the first remaining translation, or clears active state if none remain — no crash in either case
-- Get Translations shows provider dropdown + translation dropdown + single Download button; Download disabled until translation selected
-- No "Update" button anywhere in settings
-- `TranslationMeta` includes optional `source` field; `listAvailableTranslations` reads it from v1 files
-- `docs/ARCHITECTURE.md` Key Types section updated with new `TranslationMeta` shape
-- `npm run check` and `npm run ci` pass
-
 
 ### Task 11 – Custom Book Abbreviations
 
@@ -106,6 +54,23 @@ Add a copy button to the hover popover and editor tooltip that copies the full f
 
 ---
 ## Done
+
+### Task 19 – Settings UI Restructure
+Issue: #9
+
+#### Definition of Done
+- Settings tab renders four sections in order: General (no heading), Installed translations, Get translations, Advanced ✓
+- General section retains Preferred Translation dropdown; its value stays in sync with [Set as default] actions ✓
+- Each installed translation shows Name, Language, Source (if present) and [Set as default] + [Delete] buttons ✓
+- [Set as default] immediately switches the active translation (hover/tooltip update) ✓
+- [Delete] works for all translations including the active one; auto-selects first remaining or clears if none remain ✓
+- Get translations shows provider dropdown + translation dropdown + single Download button; Download disabled until translation selected ✓
+- No "Update" button anywhere in settings ✓
+- `TranslationMeta` includes optional `source` field; `listAvailableTranslations` reads it from v1 files ✓
+- `docs/ARCHITECTURE.md` Key Types section updated with new `TranslationMeta` shape ✓
+- `npm run check` and `npm run ci` pass ✓
+
+---
 
 ### Task 18 – Initial source catalog: 2+ Czech Bible translation providers
 Issue: #7

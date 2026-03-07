@@ -4,6 +4,7 @@ export type TranslationMeta = {
   id: string;
   displayName: string;
   lang?: string;
+  source?: string;
 };
 
 export type BibleRef = {
