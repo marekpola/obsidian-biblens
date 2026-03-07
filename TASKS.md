@@ -7,8 +7,6 @@ Each task must include a clear Definition of Done (DoD).
 
 ## Active
 
-## Next
-
 ### Task 10 – Translation Download
 
 #### Goal
@@ -25,6 +23,8 @@ Allow the user to download a translation JSON file from a URL directly into `tra
 - `npm run check` and `npm run ci` pass
 
 ---
+
+## Next
 
 ### Task 11 – Custom Book Abbreviations
 
