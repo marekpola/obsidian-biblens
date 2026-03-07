@@ -1,7 +1,7 @@
 # Obsidian community plugin
 
 > **BibLens agents:** Jump to [BibLens Project Layer](#biblens-project-layer) for project-specific rules.
-> Primary control docs: **SPEC.md** (scope) · **ARCHITECTURE.md** (modules & boundaries) · **DECISIONS.md** (rationale) · **TASKS.md** (active work)
+> Primary control docs: **docs/SPEC.md** (scope) · **docs/ARCHITECTURE.md** (modules & boundaries) · **docs/DECISIONS.md** (rationale) · **.claude/TASKS.md** (active work)
 
 ## Project overview
 
@@ -204,7 +204,7 @@ For BibLens-specific patterns (CM6 extensions, translation loading, scanner cons
 
 This section extends the default agent rules for the BibLens project.
 
-All agents must additionally follow: SPEC.md, ARCHITECTURE.md, DECISIONS.md.
+All agents must additionally follow: docs/SPEC.md, docs/ARCHITECTURE.md, docs/DECISIONS.md.
 
 ## Project Scope (MVP Phase)
 
@@ -213,7 +213,7 @@ BibLens is currently in MVP phase.
 Agents MUST:
 
 - Keep changes incremental and small.
-- Respect MVP boundaries defined in SPEC.md.
+- Respect MVP boundaries defined in `docs/SPEC.md`.
 - Avoid feature expansion beyond defined scope.
 - Maintain mobile compatibility at all times.
 - Avoid Node-only runtime features.
@@ -222,7 +222,7 @@ Agents MUST:
 
 ## Module Boundaries
 
-See **ARCHITECTURE.md → Boundaries** for the full list. Summary of hard rules:
+See **docs/ARCHITECTURE.md → Boundaries** for the full list. Summary of hard rules:
 
 | Module | May import from obsidian? | May import from @codemirror/*? |
 |---|---|---|
@@ -238,18 +238,10 @@ Violating these boundaries breaks mobile compatibility and testability.
 
 `main.ts` must stay focused on plugin lifecycle only: `onload`, `onunload`, `addCommand`, `registerEditorExtension`, `addSettingTab`. Any class or logic beyond lifecycle wiring belongs in a dedicated `src/` module. If `main.ts` grows beyond ~100 lines of business logic, extract.
 
-## Settings Pattern
-
-Always load settings as:
-```ts
-this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-```
-This ensures new fields introduced in future versions always get their default value when the saved data predates them.
-
 ## BibLens-Specific Don'ts
 
 - **Don't use `innerHTML`** for verse content — build DOM via `createElement`/`textContent` (D010).
-- **Don't scan the full document** — CM6 extensions must operate only on `view.visibleRanges` (ARCHITECTURE.md Performance).
+- **Don't scan the full document** — CM6 extensions must operate only on `view.visibleRanges` (docs/ARCHITECTURE.md Performance).
 - **Don't import `obsidian`** in `parser.ts`, `provider.ts`, `books.ts`, `ui/*.ts`, or `editor/*.ts`.
 - **Don't compile regex inside update loops** — precompile at startup via `buildRefScanner` (D013).
 - **Don't add raw `addEventListener`** — use `this.registerDomEvent` so listeners are cleaned up on unload.
@@ -267,5 +259,5 @@ Every implementation task must:
 
 1. Clearly define scope.
 2. Provide manual test steps.
-3. Update TESTPLAN.md if behavior changes.
+3. Update `docs/TESTPLAN.md` if behavior changes.
 4. Remain reviewable (avoid large refactors).

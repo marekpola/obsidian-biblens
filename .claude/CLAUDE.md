@@ -4,12 +4,17 @@ This file provides persistent context and workflow rules for Claude when working
 
 Claude should always read and follow:
 
-- SPEC.md — project specification and MVP boundaries
-- TASKS.md — active task and Definition of Done
-- TESTPLAN.md — manual test steps and test cases
-- AGENTS.md — coding conventions and Obsidian plugin rules
-- ARCHITECTURE.md — module structure, types, and boundaries
-- DECISIONS.md — recorded design decisions (do not contradict without a new decision)
+- `docs/SPEC.md` — project specification and MVP boundaries
+- `.claude/TASKS.md` — active task and Definition of Done
+- `docs/TESTPLAN.md` — manual test steps and test cases
+- `.claude/AGENTS.md` — coding conventions and Obsidian plugin rules
+- `docs/ARCHITECTURE.md` — module structure, types, and boundaries
+- `docs/DECISIONS.md` — recorded design decisions (do not contradict without a new decision)
+
+Role definitions:
+
+- `.claude/DESIGN_ROLES.md` — Designer, Architect, Reviewer (Track 1: Product Design)
+- `.claude/DEV_ROLES.md` — Analyst, Architect, Developer, Tester, Reviewer (Track 2: Product Development)
 
 ---
 
@@ -18,15 +23,27 @@ Claude should always read and follow:
 BibLens is an Obsidian plugin that detects Bible references in notes
 and provides contextual tools for working with biblical texts.
 
-See SPEC.md for the current specification and reference format details.
+See `docs/SPEC.md` for the current specification and reference format details.
 
 ---
 
-# Development Workflow
+# Two-Track Workflow
 
-Development is organized through TASKS.md.
+Work is organized into two parallel tracks, each with its own sequence of roles.
 
-Structure:
+## Track 1: Product Design
+
+Designer → Architect → Reviewer
+
+Produces accepted GitHub issues ready for implementation.
+
+## Track 2: Product Development
+
+Analyst → Architect → Developer → Tester → Reviewer
+
+Produces implemented, tested, and reviewed features tracked in `.claude/TASKS.md`.
+
+`.claude/TASKS.md` structure:
 
 Active → task currently being implemented
 Next → upcoming tasks
@@ -34,277 +51,96 @@ Done → completed tasks
 
 Claude should always work on the **Active task** unless instructed otherwise.
 
+**Manager** coordinates both tracks.
+
+**Architect** and **Reviewer** participate in both tracks with different responsibilities in each.
+
 ---
 
 # Agent Roles
 
-Claude may operate in different roles.
+| Role | Track | Responsibility |
+|------|-------|----------------|
+| Designer | 1 | Proposes GitHub issues |
+| Architect | 1 + 2 | Reviews proposals; ensures architecture alignment |
+| Reviewer | 1 + 2 | Design review; code review |
+| Analyst | 2 | Converts issues into TASKS.md tasks |
+| Developer | 2 | Implements tasks |
+| Tester | 2 | Validates behavior |
+| Manager | both | Coordinates both tracks (defined below) |
 
-## Developer
-
-Responsible for implementing tasks.
-
-Process:
-
-1. Read TASKS.md (Active task + DoD)
-2. Read ARCHITECTURE.md and DECISIONS.md
-3. Implement the minimal solution
-4. Keep changes small and isolated
-5. Run build if possible
-6. Show `git diff`
-7. Provide manual test steps from TESTPLAN.md
-8. Write automatic unit tests
-
-Rules:
-
-- Do not refactor unrelated code
-- Do not change project architecture without a new DECISIONS.md entry
-- Respect AGENTS.md and ARCHITECTURE.md boundaries
-
----
-
-## Reviewer
-
-Responsible for reviewing code changes.
-
-Check:
-
-- compliance with SPEC.md
-- compliance with AGENTS.md
-- compliance with ARCHITECTURE.md (module boundaries, type shapes)
-- compliance with DECISIONS.md (no silent overrides)
-- mobile compatibility
-- minimal scope
-- clarity of code
-
-Output format:
-
-1. Blockers
-2. Major issues
-3. Minor issues
-4. Approval decision
-
----
-
-## Tester
-
-Responsible for validating behavior.
-
-Follow TESTPLAN.md.
-
-Verify:
-
-- build passes
-- plugin loads in Obsidian
-- commands behave correctly
-- console contains no new errors
-
-Output:
-
-- test results
-- reproduction steps for failures
-- after test succesfully passed move tested task from secton Active to section Done 
+See `.claude/DESIGN_ROLES.md` and `.claude/DEV_ROLES.md` for full role definitions of all other roles.
 
 ---
 
 ## Manager
 
-Responsible for development coordination.
+Responsible for coordinating both tracks.
 
 Responsibilities:
 
-- choose next task
-- ensure only one task is active
+- oversee Track 1 (Product Design) and Track 2 (Product Development) independently
+- ensure only one task is active in Track 2
 - move completed tasks to Done
-- coordinate Designer → Architect → Analyst → Developer → Reviewer → Tester cycle
-- ensure accepted GitHub issues are converted into implementation tasks
+- ensure accepted GitHub issues flow from Track 1 into Track 2
 
-Process:
+### Track 1 process (Product Design)
 
-1. Read TASKS.md — check Active, Next, Done sections.
-2. Check whether there are accepted GitHub issues not yet reflected in TASKS.md.
-3. If Active is empty and Next contains tasks: move one task to Active.
-4. If TASKS.md has no suitable tasks but accepted issues exist: invoke Analyst to convert issues into tasks.
-5. If no suitable issue exists: invoke Designer to propose new GitHub issues.
-6. If a proposed issue may affect architecture or scope: invoke Architect for review before passing it to Analyst.
-7. If Active task's DoD is met: move it to Done and promote the next task.
-8. If Active task is blocked: flag the blocker to the user.
+1. Check whether new product work is needed.
+2. If yes: invoke Designer to propose GitHub issues.
+3. Invoke Architect (design context) for all proposals that add new user-facing behaviour or touch existing modules.
+4. Invoke Reviewer (design context) to approve or reject the proposal.
+5. If approved: label the GitHub issue `accepted` — it is ready for Track 2.
+6. If Analyst or Developer flags an issue as under-specified: return it to Designer for revision before re-entering Track 2.
+
+### Track 2 process (Product Development)
+
+An "accepted" issue means: a GitHub issue labelled `accepted`, or explicitly approved by the user in conversation.
+
+1. Read `.claude/TASKS.md` — check Active, Next, Done sections.
+2. Check whether there are accepted GitHub issues not yet reflected in `.claude/TASKS.md`.
+3. If `.claude/TASKS.md` has no suitable tasks but accepted issues exist: invoke Analyst to convert issues into tasks.
+4. For tasks that touch architecture boundaries, invoke Architect (development context) before moving to Active.
+5. If Active is empty and Next contains tasks: move one task to Active.
+6. If Active task's DoD is met: invoke Reviewer (code context).
+   - If Reviewer approves: invoke Tester.
+     - If Tester passes: mark task Done and promote next task.
+     - If Tester fails: return task to Developer with reproduction steps.
+   - If Reviewer rejects: return task to Developer with listed blockers.
+7. If Active task is blocked: flag the blocker to the user.
 
 Output format:
 
-- Current state (active task title or "no active task")
+- Track 1 state (design pipeline status)
+- Track 2 state (active task title or "no active task")
 - Next action (which role should act and on what)
 
 ---
 
-
-## Analyst
-
-Responsible for converting accepted GitHub issues into implementation tasks in TASKS.md.
-
-Goal:
-Translate product-level issues into small, concrete development tasks
-that can be implemented by the Developer role.
-
-Process
-1. Read the GitHub issue.
-2. Identify the minimal implementation slices required.
-3. Map tasks to existing modules described in ARCHITECTURE.md.
-4. Create 2–5 small tasks in TASKS.md under the Next section.
-5. Each task must include:
-   - Goal
-   - Scope
-   - Definition of Done
-6. Each task must reference the originating issue.
-
-Rules:
-
-- Do not write code.
-- Do not modify architecture documents.
-- Tasks must respect module boundaries defined in ARCHITECTURE.md.
-- Tasks must be small enough to be implemented in one development step.
-- Do not move tasks to Active; that is the Manager's responsibility.
-- Prefer extending existing modules instead of creating new ones.
-
-Output format
-
-Add tasks to TASKS.md:
-
-### Task XX – Short title
-Issue: #<number>
-#### Goal
-
-#### Scope
-
-#### Definition of Done
-
-- show `git diff` 
-
-
----
-
-## Designer
-
-Responsible for proposing new product-level work as GitHub issues.
-
-Goal:
-Translate user intentions and project needs into concise GitHub issues describing new capabilities or improvements for BibLens.
-
-Process:
-1. Read relevant project documents.
-1. Check existing GitHub issues to avoid duplicates.
-2. Identify useful product improvements, missing capabilities, or UX enhancements.
-3. Draft concise GitHub issues describing the desired behavior.
-4. Ensure the issue focuses on user-visible functionality rather than implementation.
-
-Rules:
-- Focus on product value, not implementation details.
-- Do not write code.
-- Do not create TASKS.md items.
-- Prefer ideas consistent with SPEC.md, but new ideas may extend the product beyond it.
-- When a proposal would significantly expand scope or affect architecture, flag it for Architect review.
-- Keep issues short and clearly scoped.
-- Prefer issues that can be implemented in a small number of tasks.
-
-Output format:
-Propose **1–3 GitHub issues**.
-Each issue must contain only:
-- Title  
-- Description
-
-The output must include a ready-to-run command:
-`gh issue create --title "..." --body "..."`
-The command should create the issue directly in the repository once approved by the user.
-
-
-## Architect
-
-Responsible for designing the long-term structure and capabilities of the BibLens plugin.
-
-Goal:
-Propose how the plugin should evolve and update the project design documents accordingly.
-
-Focus areas:
-
-- future product capabilities
-- architecture design and scalability
-- long-term maintainability 
-- user workflow in Obsidian
-- performance risks for large notes
-- plugin ecosystem compatibility
-
-Process:
-
-1. Read SPEC.md, ARCHITECTURE.md and DECISIONS.md.
-2. Evaluate whether the current design supports future growth.
-3. Identify architectural risks or missing capabilities.
-4. Propose strategic improvements or future feature directions.
-
-Rules:
-
-- Do not produce implementation tasks.
-- Do not write code.
-- You may propose extending the current product scope.
-- Changes must be expressed as updates to SPEC.md, ARCHITECTURE.md, or DECISIONS.md.
-- **Architect owns README.md** — keep it aligned with SPEC.md and the current product state.
-  - Update README.md when SPEC.md changes.
-  - Review README.md after a major feature ships (Tester moves task to Done).
-  - Developer and Reviewer do not touch README.md unless Architect delegates explicitly.
-
-Output format:
-- Strategic idea
-- Reasoning
-- Possible future implementation direction
-- Changes to ARCHITECTURE.md SPEC.md DECISION.md README.md
-- show `git diff`
-
 # Important Notes for Claude
 
-- Do not expand project scope beyond SPEC.md. unless in role Architect
+- Do not expand project scope beyond `docs/SPEC.md` unless in role Architect.
 - Prefer minimal changes over architectural redesign.
 - When uncertain, ask before making large changes.
 - Always show `git diff` before committing changes.
 
-## Development workflow: document-driven AI development
-The project uses a document-driven workflow where control documents
-serve as the primary source of truth for AI agents.
+---
 
-GitHub issues represent product-level work items.
-Implementation work is tracked in TASKS.md.
+# Rules
 
-Control documents:
-
-- CLAUDE.md
-- SPEC.md
-- ARCHITECTURE.md
-- DECISIONS.md
-- TASKS.md
-- TESTPLAN.md
-- AGENTS.md
-
-Roles interact with these documents as follows:
-
-Designer → proposes GitHub issues describing new product capabilities
-Architect → reviews proposals that may affect architecture or scope
-Analyst → converts accepted issues into implementation tasks in TASKS.md
-Manager → selects and activates tasks from TASKS.md
-Developer → implements the task
-Reviewer → validates implementation against project rules and architecture
-Tester → verifies behavior using TESTPLAN.md
-Manager → marks task Done and promotes the next task
-
-Rules:
-
-- Agents must read relevant documents before modifying code.
+- Agents must read relevant documents before acting.
 - Tasks must include Definition of Done.
 - Architectural changes must be reflected in the design documents.
 
-Revisit: simplify if the document structure becomes too heavy.
+---
 
+# Definition of Done (Track 2)
 
-## Definition of Done:
+Each task defines its own acceptance criteria in `.claude/TASKS.md`. The following is the minimum technical bar that must also pass for every task:
 
 1. npm run check passes
 2. npm run ci passes
 3. All tests green
 4. Plugin builds successfully
+
+Both the task's own DoD and this global DoD must pass before a task is marked Done.
