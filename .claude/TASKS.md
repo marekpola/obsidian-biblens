@@ -29,9 +29,12 @@ Restructure the settings panel to match the layout defined in issue #9: four nam
 **Installed Translations section** — `src/settingsTab.ts`:
 - Each entry displays: Name, Language (`lang`), Source (`source`)
 - Each entry has two buttons: [Set as default] (hidden when already default) and [Delete]
-- [Delete] is available for all translations, including the currently active one; if the deleted translation is active, `preferredTranslation` is cleared to `""` and `reloadTranslation()` is called
-- [Set as default] saves `settings.preferredTranslation`, calls `reloadTranslation()`, shows Notice, re-renders settings tab
-- Remove the Preferred Translation dropdown from General (it is replaced by [Set as default] in Installed Translations)
+- [Delete] is available for all translations, including the currently active one; if the deleted translation is active:
+  - If other translations remain: set `preferredTranslation` to the first remaining translation's `id`, call `reloadTranslation()`
+  - If no translations remain: set `preferredTranslation` to `""`, set `translationData` to `{}` (no load attempted)
+  - In both cases save settings and re-render; `reloadTranslation()` must be guarded: skip load and set empty data when `preferredTranslation` is `""`
+- [Set as default] saves `settings.preferredTranslation`, calls `reloadTranslation()`, shows Notice, re-renders settings tab; the Preferred Translation dropdown in General must reflect the new value on re-render
+- Keep the Preferred Translation dropdown in General; both dropdown and [Set as default] write `settings.preferredTranslation`; changes in one are reflected in the other via re-render
 
 **Get Translations section** — `src/settingsTab.ts`:
 - Replace per-row Download/Update buttons with: Provider dropdown + Translation dropdown + one [Download] button
@@ -40,18 +43,21 @@ Restructure the settings panel to match the layout defined in issue #9: four nam
 - [Download] button is disabled until a translation is selected in the Translation dropdown
 - On download success: re-render settings tab; no Update button
 
-**`TranslationMeta` and registry** — `src/types.ts`, `src/translationRegistry.ts`:
-- Add optional `source?: string` to `TranslationMeta`
+**`TranslationMeta` and registry** — `src/types.ts`, `src/translationRegistry.ts`, `docs/ARCHITECTURE.md`:
+- Add optional `source?: string` to `TranslationMeta` in `src/types.ts`
 - `listAvailableTranslations`: read `source` field from v1 translation files (same pattern as `lang`)
+- Update `TranslationMeta` type definition in the Key Types section of `docs/ARCHITECTURE.md`
 
 #### Definition of Done
 - Settings tab renders four sections in order: General, Installed Translations, Get Translations, Advanced
+- General section retains Preferred Translation dropdown; its value stays in sync with [Set as default] actions
 - Each installed translation shows Name, Language, Source (if present) and [Set as default] + [Delete] buttons
 - [Set as default] immediately switches the active translation (hover/tooltip update)
-- [Delete] works for all translations including the active one
+- [Delete] works for all translations including the active one; deleting the active translation auto-selects the first remaining translation, or clears active state if none remain — no crash in either case
 - Get Translations shows provider dropdown + translation dropdown + single Download button; Download disabled until translation selected
 - No "Update" button anywhere in settings
 - `TranslationMeta` includes optional `source` field; `listAvailableTranslations` reads it from v1 files
+- `docs/ARCHITECTURE.md` Key Types section updated with new `TranslationMeta` shape
 - `npm run check` and `npm run ci` pass
 
 
