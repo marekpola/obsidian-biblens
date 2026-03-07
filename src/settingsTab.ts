@@ -201,7 +201,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 						} catch (e) {
 							new Notice(`BibLens: update failed — ${e instanceof Error ? e.message : String(e)}`);
 						}
-						await this.renderTranslationList(container, provider);
+						this.display();
 					});
 				});
 				setting.addButton(btn => {
@@ -215,7 +215,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 						} catch (e) {
 							new Notice(`BibLens: delete failed — ${e instanceof Error ? e.message : String(e)}`);
 						}
-						await this.renderTranslationList(container, provider);
+						this.display();
 					});
 				});
 			} else {
@@ -231,7 +231,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 						} catch (e) {
 							new Notice(`BibLens: download failed — ${e instanceof Error ? e.message : String(e)}`);
 						}
-						await this.renderTranslationList(container, provider);
+						this.display();
 					});
 				});
 			}

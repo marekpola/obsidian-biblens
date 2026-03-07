@@ -7,61 +7,6 @@ Each task must include a clear Definition of Done (DoD).
 
 ## Active
 
-### Task 17 – Translation Source Management UI
-Issue: #6
-
-#### Goal
-Implement the Translation Sources panel in settings: provider list, translation download, delete, and catalog update.
-
-#### Scope
-- `src/settingsTab.ts`: add **Translation Sources** panel
-  - Provider dropdown populated from `loadCatalog()`
-  - Translation list for selected provider with download status derived from `translations/` directory
-  - Download button → `downloadFromSource()`; Delete button → `deleteTranslation()`; Update = delete + download
-  - **Installed Translations** panel listing local files with Delete button
-  - Catalog update row: last-updated date, "Update catalog" button → `fetchCatalogUpdate()`, "Auto-update on startup" toggle → `settings.autoUpdateCatalog`
-- `src/main.ts`: on load, if `autoUpdateCatalog` is true and `catalogLastUpdated` is stale, call `fetchCatalogUpdate()` silently
-- All network actions triggered by explicit user interaction only (button press), except opt-in auto-update
-
-#### Definition of Done
-- User can see available providers and their translations in settings
-- Download writes a valid file to `translations/`; translation appears in Preferred Translation dropdown immediately
-- Delete removes the file; it disappears from both panels
-- "Update catalog" button fetches and caches `catalog.json`; last-updated date updates in UI
-- Auto-update toggle persists across plugin reload
-- `npm run check` and `npm run ci` pass
-
----
-
-## Next
-
-### Task 18 – Initial source catalog: 2+ Czech Bible translation providers
-Issue: #8
-
-#### Goal
-Implement the v1 translation file format: versioned loader with format detection, key normalisation, and migration of `cep.json`.
-
-#### Scope
-- `src/translationLoader.ts`: detect format by `formatVersion` field
-  - `formatVersion: 1` — validate mandatory fields (`id`, `name`, `lang`, `formatVersion`, `verses`), extract `verses`, normalise keys from `USFM_ID CHAPTER:VERSE` → `USFM_ID.CHAPTER.VERSE`
-  - No `formatVersion` field — legacy path, load flat `Record<string, string>` as-is
-  - Unknown `formatVersion` — reject with error; caller falls back to "Verš nenalezen"
-- `src/translationRegistry.ts`: for v1 files, populate `TranslationMeta.displayName` from `name` field instead of filename
-- `src/types.ts`: add optional `lang?: string` to `TranslationMeta`
-- `translations/cep.json`: migrate to v1 format — add metadata fields (`id`, `name`, `lang`, `formatVersion`), rewrite all keys from `GEN.1.1` to `GEN 1:1` style
-- `src/provider.ts`: unchanged
-
-#### Definition of Done
-- v1 `cep.json` loads correctly; hover and tooltips show verse text as before
-- Legacy flat JSON file still loads without error
-- File with `formatVersion: 2` is rejected; no crash, falls back gracefully
-- Settings dropdown shows `name` from metadata instead of bare filename for v1 files
-- `npm run check` and `npm run ci` pass
-
----
-
-## Next
-
 ### Task 18 – Initial source catalog: 2+ Czech Bible translation providers
 Issue: #7
 
@@ -248,7 +193,7 @@ Clean the sample plugin code and replace it with a minimal BibLens structure.
 - Add a command: "BibLens: Show Diagnostics".
 - The command should display a Notice with:
   - Plugin version
-  - Confirmation that plugin is active
+7  - Confirmation that plugin is active
 #### Definition of Done
 - No sample plugin commands remain.
 - Command palette contains: "BibLens: Show Diagnostics".
