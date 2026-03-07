@@ -16,12 +16,13 @@ Process:
 1. Read the GitHub issue.
 2. Identify the minimal implementation slices required.
 3. Map tasks to existing modules described in `docs/ARCHITECTURE.md`.
-4. Create 2–5 small tasks in `.claude/TASKS.md` under the Next section.
-5. Each task must include:
+4. **Declare** the file(s) to be modified (always `.claude/TASKS.md`) and wait for user approval.
+5. Once approved, create 2–5 small tasks in `.claude/TASKS.md` under the Next section.
+6. Each task must include:
    - Goal
    - Scope
    - Definition of Done
-6. Each task must reference the originating issue.
+7. Each task must reference the originating issue.
 
 Rules:
 - Do not write code.
@@ -61,18 +62,24 @@ Check:
 - Does the implementation approach contradict any recorded decision?
 - Are there performance or mobile compatibility risks?
 
+Process:
+1. Read and analyse the task and relevant documents.
+2. If document updates are needed: **declare** the files to be modified and wait for user approval before writing anything.
+3. Once approved, apply only the approved changes.
+
 Rules:
 - Do not write code.
 - Do not produce new implementation tasks.
 - If a task requires an architectural change, record it in `docs/DECISIONS.md` before implementation begins.
 - **Architect owns README.md** — review it after a major feature ships (Tester moves task to Done).
   - Developer and Reviewer do not touch README.md unless Architect delegates explicitly.
+- Follow the File Modification Protocol in `CLAUDE.md` for all file writes.
 
 Output format:
 - Assessment (compliant / needs adjustment)
 - Specific concerns (if any)
-- Required changes to `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `README.md` (if needed)
-- show `git diff`
+- File declaration table (if changes are needed) — wait for approval before writing
+- show `git diff` after changes
 
 ---
 
@@ -81,21 +88,25 @@ Output format:
 Responsible for implementing tasks.
 
 Process:
-1. Read `.claude/TASKS.md` (Active task + DoD)
-2. Read `docs/ARCHITECTURE.md` and `docs/DECISIONS.md`
-3. Implement the minimal solution
-4. Keep changes small and isolated
-5. Run build if possible
-6. Show `git diff`
-7. Provide manual test steps from `docs/TESTPLAN.md`
-8. Write automatic unit tests
+1. Read `.claude/TASKS.md` (Active task + DoD).
+2. Read `docs/ARCHITECTURE.md` and `docs/DECISIONS.md`.
+3. Think through the full implementation plan.
+4. **Declare** — produce a table of every file to be created, modified, or deleted, with a one-line reason for each. Wait for user approval before touching any file.
+5. Once approved, implement only the approved files.
+6. If a new file must be touched that was not in the approved list, stop and request a new permission before proceeding.
+7. Keep changes small and isolated.
+8. Run build.
+9. Show `git diff`.
+10. Provide manual test steps from `docs/TESTPLAN.md`.
+11. Write automatic unit tests.
 
 Rules:
-- Do not refactor unrelated code
-- Do not change project architecture without a new `docs/DECISIONS.md` entry
-- Respect `.claude/AGENTS.md` and `docs/ARCHITECTURE.md` boundaries
-- If `docs/TESTPLAN.md` does not cover the task, add test steps to it before implementing
-- Before ending a session mid-task, record what was completed and what remains in the task's Scope in `.claude/TASKS.md`
+- Do not refactor unrelated code.
+- Do not change project architecture without a new `docs/DECISIONS.md` entry.
+- Respect `.claude/AGENTS.md` and `docs/ARCHITECTURE.md` boundaries.
+- If `docs/TESTPLAN.md` does not cover the task, include it in the file declaration and add test steps before implementing.
+- Before ending a session mid-task, record what was completed and what remains in the task's Scope in `.claude/TASKS.md`.
+- Follow the File Modification Protocol in `CLAUDE.md` strictly.
 
 ---
 

@@ -126,11 +126,30 @@ Output format:
 
 ---
 
+# File Modification Protocol
+
+This protocol is mandatory for every agent that creates, edits, or deletes files.
+
+**Steps — in strict order:**
+
+1. **Think** — read all relevant documents and reason about what needs to be done. Do not touch any file yet.
+2. **Declare** — produce a table listing every file the agent plans to create, modify, or delete, with a one-line reason for each.
+3. **Wait for approval** — present the declaration to the user and stop. Do not modify any file until the user explicitly approves.
+4. **Implement** — once approved, modify only the files that were approved. Work through them completely.
+5. **New permission required** — if during implementation the agent discovers it must modify a file that was not in the approved list, stop immediately. Declare the additional file and reason, and wait for a new approval before proceeding.
+
+An agent must never modify a file that has not been explicitly approved in the current permission grant.
+
+Roles that do not write files (Tester, Reviewer in code review, Designer) are exempt from steps 2–5 but must still follow step 1.
+
+---
+
 # Rules
 
 - Agents must read relevant documents before acting.
 - Tasks must include Definition of Done.
 - Architectural changes must be reflected in the design documents.
+- Every agent that writes files must follow the File Modification Protocol above.
 
 ---
 

@@ -50,6 +50,12 @@ Check:
 - Does it require significant scope expansion beyond `docs/SPEC.md`?
 - Are there architectural risks that should be addressed first?
 
+Process:
+1. Read and analyse the proposal and relevant documents.
+2. Form an assessment and recommendation.
+3. If document updates are needed: **declare** the files to be modified and wait for user approval before writing anything.
+4. Once approved, apply only the approved changes.
+
 Rules:
 - Do not produce implementation tasks.
 - Do not write code.
@@ -58,13 +64,14 @@ Rules:
 - **Architect owns README.md** — keep it aligned with `docs/SPEC.md` and the current product state.
   - Update README.md when `docs/SPEC.md` changes.
   - Developer and Reviewer do not touch README.md unless Architect delegates explicitly.
+- Follow the File Modification Protocol in `CLAUDE.md` for all file writes.
 
 Output format:
 - Assessment of the proposal's architectural fit
 - Risks or concerns
 - Recommendation (approve / revise / reject)
-- Changes to `docs/ARCHITECTURE.md`, `docs/SPEC.md`, `docs/DECISIONS.md`, `README.md` (if needed)
-- show `git diff`
+- File declaration table (if changes are needed) — wait for approval before writing
+- show `git diff` after changes
 
 ---
 
