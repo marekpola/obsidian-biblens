@@ -74,8 +74,8 @@ Notes:
 #### Input abbreviation vs internal bookId
 
 Input abbreviations (e.g. "Mt", "Gn", "Iz") are the user-facing notation in the note text.
-Internally, the parser maps each abbreviation to a canonical `bookId` in OSIS format (e.g. "MAT", "GEN", "ISA") before storing it in `BibleRef`.
-OSIS identifiers are uppercase, 3-character (or longer) ASCII strings defined by the OSIS Bible standard.
+Internally, the parser maps each abbreviation to a canonical `bookId` in USFM 3.0 format (e.g. "MAT", "GEN", "ISA") before storing it in `BibleRef`.
+USFM 3.0 book identifiers are uppercase ASCII strings defined by the USFM 3.0 standard.
 This separation allows multiple abbreviation systems to map to the same internal identifier in future versions.
 
 ### Non-Goals
@@ -137,20 +137,100 @@ Features:
 
 #### Goal
 
-Clearly defined structure of translation files helps management of multiple translations.
+Establish a versioned, self-describing structure for translation files that supports metadata,
+display abbreviations, and future multi-language use.
 
-Fetures:
+#### File format (version 1)
 
+Translation files must be valid JSON objects with the following structure:
+
+```json
+{
+  "id": "bible21",
+  "name": "Bible21",
+  "lang": "cs",
+  "source": "dava3.net (Davar .dbk export)",
+  "formatVersion": 1,
+  "canonicalAbbreviations": {
+    "GEN": "Gn",
+    "EXO": "Ex"
+  },
+  "allowedAbbreviations": {
+    "GEN": ["Gn", "Gen", "Genesis", "1. Mojžíšova"],
+    "EXO": ["Ex", "Exo", "Exodus", "2. Mojžíšova"]
+  },
+  "verses": {
+    "GEN 1:1": "Na počátku Bůh stvořil nebe a zemi.",
+    "GEN 1:2": "Země pak byla pustá a prázdná, nad propastí byla tma a nad vodami se vznášel Boží Duch.",
+    "GEN 1:3": "Bůh řekl: \"Ať je světlo!\" - a bylo světlo."
+  }
+}
+```
+
+**Mandatory fields:** `id`, `name`, `lang`, `formatVersion`, `verses`
+
+**Optional fields:** `source`, `canonicalAbbreviations`, `allowedAbbreviations`
+
+#### Field definitions
+
+- `id` — unique identifier; lowercase, no spaces; used as the filename base (`${id}.json`) and as the `settings.preferredTranslation` value
+- `name` — human-readable display name shown in the settings UI
+- `lang` — BCP 47 language tag (e.g. `"cs"`, `"en"`)
+- `source` — free-text provenance or attribution; informational only, not displayed in the UI
+- `formatVersion` — integer; must be `1` for this format; used by the loader to select the correct parsing path
+- `canonicalAbbreviations` — optional map of USFM 3.0 book ID → preferred display abbreviation for this translation; when present, `formatRef` uses these abbreviations instead of the built-in defaults while this translation is active
+- `allowedAbbreviations` — optional map of USFM 3.0 book ID → array of recognized input strings; when present, these are merged into the active abbreviation map (extends built-in defaults; does not replace them)
+- `verses` — map of `"USFM_ID CHAPTER:VERSE"` keys to verse text strings
+
+#### Book identifiers
+
+Book identifiers follow the **USFM 3.0** standard (see [USFM 3.0 Book Identifiers](https://ubsicap.github.io/usfm/usfm3.0/identification/books.html)):
+uppercase ASCII strings of 2–3 characters (e.g. `GEN`, `EXO`, `LEV`, `MAT`, `REV`).
+This is the same `BookId` type used throughout the plugin.
+
+#### Verse key format
+
+Keys in the `verses` object use the format `USFM_ID CHAPTER:VERSE`:
+
+- USFM 3.0 book identifier
+- Single space separator
+- Chapter number (no leading zeros)
+- Colon separator
+- Verse number (no leading zeros)
+
+Examples: `"GEN 1:1"`, `"MAT 28:19"`, `"PS 119:176"`
+
+This format is human-readable and consistent with common Bible software conventions.
+
+#### Loader behaviour
+
+`translationLoader.ts` detects the format by the presence of `formatVersion`:
+
+- **`formatVersion: 1`** — new format; loader validates mandatory fields, extracts `verses`,
+  and normalises keys from `USFM_ID CHAPTER:VERSE` to `USFM_ID.CHAPTER.VERSE` for internal use.
+  This preserves the existing `TranslationData` key format and keeps `provider.ts` unchanged.
+- **No `formatVersion` field** — legacy flat `Record<string, string>` with dot-separated keys;
+  loaded as-is without transformation.
+
+Both paths produce the same `TranslationData` type for all downstream consumers.
+
+Files with `formatVersion` values other than `1` are rejected with an error; the plugin falls back
+to `"Verš nenalezen"` until a valid translation is loaded.
+
+#### Migration
+
+`translations/cep.json` is updated to format version 1 as part of the 0.3 release.
+The loader continues to read legacy files indefinitely, so user-dropped translations in the old format remain functional.
 
 ### Book Abbreviation Configuration
 
 #### Goal
 
-Allow users to define custom book abbreviations that supplement or override the built-in Czech defaults.
+Allow users to define custom book abbreviations that supplement or override the built-in defaults.
 
 Features:
 
-- Settings include a `Custom abbreviations` field where the user maps input strings to OSIS book IDs.
+- Settings include a `Custom abbreviations` field where the user maps input strings to USFM 3.0 book IDs.
   Example: `Jr, Jer, Jeremiáš → JER`
 - Custom abbreviations are merged with built-in defaults; custom entries win on conflict.
 - The parser regex is compiled from the active merged map at plugin startup.
@@ -161,30 +241,6 @@ Features:
 - Built-in abbreviations remain as the default; the user does not need to redefine them.
 - Abbreviation keys are validated to prevent broken regex patterns.
 - Parser performance is unaffected: regex is compiled once, not on every keystroke.
-
-### Copy Verse Text to Clipboard
-
-Issue: #2
-
-#### Goal
-
-Allow the user to copy the full displayed verse text to the clipboard directly from the hover popover or editor tooltip.
-
-Features:
-
-- Both the Reading View popover and the editor tooltip display a copy button alongside the verse content.
-- Clicking the button copies all verse entries as plain text to the clipboard via `navigator.clipboard.writeText()`.
-- Plain-text format: first entry as `<ref label> <text>`, subsequent entries as `<verse number> <text>`, separated by spaces.
-
-#### Constraints
-
-- `navigator.clipboard` is standard Web API; no Obsidian import is required. Mobile-compatible in Obsidian's webview.
-- The copy button is rendered inside `buildVerseDOM` via an option flag. Call sites (`hover.ts`, `refTooltip.ts`) pass the flag; no signature changes elsewhere.
-- No additional feedback mechanism beyond the button itself.
-
-
-
-
 
 ### Translation Source Management
 
@@ -201,7 +257,8 @@ Allow the user to discover and download Bible translations from a curated catalo
   - Per-translation actions: **Download**, **Delete**, **Update** (= delete + re-download).
 - On Download, BibLens:
   1. Fetches raw data from the provider using `requestUrl`.
-  2. Transforms the raw response to the canonical `Record<string, string>` key format (`${OSIS_BOOK}.${chapter}.${verse}`) using a per-provider **adapter**.
+  2. Transforms the raw response to the canonical `Record<string, string>` key format (`${USFM_BOOK}.${chapter}.${verse}`) using a per-provider **adapter**.
+  4. Adds required attributes to the json file.
   3. Writes the result to `translations/${id}.json`.
 - Download status is derived from the `translations/` directory listing (no separate tracking file).
 - A separate **Installed Translations** panel lists locally available translations with a Delete button.
