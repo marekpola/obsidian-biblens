@@ -26,7 +26,7 @@ The mapping is direct: milestone `0.x` corresponds to release `0.x.0`. Patch ver
 
 ---
 
-## MVP (Version 0.1)
+## Version 0.1 – MVP
 
 ### Goal
 
@@ -49,9 +49,7 @@ For MVP:
 - No external backend is allowed.
 - Reference detection must work reliably for basic Czech notation.
 
----
-
-## Reference Format (MVP)
+### Reference Format
 
 The MVP supports Czech-style Bible reference notation.
 
@@ -73,16 +71,14 @@ Notes:
 - The MVP will initially use a predefined internal abbreviation mapping.
 - Support for configurable abbreviation systems is planned for future versions.
 
-### Input abbreviation vs internal bookId
+#### Input abbreviation vs internal bookId
 
 Input abbreviations (e.g. "Mt", "Gn", "Iz") are the user-facing notation in the note text.
 Internally, the parser maps each abbreviation to a canonical `bookId` in OSIS format (e.g. "MAT", "GEN", "ISA") before storing it in `BibleRef`.
 OSIS identifiers are uppercase, 3-character (or longer) ASCII strings defined by the OSIS Bible standard.
 This separation allows multiple abbreviation systems to map to the same internal identifier in future versions.
 
----
-
-## Non-Goals (MVP)
+### Non-Goals
 
 - No cloud services
 - No text-fabric backend
@@ -93,9 +89,32 @@ This separation allows multiple abbreviation systems to map to the same internal
 
 ---
 
-## Version 0.2 – Translation Management
+## Version 0.2
 
-### Goal
+### Insert Verse After Last Reference
+
+Issue: #3
+
+#### Goal
+
+Allow the user to insert verse text after the Bible reference last detected before cursor position
+
+Features:
+
+- Command `BibLens: Insert verse text after previous reference` available in the Obsidian command palette.
+- Scans the entire document, finds the last detected Bible reference before cursor position, and inserts its verse text immediately after it.
+- Uses the same insertion format as `BibLens: Insert verse text` (inline or blockquote, per settings).
+- Command is a no-op if no references are detected in the note.
+
+#### Constraints
+
+- Full-document scan is permitted for user-triggered commands (single one-time operation, not an automatic update handler).
+- Insertion uses a CM6 transaction; no `innerHTML`.
+- Works in editing mode only (not Reading View).
+
+### Translation Management
+
+#### Goal
 
 Allow the user to work with multiple Bible translations stored locally.
 
@@ -103,21 +122,29 @@ Features:
 
 - Plugin settings include a `Preferred translation` selector listing all files found in `translations/`.
 - User can add a translation by dropping a JSON file into `translations/` and reloading the plugin.
-- Plugin can download a translation file from a URL directly into `translations/` using Obsidian's
-  `requestUrl` API (mobile-compatible; no Node runtime required).
 - Changing the preferred translation reloads the active translation data without a plugin restart.
 
-Constraints:
+#### Constraints
 
 - All translation files must follow the same key format as `cep.json` (`${bookId}.${chapter}.${verse}`).
-- No external services are contacted at startup — download is an explicit user action.
 - Offline operation is preserved; the preferred translation must already be on disk.
 
 ---
 
-## Version 0.2 – Book Abbreviation Configuration
+## Version 0.3
 
-### Goal
+### New standard for translation files
+
+#### Goal
+
+Clearly defined structure of translation files helps management of multiple translations.
+
+Fetures:
+
+
+### Book Abbreviation Configuration
+
+#### Goal
 
 Allow users to define custom book abbreviations that supplement or override the built-in Czech defaults.
 
@@ -129,19 +156,17 @@ Features:
 - The parser regex is compiled from the active merged map at plugin startup.
 - Reference detection and hover previews respect the active abbreviation set.
 
-Constraints:
+#### Constraints
 
 - Built-in abbreviations remain as the default; the user does not need to redefine them.
 - Abbreviation keys are validated to prevent broken regex patterns.
 - Parser performance is unaffected: regex is compiled once, not on every keystroke.
 
----
-
-## Version 0.2 – Copy Verse Text to Clipboard
+### Copy Verse Text to Clipboard
 
 Issue: #2
 
-### Goal
+#### Goal
 
 Allow the user to copy the full displayed verse text to the clipboard directly from the hover popover or editor tooltip.
 
@@ -151,69 +176,23 @@ Features:
 - Clicking the button copies all verse entries as plain text to the clipboard via `navigator.clipboard.writeText()`.
 - Plain-text format: first entry as `<ref label> <text>`, subsequent entries as `<verse number> <text>`, separated by spaces.
 
-Constraints:
+#### Constraints
 
 - `navigator.clipboard` is standard Web API; no Obsidian import is required. Mobile-compatible in Obsidian's webview.
 - The copy button is rendered inside `buildVerseDOM` via an option flag. Call sites (`hover.ts`, `refTooltip.ts`) pass the flag; no signature changes elsewhere.
 - No additional feedback mechanism beyond the button itself.
 
----
 
-## Version 0.2 – Insert Verse Text Command
 
-Issue: N/A (existing scope)
 
-### Goal
 
-Allow the user to insert the text of a detected Bible reference directly into the editor.
+### Translation Source Management
 
-Features:
-
-- Command `BibLens: Insert verse text` available in the Obsidian command palette.
-- When the cursor is positioned on a detected reference, the command fetches the verse(s) and
-  inserts the text into the editor.
-- Default insertion format: append verse text on the same line, separated by ` — `.
-  Example: `Jr 1,1 — Slova Jeremjáše, syna Chilkijášova…`
-- Alternative: insert as a blockquote on the next line (configurable via settings).
-
-Constraints:
-
-- Command is a no-op if the cursor is not on a detected reference.
-- Insertion uses a CM6 transaction (no `innerHTML`, no clipboard manipulation).
-- Works in editing mode only (not Reading View).
-
----
-
-## Version 0.2 – Insert Verse After Last Reference
-
-Issue: #3
-
-### Goal
-
-Allow the user to insert verse text after the last detected Bible reference in the note, without requiring the cursor to be positioned on that reference.
-
-Features:
-
-- Command `BibLens: Insert verse text after last reference` available in the Obsidian command palette.
-- Scans the entire document, finds the last detected Bible reference by document position, and inserts its verse text immediately after it.
-- Uses the same insertion format as `BibLens: Insert verse text` (inline or blockquote, per settings).
-- Command is a no-op if no references are detected in the note.
-
-Constraints:
-
-- Full-document scan is permitted for user-triggered commands (single one-time operation, not an automatic update handler).
-- Insertion uses a CM6 transaction; no `innerHTML`.
-- Works in editing mode only (not Reading View).
-
----
-
-## Version 0.3 – Translation Source Management
-
-### Goal
+#### Goal
 
 Allow the user to discover and download Bible translations from a curated catalog of known HTTP providers, and manage downloaded translations from the settings UI.
 
-### Features
+#### Features
 
 - Plugin contains a built-in **source catalog**: a static list of known HTTP providers, each with a display name, base URL, adapter type, and list of available translations (language, name, remote identifier).
 - The settings UI exposes a **Translation Sources** panel:
@@ -227,7 +206,7 @@ Allow the user to discover and download Bible translations from a curated catalo
 - Download status is derived from the `translations/` directory listing (no separate tracking file).
 - A separate **Installed Translations** panel lists locally available translations with a Delete button.
 
-### Catalog Update from GitHub
+#### Catalog Update from GitHub
 
 The source catalog (list of providers and their translations) can be refreshed independently from the plugin itself, without requiring a new plugin release. This allows adding or removing providers when sources become available or go offline.
 
@@ -249,7 +228,7 @@ Constraints:
 - Schema validation is performed before accepting any fetched catalog.
 - The settings UI shows the date of the last successful catalog update.
 
-### Constraints
+#### Constraints
 
 - The source catalog is bundled in plugin source code as an offline fallback.
 - All network access is an **explicit user action** or opt-in auto behavior; no silent background activity by default.

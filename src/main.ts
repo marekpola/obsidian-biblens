@@ -64,7 +64,7 @@ export default class BibLensPlugin extends Plugin {
 		const scanner = { scan: scanRefs };
 		this.addCommand({
 			id: 'insert-verse-after-last',
-			name: 'Insert verse after last reference',
+			name: 'Insert verse text after previous reference',
 			editorCallback: (editor) => {
 				const view = (editor as unknown as { cm: EditorView }).cm;
 				if (view) insertAfterLastRefCommand(scanner, this.translationData, this.settings.verseInsertionFormat)(view);
