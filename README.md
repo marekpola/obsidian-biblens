@@ -1,90 +1,203 @@
-# Obsidian Sample Plugin
+# BibLens
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+An [Obsidian](https://obsidian.md) plugin that detects Bible references in your notes
+and displays the verse text as a hover preview — in both Reading View and the editor.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+Designed for academic and research workflows. Works fully offline. No external services required.
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+---
 
-## First time developing plugins?
+## Features
 
-Quick starting guide for new plugin devs:
+### Reference Detection
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+BibLens recognises Bible references written in Czech notation directly in your note text:
 
-## Releasing new releases
+- `Mt 1,3` — single verse
+- `Gn 22,1-19` — verse range
+- `Iz 11` — whole chapter
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+References are underlined in the editor and trigger a tooltip on hover.
+In Reading View, hovering a reference opens a popover with the verse text.
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+### Hover Preview
 
-## Adding your plugin to the community plugin list
+- **Reading View:** a popover appears above the reference with formatted verse text.
+- **Editor (Live Preview):** a CodeMirror tooltip shows the same content on hover.
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+Each verse entry is displayed as a superscript label followed by the verse text.
+Unknown references show *Verš nenalezen*.
 
-## How to use
+A **copy button** in the popover/tooltip copies the full verse text to the clipboard.
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+### Insert Verse Text
 
-## Manually installing the plugin
+Two commands are available in the command palette:
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+- **BibLens: Insert verse text after previous reference** — scans the document and inserts
+  text after the last detected reference before the cursor position.
 
-## Improve code quality with eslint
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
+Insertion format is configurable: **Inline** (appended on the same line) or **Blockquote**
+(inserted on the next line as `> Reference verse text`).
 
-## Funding URL
+Blockquote lines are excluded from reference detection, so inserted quotations are not
+re-decorated.
 
-You can include funding URLs where people who use your plugin can financially support it.
+### Multiple Translations
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+Select the active translation from **Settings → BibLens → Preferred translation**.
+The plugin reads all `.json` translation files from the `translations/` folder in the
+plugin directory. Changing the selection takes effect immediately without restarting Obsidian.
+
+### Translation Source Management
+
+Download Bible translations directly from within the plugin settings:
+
+1. Open **Settings → BibLens → Translation Sources**.
+2. Select a provider from the list.
+3. Browse available translations and click **Download**.
+
+Downloaded translations are saved to `translations/` and appear in the **Preferred translation**
+dropdown immediately.
+
+To remove a translation, use the **Installed Translations** panel and click **Delete**.
+
+The provider catalog is bundled with the plugin. You can refresh it independently:
+
+- Click **Update catalog** in settings to fetch the latest provider list from GitHub.
+- Enable **Auto-update on startup** to refresh automatically when the cached catalog is stale
+  (disabled by default — no background network activity without opt-in).
+
+
+---
+
+## Requirements
+
+- Obsidian desktop or mobile
+- No internet connection required for core functionality (translations must be on disk)
+- No external services or backends
+
+---
+
+## Installation
+
+### From the Community Plugin List
+
+1. Open **Settings → Community plugins → Browse**.
+2. Search for **BibLens**.
+3. Click **Install**, then **Enable**.
+
+### Manual Installation
+
+1. Download `main.js`, `styles.css`, and `manifest.json` from the latest release.
+2. Copy them to `<your vault>/.obsidian/plugins/biblens/`.
+3. Download `translations/cep.json` from the release and place it in
+   `<your vault>/.obsidian/plugins/biblens/translations/`.
+4. Enable the plugin in **Settings → Community plugins**.
+
+---
+
+## Adding Translations
+
+BibLens ships with the **Czech CEP** translation. You can add others in two ways:
+
+**Download from the catalog (recommended):**
+Open **Settings → BibLens → Translation Sources** and download a translation from a listed provider.
+
+**Drop a file manually:**
+Copy a compatible `.json` translation file into the `translations/` folder in the plugin directory,
+then reload the plugin (or toggle it off and on).
+
+### Translation File Format
+
+Translation files must be valid JSON with the following structure (format version 1):
 
 ```json
 {
-    "fundingUrl": "https://buymeacoffee.com"
+  "id": "bible21",
+  "name": "Bible21",
+  "lang": "cs",
+  "source": "optional attribution text",
+  "formatVersion": 1,
+  "canonicalAbbreviations": {
+    "GEN": "Gn",
+    "EXO": "Ex"
+  },
+  "allowedAbbreviations": {
+    "GEN": ["Gn", "Gen", "Genesis", "1. Mojžíšova"],
+    "EXO": ["Ex", "Exo", "Exodus", "2. Mojžíšova"]
+  },
+  "verses": {
+    "GEN 1:1": "Na počátku Bůh stvořil nebe a zemi.",
+    "GEN 1:2": "Země pak byla pustá a prázdná…"
+  }
 }
 ```
 
-If you have multiple URLs, you can also do:
+**Required fields:** `id`, `name`, `lang`, `formatVersion`, `verses`
+**Optional fields:** `source`, `canonicalAbbreviations`, `allowedAbbreviations`
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
-```
+Verse keys use the format `USFM_BOOK CHAPTER:VERSE` (e.g. `GEN 1:1`, `MAT 28:19`).
+Book identifiers follow the [USFM 3.0 standard](https://ubsicap.github.io/usfm/usfm3.0/identification/books.html).
 
-## API Documentation
+Legacy flat-format files (plain `Record<string, string>` with dot-separated keys) continue
+to load without modification.
 
-See https://docs.obsidian.md
+---
+
+## Settings Reference
+
+| Setting | Description |
+|---|---|
+| Preferred translation | Active translation used in hover previews and verse insertion |
+| Verse insertion format | Inline or Blockquote |
+| Custom abbreviations | Additional book abbreviation → USFM ID mappings |
+| Translation Sources | Browse providers and download translations |
+| Installed Translations | Manage locally downloaded translations |
+| Auto-update catalog on startup | Silently refresh the provider catalog when stale (opt-in) |
+| Last catalog update | Timestamp of the most recent successful catalog refresh |
+
+---
+
+## Changelog
+
+### 0.3.0
+
+- **New translation file format (v1):** versioned, self-describing JSON with metadata,
+  canonical display abbreviations, and allowed input abbreviations per translation.
+  `cep.json` migrated to v1. Legacy files continue to load.
+- **Translation Source Management:** download translations from a curated catalog of
+  HTTP providers. Delete installed translations from the settings UI.
+- **Catalog update:** refresh the provider catalog from GitHub without a plugin update.
+  Manual button + opt-in auto-update on startup.
+- **Custom abbreviations:** define additional book abbreviations in settings.
+
+### 0.2.0
+
+- Multiple locally installed translations with a settings dropdown.
+- Insert verse text command (inline and blockquote formats).
+- Insert verse after last detected reference before cursor.
+- Blockquote lines excluded from reference detection.
+- Copy-to-clipboard button in hover previews and tooltips.
+
+### 0.1.0
+
+- Initial release.
+- Czech Bible reference detection (`Mt 1,3`, `Gn 22,1-19`, `Iz 11`).
+- Hover popover in Reading View with CEP verse text.
+- Reference underline decorations in editor (Live Preview).
+- Editor tooltip on hover.
+
+---
+
+## Privacy
+
+BibLens makes no network requests by default. The Translation Sources feature and catalog
+update use network access only when you explicitly click **Download** or **Update catalog**,
+or when you enable the auto-update toggle. No data about your notes is ever transmitted.
+
+---
+
+## License
+
+MIT
