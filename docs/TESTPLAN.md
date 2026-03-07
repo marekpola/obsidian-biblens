@@ -319,6 +319,94 @@ Expected:
 
 ---
 
+## Task 18 – Initial Source Catalog: 2+ Czech Bible Translation Providers
+
+### 18a – Providers visible in Translation Sources panel
+
+Setup:
+- Plugin loaded in Obsidian (no network call needed for bundled catalog).
+
+Steps:
+1. Open Settings → BibLens.
+2. Scroll to **Translation sources** section.
+3. Open the Provider dropdown.
+
+Expected:
+- At least 2 providers listed: "GetBible (api.getbible.net)" and "Beblia Holy Bible XML (GitHub)".
+- Selecting each provider shows its translation list (BKR, CEP, KJV, etc. for GetBible; CEP 2001, BKR 1613, NIV, ESV, etc. for Beblia).
+
+### 18b – Download from GetBible (getbible-v2 adapter)
+
+Setup:
+- Active network connection.
+- No `translations/bkr.json` present (delete if exists).
+
+Steps:
+1. In Translation Sources, select provider "GetBible".
+2. Find "Bible Kralická" (bkr) with status "Not downloaded".
+3. Click **Download**.
+
+Expected:
+- Button shows "Downloading…" then disappears (row switches to Downloaded state).
+- A Notice: "BibLens: Bible Kralická downloaded".
+- File `translations/bkr.json` exists in the plugin directory.
+- File is valid JSON with `formatVersion: 1`, `id: "bkr"`, `lang: "cs"`, and a `verses` object.
+- Verse keys use USFM 3.0 format: `"GEN 1:1"`, `"MAT 1:1"`, etc.
+- Preferred Translation dropdown now includes "Bible Kralická".
+
+### 18c – Verse text visible after switching to downloaded translation
+
+Steps:
+1. Open Preferred translation dropdown, select "Bible Kralická" (bkr).
+2. Open a note in Reading View containing `Gn 1,1`.
+3. Hover over `Gn 1,1`.
+
+Expected:
+- Popover shows verse text from Bible Kralická.
+- No "Verš nenalezen" fallback.
+- No console errors.
+
+### 18d – Download from Beblia (beblia-xml adapter)
+
+Setup:
+- Active network connection.
+- No `translations/bkr1613.json` present.
+
+Steps:
+1. In Translation Sources, select provider "Beblia Holy Bible XML".
+2. Find "Bible Kralická (1613)" (bkr1613), click **Download**.
+
+Expected:
+- Notice: "BibLens: Bible Kralická (1613) downloaded".
+- File `translations/bkr1613.json` exists, valid v1 format.
+- Verse keys use USFM 3.0 format: `"GEN 1:1"`, `"MAT 1:1"`, etc.
+- Translation appears in Preferred Translation dropdown immediately.
+
+### 18e – Delete removes translation from both panels
+
+Steps:
+1. In Translation Sources, click **Delete** on a downloaded translation (e.g. bkr).
+2. Observe both the Translation Sources list and the Installed Translations panel.
+
+Expected:
+- Notice: "BibLens: Bible Kralická deleted".
+- Translation status reverts to "Not downloaded" in Translation Sources.
+- Translation disappears from Installed Translations panel.
+- File no longer exists in `translations/`.
+
+### 18f – USFM 3.0 book ID format in downloaded files (static check)
+
+Steps:
+1. After downloading any translation, open `translations/{id}.json` in a text editor.
+2. Inspect several keys in the `verses` object.
+
+Expected:
+- Keys follow the pattern `"USFM_ID CHAPTER:VERSE"`: e.g. `"GEN 1:1"`, `"PSA 119:176"`, `"REV 22:21"`.
+- No dot-separated keys (legacy format).
+- No unknown book identifiers.
+
+---
+
 ## Mobile Compatibility (Periodic Check)
 
 Note:

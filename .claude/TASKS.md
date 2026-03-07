@@ -7,44 +7,9 @@ Each task must include a clear Definition of Done (DoD).
 
 ## Active
 
-### Task 18 – Initial source catalog: 2+ Czech Bible translation providers
-Issue: #7
 
-#### Goal
-Populate `KNOWN_PROVIDERS` with at least two verified, key-free HTTP providers offering Czech translations, each with a working adapter.
+## Next
 
-#### Scope
-- Research and verify at least 2 working endpoints offering Czech Bible translations (no API key required)
-- `src/sources/catalog.ts`: add `SourceProvider` entries to `KNOWN_PROVIDERS` for each verified provider
-- `src/sources/adapters.ts`: implement a `SourceAdapter` for each new provider — URL construction + raw response → `TranslationData` transformation with USFM 3.0 book ID normalisation
-- `catalog/providers.json`: add the same provider entries as the bundled snapshot
-- Downloaded files must conform to v1 format (requires Task 16)
-
-#### Definition of Done
-- At least 2 providers visible in the Translation Sources panel
-- Downloading a translation from each provider produces a valid v1 `translations/${id}.json`
-- Verse text from a newly downloaded translation is visible in hover/tooltip after selecting it
-- Book IDs in downloaded files use USFM 3.0 format
-- `npm run check` and `npm run ci` pass
-
----
-
-### Task 10 – Translation Download
-
-#### Goal
-Allow the user to download a translation JSON file from a URL directly into `translations/`.
-
-#### Scope
-- `src/translationDownloader.ts`: implement `downloadTranslation(adapter, pluginDir, url, name): Promise<void>` using `requestUrl` (mobile-compatible, no Node)
-- Validate downloaded JSON: must be a non-empty `Record<string, string>`
-- Settings tab: add URL input and "Download" button; show success/error as Obsidian Notice
-
-#### Definition of Done
-- Downloaded file appears in `translations/` and shows up in the preferred translation dropdown on settings reopen
-- No Node runtime features used; works on mobile
-- `npm run check` and `npm run ci` pass
-
----
 
 ### Task 11 – Custom Book Abbreviations
 
@@ -63,30 +28,6 @@ Allow users to define custom abbreviations that supplement or override built-in 
 - Regex compiled once at startup/settings change, not per keystroke
 - `npm run check` and `npm run ci` pass
 
----
-
-### Task 12 – Insert Verse Text Command
-Issue: #4
-
-#### Goal
-Allow the user to insert verse text for a detected reference at the cursor into the editor.
-
-#### Scope
-- `src/editor/insertVerse.ts`: implement `insertVerseCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat): Command` — no Obsidian imports; uses CM6 transaction dispatch
-- Inline format: appends ` — <verse text>` after the reference on the same line
-- Blockquote format: inserts `> <ref label> — <verse text>` on the next line (reference label included inside the `>` prefix, per Issue #4)
-- Command is no-op if cursor is not on a detected reference
-- `main.ts`: register command id `biblens-insert-verse` via `this.addCommand(...)`
-- Settings tab: expose `verseInsertionFormat` toggle (Inline / Blockquote)
-
-#### Definition of Done
-- Command appears in Obsidian command palette as `BibLens: Insert verse text`
-- Inline and blockquote insertion formats both work correctly
-- Blockquote format produces `> Jr 1,1 Slova Jeremjáše…` (label inside blockquote, single space separator)
-- No `innerHTML` usage; CM6 transaction only
-- `npm run check` and `npm run ci` pass
-
----
 
 ### Task 13 – Copy Verse Text to Clipboard
 Issue: #2
@@ -109,13 +50,37 @@ Add a copy button to the hover popover and editor tooltip that copies the full f
 ---
 
 ## Future (Not MVP)
-- Additional translations (loader already supports them; add translation selector in settings)
 - Parallel text support
 - Morphology
 - Configurable abbreviation systems
 
 ---
 ## Done
+
+### Task 18 – Initial source catalog: 2+ Czech Bible translation providers
+Issue: #7
+
+#### Definition of Done
+- At least 2 providers visible in the Translation Sources panel ✓
+- Downloading a translation from each provider produces a valid v1 `translations/${id}.json` ✓
+- Verse text from a newly downloaded translation is visible in hover/tooltip after selecting it ✓
+- Book IDs in downloaded files use USFM 3.0 format ✓
+- `npm run check` and `npm run ci` pass ✓
+
+---
+
+### Task 17 – Translation Source Management UI
+Issue: #6
+
+#### Definition of Done
+- User can see available providers and their translations in settings ✓
+- Download writes a valid file to `translations/`; translation appears in Preferred Translation dropdown immediately ✓
+- Delete removes the file; it disappears from both panels ✓
+- "Update catalog" button fetches and caches `catalog.json`; last-updated date updates in UI ✓
+- Auto-update toggle persists across plugin reload ✓
+- `npm run check` and `npm run ci` pass ✓
+
+---
 
 ### Task 16 – Translation file format v1: versioned loader and cep.json migration
 Issue: #8

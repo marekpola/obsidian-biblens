@@ -37,7 +37,8 @@ export async function downloadFromSource(
 	const adapter = getAdapter(provider.adapterType);
 	const url = adapter.buildUrl(provider, entry);
 	const response = await requestUrl({ url });
-	const data = adapter.transform(response.json);
+	// Pass raw text so each adapter can parse it (JSON.parse or regex-XML)
+	const data = adapter.transform(response.text);
 
 	if (
 		typeof data !== 'object' || data === null ||
