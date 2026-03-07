@@ -1,5 +1,7 @@
 import { MarkdownPostProcessorContext, Notice, Plugin } from 'obsidian';
 import { EditorView } from '@codemirror/view';
+import { fetchCatalogUpdate } from './sources/catalogManager';
+import { isCatalogStale } from './sources/catalogUtils';
 import { scanRefs } from './parser';
 import { PopoverManager } from './ui/hover';
 import { refDecorationsExtension } from './editor/refDecorations';
@@ -51,6 +53,17 @@ export default class BibLensPlugin extends Plugin {
 			);
 		} catch (e) {
 			console.error('BibLens: failed to load translation', e);
+		}
+
+		if (this.settings.autoUpdateCatalog && isCatalogStale(this.settings.catalogLastUpdated)) {
+			fetchCatalogUpdate(this.app.vault.adapter, this.manifest.dir!)
+				.then(result => {
+					if (result.ok) {
+						this.settings.catalogLastUpdated = result.updatedAt;
+						void this.saveSettings();
+					}
+				})
+				.catch((e: unknown) => console.error('BibLens: catalog auto-update failed', e));
 		}
 
 		this.addSettingTab(new BibLensSettingTab(this.app, this));
