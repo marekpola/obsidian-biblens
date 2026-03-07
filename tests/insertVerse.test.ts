@@ -12,6 +12,8 @@ const data: TranslationData = {
 
 function makeView(docText: string, cursor?: number) {
 	let lastInsert: string | undefined;
+	let lastFrom: number | undefined;
+	let lastTo: number | undefined;
 	let dispatchCalled = false;
 	const head = cursor ?? docText.length;
 	const view = {
@@ -19,12 +21,14 @@ function makeView(docText: string, cursor?: number) {
 			doc: { toString: () => docText },
 			selection: { main: { head } },
 		},
-		dispatch(arg: { changes: { from: number; insert: string } }) {
+		dispatch(arg: { changes: { from: number; to?: number; insert: string } }) {
 			dispatchCalled = true;
 			lastInsert = arg.changes.insert;
+			lastFrom = arg.changes.from;
+			lastTo = arg.changes.to;
 		},
 	} as unknown as EditorView;
-	return { view, getInsert: () => lastInsert, wasDispatched: () => dispatchCalled };
+	return { view, getInsert: () => lastInsert, getFrom: () => lastFrom, getTo: () => lastTo, wasDispatched: () => dispatchCalled };
 }
 
 const scanner: RefScanner = { scan: scanRefs };
@@ -48,10 +52,21 @@ describe("insertAfterLastRefCommand", () => {
 		expect(getInsert()).toBe(" — Na počátku stvořil Bůh nebe a zemi.");
 	});
 
-	it("inserts blockquote verse after last reference before cursor", () => {
-		const { view, getInsert } = makeView("See Gn 1,1 for reference.");
+	it("inserts blockquote verse replacing the reference (mid-line adds leading newline)", () => {
+		const doc = "See Gn 1,1 for reference.";
+		const { view, getInsert, getFrom, getTo } = makeView(doc);
 		insertAfterLastRefCommand(scanner, data, "blockquote")(view);
-		expect(getInsert()).toBe("\n> Na počátku stvořil Bůh nebe a zemi.");
+		expect(getInsert()).toBe("\n> Gn 1,1 Na počátku stvořil Bůh nebe a zemi.\n");
+		// "See " = 4 chars; "Gn 1,1" starts at 4, ends at 10
+		expect(getFrom()).toBe(4);
+		expect(getTo()).toBe(10);
+	});
+
+	it("inserts blockquote without leading newline when reference is at line start", () => {
+		const doc = "Some intro.\nGn 1,1";
+		const { view, getInsert } = makeView(doc);
+		insertAfterLastRefCommand(scanner, data, "blockquote")(view);
+		expect(getInsert()).toBe("> Gn 1,1 Na počátku stvořil Bůh nebe a zemi.\n");
 	});
 
 	it("uses last reference before cursor, not last in document", () => {

@@ -279,6 +279,46 @@ Expected:
 
 ---
 
+## Task 15 – Exclude Blockquote Lines from Reference Detection
+
+Setup:
+- Create a note in Live Preview with:
+  ```
+  Ex 1,1
+  > Ex 1,1 — text
+  Mt 5,3
+  ```
+
+### 15a – No decoration on blockquote line
+
+Steps:
+1. Open the note in Live Preview.
+2. Observe the three lines.
+
+Expected:
+- `Ex 1,1` (line 1) is underlined with `biblens-ref` decoration.
+- `> Ex 1,1 — …` (line 2) has **no** underline decoration.
+- `Mt 5,3` (line 3) is underlined with `biblens-ref` decoration.
+
+### 15b – No tooltip on blockquote line
+
+Steps:
+1. Hover over the reference text on line 2 (`> Ex 1,1 …`).
+
+Expected:
+- No tooltip appears.
+- No console errors.
+
+### 15c – Normal references still work
+
+Steps:
+1. Hover over `Ex 1,1` on line 1 and `Mt 5,3` on line 3.
+
+Expected:
+- Tooltip appears with verse content for both.
+
+---
+
 ## Mobile Compatibility (Periodic Check)
 
 Note:

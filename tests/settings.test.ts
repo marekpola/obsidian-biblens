@@ -11,8 +11,8 @@ describe("DEFAULT_SETTINGS", () => {
     expect(DEFAULT_SETTINGS.customAbbreviations).toEqual({});
   });
 
-  it("has verseInsertionFormat 'inline'", () => {
-    expect(DEFAULT_SETTINGS.verseInsertionFormat).toBe("inline");
+  it("has verseInsertionFormat 'blockquote'", () => {
+    expect(DEFAULT_SETTINGS.verseInsertionFormat).toBe("blockquote");
   });
 });
 

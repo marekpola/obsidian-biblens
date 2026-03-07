@@ -2,6 +2,7 @@ import type { EditorView } from "@codemirror/view";
 import type { TranslationData, VerseEntry } from "../provider";
 import { getVerses } from "../provider";
 import type { RefScanner } from "../parser";
+import { formatRef } from "../parser";
 
 export type InsertionFormat = 'inline' | 'blockquote';
 
@@ -25,11 +26,14 @@ export function insertAfterLastRefCommand(
 		if (entries.length === 0) return false;
 
 		const verseText = formatEntries(entries);
-		const insertion = format === 'blockquote'
-			? `\n> ${verseText}`
-			: ` — ${verseText}`;
 
-		view.dispatch({ changes: { from: last.end, insert: insertion } });
+		if (format === 'blockquote') {
+			const atLineStart = last.start === 0 || text[last.start - 1] === '\n';
+			const prefix = atLineStart ? '' : '\n';
+			view.dispatch({ changes: { from: last.start, to: last.end, insert: `${prefix}> ${formatRef(last.ref)} ${verseText}\n` } });
+		} else {
+			view.dispatch({ changes: { from: last.end, insert: ` — ${verseText}` } });
+		}
 		return true;
 	};
 }

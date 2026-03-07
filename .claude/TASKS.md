@@ -48,6 +48,7 @@ Allow users to define custom abbreviations that supplement or override built-in 
 ---
 
 ### Task 12 – Insert Verse Text Command
+Issue: #4
 
 #### Goal
 Allow the user to insert verse text for a detected reference at the cursor into the editor.
@@ -55,7 +56,7 @@ Allow the user to insert verse text for a detected reference at the cursor into 
 #### Scope
 - `src/editor/insertVerse.ts`: implement `insertVerseCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat): Command` — no Obsidian imports; uses CM6 transaction dispatch
 - Inline format: appends ` — <verse text>` after the reference on the same line
-- Blockquote format: inserts `> <verse text>` on the next line
+- Blockquote format: inserts `> <ref label> — <verse text>` on the next line (reference label included inside the `>` prefix, per Issue #4)
 - Command is no-op if cursor is not on a detected reference
 - `main.ts`: register command id `biblens-insert-verse` via `this.addCommand(...)`
 - Settings tab: expose `verseInsertionFormat` toggle (Inline / Blockquote)
@@ -63,6 +64,7 @@ Allow the user to insert verse text for a detected reference at the cursor into 
 #### Definition of Done
 - Command appears in Obsidian command palette as `BibLens: Insert verse text`
 - Inline and blockquote insertion formats both work correctly
+- Blockquote format produces `> Jr 1,1 Slova Jeremjáše…` (label inside blockquote, single space separator)
 - No `innerHTML` usage; CM6 transaction only
 - `npm run check` and `npm run ci` pass
 
@@ -97,20 +99,37 @@ Add a copy button to the hover popover and editor tooltip that copies the full f
 ---
 ## Done
 
-### Task 14 – Insert Verse After Last Reference in Note
-Issue: #3
+### Task 14 – Insert Verse After Last Reference in Note (format fix)
+Issue: #3, #4
 
 #### Goal
-Add a command that finds the last Bible reference anywhere in the current note and inserts its verse text immediately after it, without requiring the cursor to be positioned on the reference.
+Fix the blockquote insertion format in `insertAfterLastRefCommand` per Issue #4: inserted verse text must appear on its own line prefixed with `>`, surrounded by newlines so it does not run into adjacent text.
 
 #### Scope
-- `src/editor/insertVerse.ts`: implement `insertAfterLastRefCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat): Command` — scans full document via `view.state.doc.toString()` (permitted for user-triggered commands per D018), finds last `RefMatch` whose end position is at or before the cursor, calls `getVerses`, dispatches CM6 transaction inserting formatted text at match end position; no-op if no references exist before the cursor
-- `main.ts`: register command id `biblens-insert-verse-after-last` via `this.addCommand(...)`
+- `src/editor/insertVerse.ts`: blockquote mode replaces the original reference with the `> …` line (no duplication); leading `\n` suppressed when reference is at line start
+- `src/settingsTab.ts`: added "Verse insertion format" dropdown (Inline / Blockquote)
+- Inline format remains unchanged
 
 #### Definition of Done
-- Command appears in palette as `BibLens: Insert verse after last reference`
-- Verse text is inserted immediately after the last detected reference at or before the cursor
-- Command is a no-op when no references exist before the cursor
+- Running the command with blockquote format inserts on a new line: `\n> Ex 1,1 verse text\n`
+- No surrounding text is run together with the inserted blockquote
+- `npm run check` and `npm run ci` pass
+
+---
+
+### Task 15 – Exclude Blockquote Lines from Reference Detection
+Issue: #4
+
+#### Goal
+Prevent the plugin from detecting Bible references on lines that begin with `>` (Markdown blockquote prefix), so that inserted verse quotations are not re-decorated or re-tooltipped.
+
+#### Scope
+- `src/parser.ts`: `scanRefs` filters out lines starting with `>` before matching; no call-site changes needed
+
+#### Definition of Done
+- References on lines starting with `>` produce no decorations and no hover tooltip
+- References on normal lines continue to work correctly
+- Unit tests cover both cases
 - `npm run check` and `npm run ci` pass
 
 ---
@@ -213,7 +232,7 @@ DoD: underline refs in editor, no lag on large notes, no console errors
 
 ### Task 5 – Editor tooltip
 Issue: #1
-DoD: hover shows tooltip with normalized ref, works after edits, doesn’t break selection/cursor
+DoD: hover shows tooltip with normalized ref, works after edits, doesn't break selection/cursor
 
 ### Task 6 – Bible Text Data Provider
 

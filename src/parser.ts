@@ -19,6 +19,8 @@ export function scanRefs(text: string): RefMatch[] {
   const re = candidateRegex();
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
+    const lineStart = text.lastIndexOf('\n', m.index - 1) + 1;
+    if (text[lineStart] === '>') continue;
     const matchText = m[0];
     const result = parseCzechBibleRef(matchText);
     if (result.ok) {

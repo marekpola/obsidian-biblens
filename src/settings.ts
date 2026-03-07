@@ -11,5 +11,5 @@ export interface BibLensSettings {
 export const DEFAULT_SETTINGS: BibLensSettings = {
 	preferredTranslation: 'cep',
 	customAbbreviations: {},
-	verseInsertionFormat: 'inline',
+	verseInsertionFormat: 'blockquote',
 };
