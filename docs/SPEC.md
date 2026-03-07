@@ -18,6 +18,14 @@ The plugin must:
 
 ---
 
+## Versioning Note
+
+Milestone labels in this document use two-part notation (`0.1`, `0.2`, `0.3`) for readability.
+`manifest.json`, `package.json`, and `versions.json` use full semver (`0.1.0`, `0.2.0`, `0.3.0`).
+The mapping is direct: milestone `0.x` corresponds to release `0.x.0`. Patch versions (`0.x.1`, etc.) are used for bugfix releases within a milestone and are not tracked in this document.
+
+---
+
 ## MVP (Version 0.1)
 
 ### Goal
