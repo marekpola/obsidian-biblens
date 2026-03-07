@@ -11,6 +11,50 @@ Each task must include a clear Definition of Done (DoD).
 ## Next
 
 
+### Task 19 – Settings UI Restructure
+Issue: #9
+
+#### Goal
+Restructure the settings panel to match the layout defined in issue #9: four named sections in the correct order, with updated Installed Translations entries and a simplified Get Translations panel.
+
+#### Scope
+
+**Section ordering and headings** — `src/settingsTab.ts`:
+- Render sections in this order: General → Installed Translations → Get Translations → Advanced
+- Add heading: "General" (before verse insertion format and preferred translation)
+- Rename "Installed translations" heading → "Installed Translations"
+- Rename "Translation sources" heading → "Get Translations"
+- Rename "Translation catalog" heading → "Advanced"
+
+**Installed Translations section** — `src/settingsTab.ts`:
+- Each entry displays: Name, Language (`lang`), Source (`source`)
+- Each entry has two buttons: [Set as default] (hidden when already default) and [Delete]
+- [Delete] is available for all translations, including the currently active one; if the deleted translation is active, `preferredTranslation` is cleared to `""` and `reloadTranslation()` is called
+- [Set as default] saves `settings.preferredTranslation`, calls `reloadTranslation()`, shows Notice, re-renders settings tab
+- Remove the Preferred Translation dropdown from General (it is replaced by [Set as default] in Installed Translations)
+
+**Get Translations section** — `src/settingsTab.ts`:
+- Replace per-row Download/Update buttons with: Provider dropdown + Translation dropdown + one [Download] button
+- Both dropdowns and button render on a single `Setting` row
+- Translation dropdown is populated when provider is selected; populated with translations not yet installed
+- [Download] button is disabled until a translation is selected in the Translation dropdown
+- On download success: re-render settings tab; no Update button
+
+**`TranslationMeta` and registry** — `src/types.ts`, `src/translationRegistry.ts`:
+- Add optional `source?: string` to `TranslationMeta`
+- `listAvailableTranslations`: read `source` field from v1 translation files (same pattern as `lang`)
+
+#### Definition of Done
+- Settings tab renders four sections in order: General, Installed Translations, Get Translations, Advanced
+- Each installed translation shows Name, Language, Source (if present) and [Set as default] + [Delete] buttons
+- [Set as default] immediately switches the active translation (hover/tooltip update)
+- [Delete] works for all translations including the active one
+- Get Translations shows provider dropdown + translation dropdown + single Download button; Download disabled until translation selected
+- No "Update" button anywhere in settings
+- `TranslationMeta` includes optional `source` field; `listAvailableTranslations` reads it from v1 files
+- `npm run check` and `npm run ci` pass
+
+
 ### Task 11 – Custom Book Abbreviations
 
 #### Goal
