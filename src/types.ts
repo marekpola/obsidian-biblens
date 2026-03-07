@@ -3,6 +3,7 @@ import type { BookId} from "./books";
 export type TranslationMeta = {
   id: string;
   displayName: string;
+  lang?: string;
 };
 
 export type BibleRef = {
