@@ -222,26 +222,6 @@ to `"Verš nenalezen"` until a valid translation is loaded.
 `translations/cep.json` is updated to format version 1 as part of the 0.3 release.
 The loader continues to read legacy files indefinitely, so user-dropped translations in the old format remain functional.
 
-### Book Abbreviation Configuration
-
-#### Goal
-
-Allow users to define custom book abbreviations that supplement or override the built-in defaults.
-
-Features:
-
-- Settings include a `Custom abbreviations` field where the user maps input strings to USFM 3.0 book IDs.
-  Example: `Jr, Jer, Jeremiáš → JER`
-- Custom abbreviations are merged with built-in defaults; custom entries win on conflict.
-- The parser regex is compiled from the active merged map at plugin startup.
-- Reference detection and hover previews respect the active abbreviation set.
-
-#### Constraints
-
-- Built-in abbreviations remain as the default; the user does not need to redefine them.
-- Abbreviation keys are validated to prevent broken regex patterns.
-- Parser performance is unaffected: regex is compiled once, not on every keystroke.
-
 ### Translation Source Management
 
 #### Goal
@@ -302,6 +282,33 @@ Constraints:
 - Must not rely on Node runtime features.
 - Changes must remain small and incremental.
 - Parsing logic must remain testable independently of Obsidian UI.
+
+## Version 0.4
+
+
+
+
+### Book Abbreviation Configuration
+
+#### Goal
+
+Allow users to define custom book abbreviations that supplement or override the built-in defaults.
+
+Features:
+
+- Settings include a `Custom abbreviations` field where the user maps input strings to USFM 3.0 book IDs.
+  Example: `Jr, Jer, Jeremiáš → JER`
+- Custom abbreviations are merged with built-in defaults; custom entries win on conflict.
+- The parser regex is compiled from the active merged map at plugin startup.
+- Reference detection and hover previews respect the active abbreviation set.
+
+#### Constraints
+
+- Built-in abbreviations remain as the default; the user does not need to redefine them.
+- Abbreviation keys are validated to prevent broken regex patterns.
+- Parser performance is unaffected: regex is compiled once, not on every keystroke.
+
+
 
 ---
 
