@@ -19,10 +19,6 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 ## Active
 
 
----
-
-## Next
-
 ### Task 29 – Settings UI Reorganisation
 
 #### Goal
@@ -49,6 +45,9 @@ Restructure the settings tab so each asset domain (translations, reference forma
 - `npm run check` and `npm run ci` pass
 
 ---
+
+## Next
+
 
 ## Future 
 

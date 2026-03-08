@@ -7,12 +7,16 @@ import { loadCatalog, fetchCatalogUpdate } from './sources/catalogManager';
 import { downloadFromSource, deleteTranslation } from './translationManager';
 import { downloadLanguagePack, deleteLanguagePack, downloadReferenceFormat, deleteReferenceFormat } from './packManager';
 import type { SourceProvider, LanguagePackProvider, ReferenceFormatProvider } from './sources/catalog';
+import type { CatalogData } from './types';
 
 export class BibLensSettingTab extends PluginSettingTab {
 	private plugin: BibLensPlugin;
 	private selectedTranslProvId: string | null = null;
 	private selectedFormatProvId: string | null = null;
 	private selectedLangProvId: string | null = null;
+	private translationsExpanded = false;
+	private formatsExpanded = false;
+	private languagesExpanded = false;
 
 	constructor(app: App, plugin: BibLensPlugin) {
 		super(app, plugin);
@@ -23,11 +27,20 @@ export class BibLensSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 		this.renderGeneral(containerEl);
-		this.renderInstalledTranslations(containerEl);
-		this.renderInstalledFormats(containerEl);
-		this.renderInstalledLanguages(containerEl);
-		this.renderInstallSources(containerEl);
+
+		const translContainer = containerEl.createDiv();
+		const formatsContainer = containerEl.createDiv();
+		const langsContainer = containerEl.createDiv();
+
 		this.renderAdvanced(containerEl);
+
+		loadCatalog(this.app.vault.adapter, this.plugin.manifest.dir!)
+			.then(catalog => {
+				this.renderInstalledTranslations(translContainer, catalog);
+				this.renderInstalledFormats(formatsContainer, catalog);
+				this.renderInstalledLanguages(langsContainer, catalog);
+			})
+			.catch((e: unknown) => console.error('BibLens: failed to load catalog', e));
 	}
 
 	private renderGeneral(containerEl: HTMLElement): void {
@@ -137,215 +150,85 @@ export class BibLensSettingTab extends PluginSettingTab {
 			});
 	}
 
-	private renderInstalledTranslations(containerEl: HTMLElement): void {
-	new Setting(containerEl).setName('Installed translations').setHeading();
+	private renderInstalledTranslations(containerEl: HTMLElement, catalog: CatalogData): void {
+		const detailsEl = containerEl.createEl('details');
+		if (this.translationsExpanded) detailsEl.open = true;
+		detailsEl.addEventListener('toggle', () => {
+			this.translationsExpanded = detailsEl.open;
+		});
 
-	const activeContainer = containerEl.createDiv();
-	const detailsEl = containerEl.createEl('details');
-	const summaryEl = detailsEl.createEl('summary', { text: 'Other installed translations' });
-	summaryEl.addClass('biblens-settings-summary');
+		const summaryEl = detailsEl.createEl('summary', { text: 'Installed translations' });
+		summaryEl.addClass('biblens-settings-summary');
 
-	const hiddenContainer = detailsEl.createDiv();
+		const listEl = detailsEl.createDiv();
+		const installRowEl = detailsEl.createDiv();
 
-	listAvailableTranslations(this.app.vault.adapter, this.plugin.manifest.dir!)
-		.then(translations => {
-			if (translations.length === 0) {
-				activeContainer.createEl('p', {
-					text: 'No translation files found.',
-					cls: 'setting-item-description',
-				});
-				detailsEl.remove();
-				return;
-			}
-
-			const active = translations.find(t => t.id === this.plugin.settings.preferredTranslation) ?? null;
-			const others = translations.filter(t => t.id !== this.plugin.settings.preferredTranslation);
-
-			if (active) {
-				const desc = [
-					active.lang ? `Language: ${active.lang}` : '',
-					active.source ? `Source: ${active.source}` : '',
-					'Active',
-				].filter(Boolean).join(' · ');
-
-				new Setting(activeContainer)
-					.setName(active.displayName)
-					.setDesc(desc);
-			}
-
-			if (others.length === 0) {
-				detailsEl.remove();
-				return;
-			}
-
-			summaryEl.setText(`Other installed translations (${others.length})`);
-
-			for (const t of others) {
-				const desc = [
-					t.lang ? `Language: ${t.lang}` : '',
-					t.source ? `Source: ${t.source}` : '',
-				].filter(Boolean).join(' · ');
-
-				const setting = new Setting(hiddenContainer)
-					.setName(t.displayName)
-					.setDesc(desc);
-
-				setting.addButton(btn => {
-					btn.setButtonText('Set as default');
-					btn.onClick(async () => {
-						btn.setDisabled(true);
-						this.plugin.settings.preferredTranslation = t.id;
-						await this.plugin.saveSettings();
-						await this.plugin.reloadTranslation();
-						new Notice(`BibLens: switched to ${t.displayName}`);
-						this.display();
-					});
-				});
-
-				setting.addButton(btn => {
-					btn.setButtonText('Delete');
-					btn.setWarning();
-					btn.onClick(async () => {
-						btn.setDisabled(true);
-						try {
-							await deleteTranslation(this.app.vault.adapter, this.plugin.manifest.dir!, t.id);
-							new Notice(`BibLens: ${t.displayName} deleted`);
-						} catch (e) {
-							new Notice(`BibLens: delete failed — ${e instanceof Error ? e.message : String(e)}`);
-						}
-						this.display();
-					});
-				});
-			}
-		})
-		.catch((e: unknown) => console.error('BibLens: failed to list translations', e));
-}
-
-	private renderInstalledFormats(containerEl: HTMLElement): void {
-		new Setting(containerEl).setName('Installed reference formats').setHeading();
-		const container = containerEl.createDiv();
-
-		listAvailableReferenceFormats(this.app.vault.adapter, this.plugin.manifest.dir!)
-			.then(formats => {
-				if (formats.length === 0) {
-					container.createEl('p', {
-						text: 'No reference format files found.',
+		listAvailableTranslations(this.app.vault.adapter, this.plugin.manifest.dir!)
+			.then(translations => {
+				if (translations.length === 0) {
+					listEl.createEl('p', {
+						text: 'No translation files found.',
 						cls: 'setting-item-description',
 					});
+					this.appendTranslInstallRow(installRowEl, catalog.translationProviders, new Set());
 					return;
 				}
 
-				for (const f of formats) {
-					const isActive = f.id === this.plugin.settings.standardReferenceFormat;
+				for (const t of translations) {
+					const isActive = t.id === this.plugin.settings.preferredTranslation;
 					const desc = [
-						f.lang ? `Language: ${f.lang}` : '',
+						t.lang ? `Language: ${t.lang}` : '',
+						t.source ? `Source: ${t.source}` : '',
 						isActive ? 'Active' : '',
 					].filter(Boolean).join(' · ');
 
-					new Setting(container)
-						.setName(f.displayName)
-						.setDesc(desc)
-						.addButton(btn => {
-							btn.setButtonText('Delete');
-							btn.setWarning();
+					const setting = new Setting(listEl)
+						.setName(t.displayName)
+						.setDesc(desc);
+
+					if (!isActive) {
+						setting.addButton(btn => {
+							btn.setButtonText('Set as default');
 							btn.onClick(async () => {
 								btn.setDisabled(true);
-								try {
-									await deleteReferenceFormat(this.app.vault.adapter, this.plugin.manifest.dir!, f.id);
-									new Notice(`BibLens: ${f.displayName} deleted`);
-									if (isActive) {
-										this.plugin.settings.standardReferenceFormat = '';
-										await this.plugin.saveSettings();
-										await this.plugin.reloadScanner();
-									}
-								} catch (e) {
-									new Notice(`BibLens: delete failed — ${e instanceof Error ? e.message : String(e)}`);
-								}
+								this.plugin.settings.preferredTranslation = t.id;
+								await this.plugin.saveSettings();
+								await this.plugin.reloadTranslation();
+								new Notice(`BibLens: switched to ${t.displayName}`);
 								this.display();
 							});
 						});
-				}
-			})
-			.catch((e: unknown) => console.error('BibLens: failed to list reference formats', e));
-	}
+					}
 
-	private renderInstalledLanguages(containerEl: HTMLElement): void {
-		new Setting(containerEl).setName('Installed recognition languages').setHeading();
-		const container = containerEl.createDiv();
-
-		listAvailableLanguagePacks(this.app.vault.adapter, this.plugin.manifest.dir!)
-			.then(packs => {
-				if (packs.length === 0) {
-					container.createEl('p', {
-						text: 'No language pack files found.',
-						cls: 'setting-item-description',
+					setting.addButton(btn => {
+						btn.setButtonText('Delete');
+						btn.setWarning();
+						btn.onClick(async () => {
+							btn.setDisabled(true);
+							try {
+								await deleteTranslation(this.app.vault.adapter, this.plugin.manifest.dir!, t.id);
+								new Notice(`BibLens: ${t.displayName} deleted`);
+							} catch (e) {
+								new Notice(`BibLens: delete failed — ${e instanceof Error ? e.message : String(e)}`);
+							}
+							this.display();
+						});
 					});
-					return;
 				}
 
-				for (const p of packs) {
-					const isActive = p.id === this.plugin.settings.preferredLanguage;
-					const desc = [
-						p.lang ? `Language: ${p.lang}` : '',
-						isActive ? 'Active' : '',
-					].filter(Boolean).join(' · ');
-
-					new Setting(container)
-						.setName(p.displayName)
-						.setDesc(desc)
-						.addButton(btn => {
-							btn.setButtonText('Delete');
-							btn.setWarning();
-							btn.onClick(async () => {
-								btn.setDisabled(true);
-								try {
-									await deleteLanguagePack(this.app.vault.adapter, this.plugin.manifest.dir!, p.id);
-									new Notice(`BibLens: ${p.displayName} deleted`);
-									if (isActive) {
-										this.plugin.settings.preferredLanguage = '';
-										await this.plugin.saveSettings();
-										await this.plugin.reloadScanner();
-									}
-								} catch (e) {
-									new Notice(`BibLens: delete failed — ${e instanceof Error ? e.message : String(e)}`);
-								}
-								this.display();
-							});
-						});
-				}
+				const installedIds = new Set(translations.map(t => t.id));
+				this.appendTranslInstallRow(installRowEl, catalog.translationProviders, installedIds);
 			})
-			.catch((e: unknown) => console.error('BibLens: failed to list language packs', e));
+			.catch((e: unknown) => console.error('BibLens: failed to list translations', e));
 	}
 
-	private renderInstallSources(containerEl: HTMLElement): void {
-		new Setting(containerEl).setName('Install sources').setHeading();
-		const container = containerEl.createDiv();
-
-		loadCatalog(this.app.vault.adapter, this.plugin.manifest.dir!)
-			.then(async (catalog) => {
-				const installed = await listAvailableTranslations(
-					this.app.vault.adapter,
-					this.plugin.manifest.dir!
-				);
-				const installedTranslIds = new Set(installed.map(t => t.id));
-
-				this.renderTranslationsSubsection(container, catalog.translationProviders, installedTranslIds);
-				this.renderReferenceFormatsSubsection(container, catalog.referenceFormatProviders);
-				this.renderLanguagePacksSubsection(container, catalog.languagePackProviders);
-			})
-			.catch((e: unknown) => console.error('BibLens: failed to load catalog', e));
-	}
-
-	private renderTranslationsSubsection(
+	private appendTranslInstallRow(
 		container: HTMLElement,
 		providers: SourceProvider[],
 		installedIds: Set<string>
 	): void {
-		//new Setting(container).setName('Translations').setHeading();
-		//const inner = container.createDiv();
-
 		if (providers.length === 0) {
-			new Setting(container).setName('Translations').setDesc('No translation providers available.');
+			new Setting(container).setName('Install new').setDesc('No translation providers available.');
 			return;
 		}
 
@@ -389,7 +272,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 		};
 
 		new Setting(container)
-			.setName('Translations')
+			.setName('Install new')
 			.addDropdown(provDrop => {
 				provDrop.addOptions(providerOptions);
 				provDrop.setValue(selectedProviderId);
@@ -435,15 +318,82 @@ export class BibLensSettingTab extends PluginSettingTab {
 			});
 	}
 
-	private renderReferenceFormatsSubsection(
-		container: HTMLElement,
-		providers: ReferenceFormatProvider[]
-	): void {
-		new Setting(container).setName('Reference formats').setHeading();
-		const inner = container.createDiv();
+	private renderInstalledFormats(containerEl: HTMLElement, catalog: CatalogData): void {
+		const detailsEl = containerEl.createEl('details');
+		if (this.formatsExpanded) detailsEl.open = true;
+		detailsEl.addEventListener('toggle', () => {
+			this.formatsExpanded = detailsEl.open;
+		});
 
+		const summaryEl = detailsEl.createEl('summary', { text: 'Reference formats' });
+		summaryEl.addClass('biblens-settings-summary');
+
+		const listEl = detailsEl.createDiv();
+		const installEl = detailsEl.createDiv();
+
+		listAvailableReferenceFormats(this.app.vault.adapter, this.plugin.manifest.dir!)
+			.then(formats => {
+				if (formats.length === 0) {
+					listEl.createEl('p', {
+						text: 'No reference format files found.',
+						cls: 'setting-item-description',
+					});
+				} else {
+					for (const f of formats) {
+						const isActive = f.id === this.plugin.settings.standardReferenceFormat;
+						const desc = [
+							f.lang ? `Language: ${f.lang}` : '',
+							isActive ? 'Active' : '',
+						].filter(Boolean).join(' · ');
+
+						const setting = new Setting(listEl)
+							.setName(f.displayName)
+							.setDesc(desc);
+
+						if (!isActive) {
+							setting.addButton(btn => {
+								btn.setButtonText('Set as default');
+								btn.onClick(async () => {
+									btn.setDisabled(true);
+									this.plugin.settings.standardReferenceFormat = f.id;
+									await this.plugin.saveSettings();
+									await this.plugin.reloadScanner();
+									new Notice(`BibLens: reference format set to ${f.displayName}`);
+									this.display();
+								});
+							});
+						}
+
+						setting.addButton(btn => {
+							btn.setButtonText('Delete');
+							btn.setWarning();
+							btn.onClick(async () => {
+								btn.setDisabled(true);
+								try {
+									await deleteReferenceFormat(this.app.vault.adapter, this.plugin.manifest.dir!, f.id);
+									new Notice(`BibLens: ${f.displayName} deleted`);
+									if (isActive) {
+										this.plugin.settings.standardReferenceFormat = '';
+										await this.plugin.saveSettings();
+										await this.plugin.reloadScanner();
+									}
+								} catch (e) {
+									new Notice(`BibLens: delete failed — ${e instanceof Error ? e.message : String(e)}`);
+								}
+								this.display();
+							});
+						});
+					}
+				}
+			})
+			.catch((e: unknown) => console.error('BibLens: failed to list reference formats', e));
+
+		this.appendFormatInstallRow(installEl, catalog.referenceFormatProviders);
+	}
+
+	private appendFormatInstallRow(container: HTMLElement, providers: ReferenceFormatProvider[]): void {
 		if (providers.length === 0) {
-			inner.createEl('p', { text: 'No reference format providers available.', cls: 'setting-item-description' });
+			new Setting(container).setName('Install new').setDesc('No reference format providers available.');
 			return;
 		}
 
@@ -476,7 +426,8 @@ export class BibLensSettingTab extends PluginSettingTab {
 			return null;
 		};
 
-		new Setting(inner)
+		new Setting(container)
+			.setName('Install new')
 			.addDropdown(provDrop => {
 				provDrop.addOptions(providerOptions);
 				provDrop.setValue(selectedProviderId);
@@ -522,15 +473,82 @@ export class BibLensSettingTab extends PluginSettingTab {
 			});
 	}
 
-	private renderLanguagePacksSubsection(
-		container: HTMLElement,
-		providers: LanguagePackProvider[]
-	): void {
-		new Setting(container).setName('Recognition languages').setHeading();
-		const inner = container.createDiv();
+	private renderInstalledLanguages(containerEl: HTMLElement, catalog: CatalogData): void {
+		const detailsEl = containerEl.createEl('details');
+		if (this.languagesExpanded) detailsEl.open = true;
+		detailsEl.addEventListener('toggle', () => {
+			this.languagesExpanded = detailsEl.open;
+		});
 
+		const summaryEl = detailsEl.createEl('summary', { text: 'Recognition languages' });
+		summaryEl.addClass('biblens-settings-summary');
+
+		const listEl = detailsEl.createDiv();
+		const installEl = detailsEl.createDiv();
+
+		listAvailableLanguagePacks(this.app.vault.adapter, this.plugin.manifest.dir!)
+			.then(packs => {
+				if (packs.length === 0) {
+					listEl.createEl('p', {
+						text: 'No language pack files found.',
+						cls: 'setting-item-description',
+					});
+				} else {
+					for (const p of packs) {
+						const isActive = p.id === this.plugin.settings.preferredLanguage;
+						const desc = [
+							p.lang ? `Language: ${p.lang}` : '',
+							isActive ? 'Active' : '',
+						].filter(Boolean).join(' · ');
+
+						const setting = new Setting(listEl)
+							.setName(p.displayName)
+							.setDesc(desc);
+
+						if (!isActive) {
+							setting.addButton(btn => {
+								btn.setButtonText('Set as default');
+								btn.onClick(async () => {
+									btn.setDisabled(true);
+									this.plugin.settings.preferredLanguage = p.id;
+									await this.plugin.saveSettings();
+									await this.plugin.reloadScanner();
+									new Notice(`BibLens: language pack set to ${p.displayName}`);
+									this.display();
+								});
+							});
+						}
+
+						setting.addButton(btn => {
+							btn.setButtonText('Delete');
+							btn.setWarning();
+							btn.onClick(async () => {
+								btn.setDisabled(true);
+								try {
+									await deleteLanguagePack(this.app.vault.adapter, this.plugin.manifest.dir!, p.id);
+									new Notice(`BibLens: ${p.displayName} deleted`);
+									if (isActive) {
+										this.plugin.settings.preferredLanguage = '';
+										await this.plugin.saveSettings();
+										await this.plugin.reloadScanner();
+									}
+								} catch (e) {
+									new Notice(`BibLens: delete failed — ${e instanceof Error ? e.message : String(e)}`);
+								}
+								this.display();
+							});
+						});
+					}
+				}
+			})
+			.catch((e: unknown) => console.error('BibLens: failed to list language packs', e));
+
+		this.appendLangInstallRow(installEl, catalog.languagePackProviders);
+	}
+
+	private appendLangInstallRow(container: HTMLElement, providers: LanguagePackProvider[]): void {
 		if (providers.length === 0) {
-			inner.createEl('p', { text: 'No language pack providers available.', cls: 'setting-item-description' });
+			new Setting(container).setName('Install new').setDesc('No language pack providers available.');
 			return;
 		}
 
@@ -563,7 +581,8 @@ export class BibLensSettingTab extends PluginSettingTab {
 			return null;
 		};
 
-		new Setting(inner)
+		new Setting(container)
+			.setName('Install new')
 			.addDropdown(provDrop => {
 				provDrop.addOptions(providerOptions);
 				provDrop.setValue(selectedProviderId);
