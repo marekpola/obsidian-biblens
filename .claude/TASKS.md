@@ -18,22 +18,7 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 ## Active
 
-### Task 21 – Language Pack Loader and Registry
-Issue: #10
 
-#### Goal
-Implement reading and listing of recognition language packs from `recognition-languages/` in the plugin directory.
-
-#### Scope
-- `src/languagePackLoader.ts`: implement `loadLanguagePack(adapter, pluginDir, id): Promise<{ map: AbbreviationMap; meta: LanguagePackMeta }>` — reads `recognition-languages/${id}.json`; book keys are USFM (no conversion needed); flattens `books[usfmId].aliases` into `AbbreviationMap`
-- `src/languagePackRegistry.ts`: implement `listAvailableLanguagePacks(adapter, pluginDir): Promise<LanguagePackMeta[]>` — scans `recognition-languages/` and returns metadata from each `.json` file
-
-#### Definition of Done
-- Loading a valid language pack JSON (USFM-keyed) produces a correct `AbbreviationMap`
-- `languagePackLoader.ts` does not import `osisMapping.ts`
-- Registry returns an empty array (not an error) when the directory does not exist
-- Both modules may import from `obsidian`; neither imports from DOM APIs
-- `npm run check` and `npm run ci` pass
 
 ---
 ## Next
@@ -137,7 +122,22 @@ Add a copy button to the hover popover and editor tooltip that copies the full f
 ---
 ## Done
 
+### Task 21 – Language Pack Loader and Registry
+Issue: #10
 
+#### Goal
+Implement reading and listing of recognition language packs from `recognition-languages/` in the plugin directory.
+
+#### Scope
+- `src/languagePackLoader.ts`: implement `loadLanguagePack(adapter, pluginDir, id): Promise<{ map: AbbreviationMap; meta: LanguagePackMeta }>` — reads `recognition-languages/${id}.json`; book keys are USFM (no conversion needed); flattens `books[usfmId].aliases` into `AbbreviationMap`
+- `src/languagePackRegistry.ts`: implement `listAvailableLanguagePacks(adapter, pluginDir): Promise<LanguagePackMeta[]>` — scans `recognition-languages/` and returns metadata from each `.json` file
+
+#### Definition of Done
+- Loading a valid language pack JSON (USFM-keyed) produces a correct `AbbreviationMap`
+- `languagePackLoader.ts` does not import `osisMapping.ts`
+- Registry returns an empty array (not an error) when the directory does not exist
+- Both modules may import from `obsidian`; neither imports from DOM APIs
+- `npm run check` and `npm run ci` pass
 
 ### Task 20 – OSIS→USFM Mapping
 Issue: #10

@@ -319,6 +319,44 @@ Expected:
 
 ---
 
+## Task 21 – Language Pack Loader and Registry
+
+### 21a – Loader: valid pack produces correct AbbreviationMap (automated)
+
+Covered by `tests/languagePackLoader.test.ts`:
+- Valid pack with USFM-keyed books flattens all aliases into `AbbreviationMap` with normalized keys.
+- `meta.id`, `meta.displayName`, `meta.lang` match the JSON fields.
+- Throws on unsupported `formatVersion`.
+- Throws when mandatory fields (`books`, `displayName`, etc.) are missing.
+- Reads from `recognition-languages/${id}.json` path.
+
+### 21b – Loader: no osisMapping import (static check)
+
+Run:
+```
+grep -r "osisMapping" src/languagePackLoader.ts
+```
+Expected: no output.
+
+### 21c – Registry: returns empty array when directory absent (automated)
+
+Covered by `tests/languagePackRegistry.test.ts`:
+- `adapter.list` throws → returns `[]`, no error propagated.
+- Empty file list → returns `[]`.
+- Returns correct `LanguagePackMeta` fields for each `.json` file found.
+- Ignores non-`.json` files.
+- Falls back to id-based meta when a file cannot be read.
+
+### 21d – No DOM API imports (static check)
+
+Run:
+```
+grep -E "document\.|window\.|navigator\." src/languagePackLoader.ts src/languagePackRegistry.ts
+```
+Expected: no output.
+
+---
+
 ## Task 18 – Initial Source Catalog: 2+ Czech Bible Translation Providers
 
 ### 18a – Providers visible in Translation Sources panel
