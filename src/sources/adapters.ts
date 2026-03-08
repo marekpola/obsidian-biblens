@@ -7,6 +7,7 @@ import type {
 	ReferenceFormatProvider, RemoteReferenceFormatEntry,
 } from './catalog';
 import type { LanguagePackFile, ReferenceFormatFile } from '../types';
+import { osisToUsfm } from '../osisMapping';
 
 export interface SourceAdapter {
 	buildUrl(provider: SourceProvider, entry: RemoteTranslationEntry): string;
@@ -142,6 +143,101 @@ export function getAdapter(adapterType: string): SourceAdapter {
 }
 
 // ---------------------------------------------------------------------------
+// openbibleinfo language pack adapter
+// URL: ${baseUrl}/src/${lang}/data.txt
+// Format: tab-separated plain text with $VAR variable definitions and book alias lines.
+// ---------------------------------------------------------------------------
+
+function parseOpenbibleinfoVars(lines: string[]): Map<string, string[]> {
+	const vars = new Map<string, string[]>();
+	for (const line of lines) {
+		if (!line.startsWith('$')) continue;
+		const parts = line.split('\t');
+		const name = parts[0]!.trim();
+		const values = parts.slice(1).map(v => v.trim()).filter(v => v.length > 0);
+		if (values.length > 0) vars.set(name, values);
+	}
+	return vars;
+}
+
+// Expand variable references ($FIRST, $SECOND, …) in a single alias template.
+// Returns [] for regex patterns (containing ?, [, ]) or empty input.
+function expandOpenbibleinfoAlias(template: string, vars: Map<string, string[]>): string[] {
+	const t = template.trim();
+	if (!t) return [];
+	// Regex patterns used by the openbibleinfo parser internals — not literal aliases
+	if (t.includes('?') || t.includes('[') || t.includes(']')) return [];
+	const m = t.match(/\$[A-Z_]+/);
+	if (!m) return [t];
+	const varName = m[0];
+	const values = vars.get(varName);
+	if (!values || values.length === 0) return [t];
+	const results: string[] = [];
+	for (const val of values) {
+		const expanded = t.replace(varName, val).replace(/\s{2,}/g, ' ').trim();
+		results.push(...expandOpenbibleinfoAlias(expanded, vars));
+	}
+	return results;
+}
+
+const CANONICAL_USFM_SET = new Set<string>(USFM_BOOK_IDS);
+
+const openbibleinfoLanguagePackAdapter: LanguagePackAdapter = {
+	buildUrl(provider, entry) {
+		return `${provider.baseUrl}/src/${entry.remoteId}/data.txt`;
+	},
+	transform(raw) {
+		const lines = (raw as string).split('\n').map(l => l.trimEnd());
+		const vars = parseOpenbibleinfoVars(lines);
+		const books: Record<string, { aliases: string[] }> = {};
+
+		for (const line of lines) {
+			if (!line) continue;
+			const c = line[0];
+			// Skip comments (#), variable defs ($), preferred names (*), order entries (=)
+			if (c === '#' || c === '$' || c === '*' || c === '=') continue;
+
+			const parts = line.split('\t');
+			const osisId = parts[0]!.trim();
+			if (!osisId) continue;
+
+			const usfmId = osisToUsfm(osisId);
+			// Skip deuterocanonical books and any OSIS id not in the 66-book Protestant canon
+			if (!usfmId || !CANONICAL_USFM_SET.has(usfmId)) continue;
+
+			const seen = new Set<string>();
+			const aliases: string[] = [];
+			for (const tpl of parts.slice(1)) {
+				for (const alias of expandOpenbibleinfoAlias(tpl, vars)) {
+					if (!seen.has(alias)) {
+						seen.add(alias);
+						aliases.push(alias);
+					}
+				}
+			}
+			if (aliases.length === 0) continue;
+
+			if (books[usfmId]) {
+				for (const a of aliases) {
+					if (!books[usfmId].aliases.includes(a)) books[usfmId].aliases.push(a);
+				}
+			} else {
+				books[usfmId] = { aliases };
+			}
+		}
+
+		return {
+			id: '',           // populated by packManager from catalog entry
+			displayName: '',  // populated by packManager from catalog entry
+			lang: '',         // populated by packManager from catalog entry
+			formatVersion: 1,
+			source: 'openbibleinfo/Bible-Passage-Reference-Parser',
+			books,
+		};
+	},
+};
+
+// ---------------------------------------------------------------------------
 // biblens-catalog reference format adapter
 // Fetches a pre-authored ReferenceFormatFile JSON from the BibLens repository.
 // ---------------------------------------------------------------------------
@@ -160,7 +256,7 @@ const biblensCatalogFormatAdapter: ReferenceFormatAdapter = {
 // ---------------------------------------------------------------------------
 
 const LANG_REGISTRY: Record<string, LanguagePackAdapter> = {
-	// 'openbibleinfo' adapter to be added when remote providers are configured
+	'openbibleinfo': openbibleinfoLanguagePackAdapter,
 };
 
 const FORMAT_REGISTRY: Record<string, ReferenceFormatAdapter> = {

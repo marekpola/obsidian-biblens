@@ -83,7 +83,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 
 				new Setting(langContainer)
 					.setName('Preferred language for reference recognition')
-					.setDesc('Language pack used to recognise Bible book names.')
+					.setDesc('Language pack used to recognise book names.')
 					.addDropdown(drop => {
 						drop.addOptions(options);
 						drop.setValue(this.plugin.settings.preferredLanguage);
@@ -91,7 +91,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 							this.plugin.settings.preferredLanguage = value;
 							await this.plugin.saveSettings();
 							await this.plugin.reloadScanner();
-							new Notice('BibLens: language updated');
+							new Notice('Language pack updated.');
 						});
 					});
 			})
@@ -114,7 +114,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 							this.plugin.settings.standardReferenceFormat = value;
 							await this.plugin.saveSettings();
 							await this.plugin.reloadScanner();
-							new Notice('BibLens: reference format updated');
+							new Notice('Reference format updated.');
 						});
 					});
 			})
@@ -132,7 +132,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 					this.plugin.settings.parsingRules = value as 'strict' | 'extended';
 					await this.plugin.saveSettings();
 					await this.plugin.reloadScanner();
-					new Notice('BibLens: parsing rules updated');
+					new Notice('Parsing rules updated.');
 				});
 			});
 	}

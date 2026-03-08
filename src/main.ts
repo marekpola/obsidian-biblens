@@ -113,22 +113,22 @@ export default class BibLensPlugin extends Plugin {
 		});
 
 		this.addCommand({
-			id: 'biblens-open-settings',
-			name: 'Open BibLens Settings',
+			id: 'open-settings',
+			name: 'Open settings',
 			callback: () => {
-				const app = this.app as any;
-				app.setting.open();
-				app.setting.openTabById(this.manifest.id);
+				const setting = (this.app as unknown as { setting: { open(): void; openTabById(id: string): void } }).setting;
+				setting.open();
+				setting.openTabById(this.manifest.id);
 			}
 		});
 
 		this.addCommand({
-			id: 'biblens-reload',
-			name: 'Reload BibLens (for development)',
+			id: 'reload-for-development',
+			name: 'Reload for development',
 			callback: async () => {
 				await this.reloadTranslation();
 				await this.reloadScanner();
-				new Notice('BibLens reloaded.');
+				new Notice('Plugin reloaded.');
 			}
 		});
 

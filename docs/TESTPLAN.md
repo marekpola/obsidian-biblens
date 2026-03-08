@@ -476,6 +476,65 @@ Expected:
 
 ---
 
+## Task 25 – openbibleinfo Language Pack Adapter
+
+### 25a – Adapter unit tests (automated)
+
+Covered by `tests/sources.test.ts`:
+- `getLanguagePackAdapter("openbibleinfo")` returns an adapter without throwing.
+- `buildUrl` constructs correct URL for Czech: `.../src/cs/data.txt`.
+- `transform` maps OSIS ids to USFM keys covering canonical books.
+- `transform` expands `$VAR` references into all values (e.g. `$FIRST Mojžíšova` → "První Mojžíšova", "1 Mojžíšova", "I Mojžíšova").
+- `transform` skips aliases containing regex meta-characters (`?`, `[`, `]`).
+- `transform` skips deuterocanonical books not in the 66-book Protestant canon (e.g. Tob, Sir).
+- `transform` ignores comment, variable-def, preferred-names, and order lines.
+- `transform` deduplicates identical aliases.
+- `transform` returns `formatVersion: 1` and `source: "openbibleinfo/Bible-Passage-Reference-Parser"`.
+- `KNOWN_PROVIDERS.languagePackProviders` contains an openbibleinfo entry with ≥14 packs including cs, en, de.
+- Each `languagePackProvider` has a registered adapter type.
+
+### 25b – Download Czech language pack (manual, requires network)
+
+Setup:
+- Active network connection.
+- No `recognition-languages/cs.json` present in the plugin directory.
+
+Steps:
+1. Open Settings → BibLens → Install sources → Recognition languages.
+2. Select provider "openbibleinfo (Bible-Passage-Reference-Parser)".
+3. Select language "Czech".
+4. Click **Download**.
+
+Expected:
+- Download completes without error; a Notice confirms.
+- File `recognition-languages/cs.json` is created in the plugin directory.
+- File is valid JSON with `id: "cs"`, `lang: "cs"`, `formatVersion: 1`.
+- `books` object contains USFM-keyed entries, e.g. `"GEN"`, `"MAT"`, `"REV"`.
+- Each book entry has a non-empty `aliases` array.
+- No deuterocanonical entries (e.g. no `"TOB"`, `"SIR"` keys).
+
+### 25c – Language pack appears in installed list (manual)
+
+Steps:
+1. After downloading (25b), open Settings → BibLens → Installed recognition languages.
+
+Expected:
+- "Czech" appears in the list with language tag `cs`.
+- A Delete button is present.
+
+### 25d – Selecting Czech language pack activates Czech book names (manual)
+
+Steps:
+1. In Settings → BibLens → General, set **Preferred language for reference recognition** to "Czech".
+2. Open a note containing `Gn 1,1` (Czech abbreviation).
+3. Hover over the reference in Reading View or Live Preview.
+
+Expected:
+- Reference is detected and a tooltip/popover displays verse content.
+- No console errors.
+
+---
+
 ## Mobile Compatibility (Periodic Check)
 
 Note:

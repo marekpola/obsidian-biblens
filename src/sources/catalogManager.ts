@@ -65,8 +65,8 @@ export async function loadCatalog(
 		) {
 			return {
 				translationProviders: parsed.translationProviders,
-				languagePackProviders: parsed.languagePackProviders as LanguagePackProvider[],
-				referenceFormatProviders: parsed.referenceFormatProviders as ReferenceFormatProvider[],
+				languagePackProviders: parsed.languagePackProviders,
+				referenceFormatProviders: parsed.referenceFormatProviders,
 			};
 		}
 	} catch {
@@ -99,8 +99,8 @@ export async function fetchCatalogUpdate(
 
 		const filtered = filterCatalog({
 			translationProviders: parsed.translationProviders,
-			languagePackProviders: parsed.languagePackProviders as LanguagePackProvider[],
-			referenceFormatProviders: parsed.referenceFormatProviders as ReferenceFormatProvider[],
+			languagePackProviders: parsed.languagePackProviders,
+			referenceFormatProviders: parsed.referenceFormatProviders,
 		});
 
 		const updatedAt = parsed.updatedAt ?? new Date().toISOString();
