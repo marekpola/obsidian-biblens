@@ -18,28 +18,8 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 ## Active
 
-
-
 ---
 ## Next
-
-### Task 22 – Reference Format Loader and Registry
-Issue: #10
-
-#### Goal
-Implement reading and listing of reference format packs from `reference-formats/` in the plugin directory.
-
-#### Scope
-- `src/referenceFormatLoader.ts`: implement `loadReferenceFormat(adapter, pluginDir, id): Promise<{ rules: ReferenceFormatRules; meta: ReferenceFormatMeta }>` — reads `reference-formats/${id}.json`, validates mandatory fields (`rules` + `books`), returns `ReferenceFormatRules` (which includes `books: Record<string, string>`)
-- `src/referenceFormatRegistry.ts`: implement `listAvailableReferenceFormats(adapter, pluginDir): Promise<ReferenceFormatMeta[]>` — scans `reference-formats/` and returns metadata from each `.json` file
-
-#### Definition of Done
-- Loading a valid format pack JSON produces a correct `ReferenceFormatRules` object including `books` (USFM → canonical abbreviation map)
-- Registry returns an empty array (not an error) when the directory does not exist
-- Both modules may import from `obsidian`; neither imports from DOM APIs
-- `npm run check` and `npm run ci` pass
-
----
 
 ### Task 23 – buildRefScanner: Format Rules and Parsing Mode
 Issue: #10
@@ -65,6 +45,7 @@ Extend the parser with `buildRefScanner` that compiles a regex once from a given
 - `npm run check` and `npm run ci` pass
 
 ---
+
 
 ### Task 24 – Settings UI and main.ts Wiring
 Issue: #10
@@ -121,6 +102,26 @@ Add a copy button to the hover popover and editor tooltip that copies the full f
 
 ---
 ## Done
+
+
+### Task 22 – Reference Format Loader and Registry
+Issue: #10
+
+#### Goal
+Implement reading and listing of reference format packs from `reference-formats/` in the plugin directory.
+
+#### Scope
+- `src/referenceFormatLoader.ts`: implement `loadReferenceFormat(adapter, pluginDir, id): Promise<{ rules: ReferenceFormatRules; meta: ReferenceFormatMeta }>` — reads `reference-formats/${id}.json`, validates mandatory fields (`rules` + `books`), returns `ReferenceFormatRules` (which includes `books: Record<string, string>`)
+- `src/referenceFormatRegistry.ts`: implement `listAvailableReferenceFormats(adapter, pluginDir): Promise<ReferenceFormatMeta[]>` — scans `reference-formats/` and returns metadata from each `.json` file
+
+#### Definition of Done
+- Loading a valid format pack JSON produces a correct `ReferenceFormatRules` object including `books` (USFM → canonical abbreviation map)
+- Registry returns an empty array (not an error) when the directory does not exist
+- Both modules may import from `obsidian`; neither imports from DOM APIs
+- `npm run check` and `npm run ci` pass
+
+
+
 
 ### Task 21 – Language Pack Loader and Registry
 Issue: #10

@@ -357,6 +357,37 @@ Expected: no output.
 
 ---
 
+## Task 22 – Reference Format Loader and Registry
+
+### 22a – Loader: valid pack produces correct ReferenceFormatRules (automated)
+
+Covered by `tests/referenceFormatLoader.test.ts`:
+- Valid pack returns `rules` with correct `chapterVerseSeparator`, `rangeSeparator`, `bookChapterSeparator`.
+- `rules.books` contains USFM → canonical abbreviation entries from the JSON file.
+- `meta.id`, `meta.displayName`, `meta.lang` match the JSON fields.
+- Reads from `reference-formats/${id}.json` path.
+- Throws on unsupported `formatVersion`.
+- Throws when mandatory fields (`rules`, `books`, `displayName`, etc.) are missing.
+
+### 22b – Registry: returns empty array when directory absent (automated)
+
+Covered by `tests/referenceFormatRegistry.test.ts`:
+- `adapter.list` throws → returns `[]`, no error propagated.
+- Empty file list → returns `[]`.
+- Returns correct `ReferenceFormatMeta` fields for each `.json` file found.
+- Ignores non-`.json` files.
+- Falls back to id-based meta when a file cannot be read.
+
+### 22c – No DOM API imports (static check)
+
+Run:
+```
+grep -E "document\.|window\.|navigator\." src/referenceFormatLoader.ts src/referenceFormatRegistry.ts
+```
+Expected: no output.
+
+---
+
 ## Task 18 – Initial Source Catalog: 2+ Czech Bible Translation Providers
 
 ### 18a – Providers visible in Translation Sources panel

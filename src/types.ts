@@ -6,6 +6,19 @@ export type LanguagePackMeta = {
   lang: string;
 };
 
+export type ReferenceFormatMeta = {
+  id: string;
+  displayName: string;
+  lang: string;
+};
+
+export type ReferenceFormatRules = {
+  chapterVerseSeparator: string;
+  rangeSeparator: string;
+  bookChapterSeparator: string;
+  books: Record<string, string>;
+};
+
 export type TranslationMeta = {
   id: string;
   displayName: string;
