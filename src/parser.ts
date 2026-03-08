@@ -68,12 +68,12 @@ export function buildRefScanner(
     cvPattern = `\\d+(?:[,:]\\d+(?:-\\d+)?)?`;
   }
 
-  const source = `\\b((?:[1-3])?[A-ZÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ][a-záčďéěíňóřšťůúýž]{0,10})\\s+(${cvPattern})`;
+  const re = new RegExp(`\\b((?:[1-3])?[A-ZÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ][a-záčďéěíňóřšťůúýž]{0,10})\\s+(${cvPattern})`, 'g');
 
   return {
     scan(text: string): RefMatch[] {
       const matches: RefMatch[] = [];
-      const re = new RegExp(source, 'g');
+      re.lastIndex = 0;
       let m: RegExpExecArray | null;
       while ((m = re.exec(text)) !== null) {
         const lineStart = text.lastIndexOf('\n', m.index - 1) + 1;
