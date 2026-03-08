@@ -18,24 +18,6 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 ## Active
 
-## Next
-
-### Task 20 – OSIS→USFM Mapping
-Issue: #10
-
-#### Goal
-Implement the static OSIS→USFM 3.0 lookup table used by adapters to convert OSIS book identifiers (e.g. `Gen`, `Matt`) to USFM identifiers (e.g. `GEN`, `MAT`) during download transformation. Pack files store USFM keys; this module is not used by the loaders.
-
-#### Scope
-- `src/osisMapping.ts`: implement `osisToUsfm(osisId: string): BookId | undefined` — static map covering all 66 canonical books; no Obsidian imports
-
-#### Definition of Done
-- `osisToUsfm("Gen")` returns `"GEN"`, `osisToUsfm("Matt")` returns `"MAT"`, unknown input returns `undefined`
-- Module has no Obsidian imports
-- `npm run check` and `npm run ci` pass
-
----
-
 ### Task 21 – Language Pack Loader and Registry
 Issue: #10
 
@@ -54,6 +36,7 @@ Implement reading and listing of recognition language packs from `recognition-la
 - `npm run check` and `npm run ci` pass
 
 ---
+## Next
 
 ### Task 22 – Reference Format Loader and Registry
 Issue: #10
@@ -153,6 +136,25 @@ Add a copy button to the hover popover and editor tooltip that copies the full f
 
 ---
 ## Done
+
+
+
+### Task 20 – OSIS→USFM Mapping
+Issue: #10
+
+#### Goal
+Implement the static OSIS→USFM 3.0 lookup table used by adapters to convert OSIS book identifiers (e.g. `Gen`, `Matt`) to USFM identifiers (e.g. `GEN`, `MAT`) during download transformation. Pack files store USFM keys; this module is not used by the loaders.
+
+#### Scope
+- `src/osisMapping.ts`: implement `osisToUsfm(osisId: string): BookId | undefined` — static map covering all 66 canonical books; no Obsidian imports
+
+#### Definition of Done
+- `osisToUsfm("Gen")` returns `"GEN"`, `osisToUsfm("Matt")` returns `"MAT"`, unknown input returns `undefined`
+- Module has no Obsidian imports
+- `npm run check` and `npm run ci` pass
+
+---
+
 
 ### Task 19 – Settings UI Restructure
 Issue: #9
