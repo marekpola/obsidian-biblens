@@ -1,4 +1,4 @@
-import { MarkdownPostProcessorContext, Notice, Plugin } from 'obsidian';
+import { App,MarkdownPostProcessorContext, Notice, Plugin } from 'obsidian';
 import { EditorView } from '@codemirror/view';
 import { fetchCatalogUpdate } from './sources/catalogManager';
 import { isCatalogStale } from './sources/catalogUtils';
@@ -109,6 +109,26 @@ export default class BibLensPlugin extends Plugin {
 					this.settings.verseInsertionFormat,
 					this._refFormat
 				)(view);
+			}
+		});
+
+		this.addCommand({
+			id: 'biblens-open-settings',
+			name: 'Open BibLens Settings',
+			callback: () => {
+				const app = this.app as any;
+				app.setting.open();
+				app.setting.openTabById(this.manifest.id);
+			}
+		});
+
+		this.addCommand({
+			id: 'biblens-reload',
+			name: 'Reload BibLens (for development)',
+			callback: async () => {
+				await this.reloadTranslation();
+				await this.reloadScanner();
+				new Notice('BibLens reloaded.');
 			}
 		});
 

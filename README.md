@@ -143,6 +143,11 @@ Book identifiers follow the [USFM 3.0 standard](https://ubsicap.github.io/usfm/u
 Legacy flat-format files (plain `Record<string, string>` with dot-separated keys) continue
 to load without modification.
 
+BibLens ships with the World English Bible (WEB), which is in the public domain.
+
+Other Bible translations may be added by users in the `translations/` directory,
+subject to their respective licenses.
+
 ---
 
 ## Settings Reference

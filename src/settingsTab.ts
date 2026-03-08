@@ -138,73 +138,88 @@ export class BibLensSettingTab extends PluginSettingTab {
 	}
 
 	private renderInstalledTranslations(containerEl: HTMLElement): void {
-		new Setting(containerEl).setName('Installed translations').setHeading();
-		const installedContainer = containerEl.createDiv();
+	new Setting(containerEl).setName('Installed translations').setHeading();
 
-		listAvailableTranslations(this.app.vault.adapter, this.plugin.manifest.dir!)
-			.then(translations => {
-				if (translations.length === 0) {
-					installedContainer.createEl('p', {
-						text: 'No translation files found.',
-						cls: 'setting-item-description',
+	const activeContainer = containerEl.createDiv();
+	const detailsEl = containerEl.createEl('details');
+	const summaryEl = detailsEl.createEl('summary', { text: 'Other installed translations' });
+	summaryEl.addClass('biblens-settings-summary');
+
+	const hiddenContainer = detailsEl.createDiv();
+
+	listAvailableTranslations(this.app.vault.adapter, this.plugin.manifest.dir!)
+		.then(translations => {
+			if (translations.length === 0) {
+				activeContainer.createEl('p', {
+					text: 'No translation files found.',
+					cls: 'setting-item-description',
+				});
+				detailsEl.remove();
+				return;
+			}
+
+			const active = translations.find(t => t.id === this.plugin.settings.preferredTranslation) ?? null;
+			const others = translations.filter(t => t.id !== this.plugin.settings.preferredTranslation);
+
+			if (active) {
+				const desc = [
+					active.lang ? `Language: ${active.lang}` : '',
+					active.source ? `Source: ${active.source}` : '',
+					'Active',
+				].filter(Boolean).join(' · ');
+
+				new Setting(activeContainer)
+					.setName(active.displayName)
+					.setDesc(desc);
+			}
+
+			if (others.length === 0) {
+				detailsEl.remove();
+				return;
+			}
+
+			summaryEl.setText(`Other installed translations (${others.length})`);
+
+			for (const t of others) {
+				const desc = [
+					t.lang ? `Language: ${t.lang}` : '',
+					t.source ? `Source: ${t.source}` : '',
+				].filter(Boolean).join(' · ');
+
+				const setting = new Setting(hiddenContainer)
+					.setName(t.displayName)
+					.setDesc(desc);
+
+				setting.addButton(btn => {
+					btn.setButtonText('Set as default');
+					btn.onClick(async () => {
+						btn.setDisabled(true);
+						this.plugin.settings.preferredTranslation = t.id;
+						await this.plugin.saveSettings();
+						await this.plugin.reloadTranslation();
+						new Notice(`BibLens: switched to ${t.displayName}`);
+						this.display();
 					});
-					return;
-				}
+				});
 
-				for (const t of translations) {
-					const isActive = t.id === this.plugin.settings.preferredTranslation;
-					const desc = [
-						t.lang ? `Language: ${t.lang}` : '',
-						t.source ? `Source: ${t.source}` : '',
-						isActive ? 'Active' : '',
-					].filter(Boolean).join(' · ');
-
-					const setting = new Setting(installedContainer)
-						.setName(t.displayName)
-						.setDesc(desc);
-
-					if (!isActive) {
-						setting.addButton(btn => {
-							btn.setButtonText('Set as default');
-							btn.onClick(async () => {
-								btn.setDisabled(true);
-								this.plugin.settings.preferredTranslation = t.id;
-								await this.plugin.saveSettings();
-								await this.plugin.reloadTranslation();
-								new Notice(`BibLens: switched to ${t.displayName}`);
-								this.display();
-							});
-						});
-					}
-
-					setting.addButton(btn => {
-						btn.setButtonText('Delete');
-						btn.setWarning();
-						btn.onClick(async () => {
-							btn.setDisabled(true);
-							try {
-								await deleteTranslation(this.app.vault.adapter, this.plugin.manifest.dir!, t.id);
-								new Notice(`BibLens: ${t.displayName} deleted`);
-								if (isActive) {
-									const remaining = translations.filter(x => x.id !== t.id);
-									if (remaining.length > 0) {
-										this.plugin.settings.preferredTranslation = remaining[0]!.id;
-									} else {
-										this.plugin.settings.preferredTranslation = '';
-									}
-									await this.plugin.saveSettings();
-									await this.plugin.reloadTranslation();
-								}
-							} catch (e) {
-								new Notice(`BibLens: delete failed — ${e instanceof Error ? e.message : String(e)}`);
-							}
-							this.display();
-						});
+				setting.addButton(btn => {
+					btn.setButtonText('Delete');
+					btn.setWarning();
+					btn.onClick(async () => {
+						btn.setDisabled(true);
+						try {
+							await deleteTranslation(this.app.vault.adapter, this.plugin.manifest.dir!, t.id);
+							new Notice(`BibLens: ${t.displayName} deleted`);
+						} catch (e) {
+							new Notice(`BibLens: delete failed — ${e instanceof Error ? e.message : String(e)}`);
+						}
+						this.display();
 					});
-				}
-			})
-			.catch((e: unknown) => console.error('BibLens: failed to list translations', e));
-	}
+				});
+			}
+		})
+		.catch((e: unknown) => console.error('BibLens: failed to list translations', e));
+}
 
 	private renderInstalledFormats(containerEl: HTMLElement): void {
 		new Setting(containerEl).setName('Installed reference formats').setHeading();
@@ -326,11 +341,11 @@ export class BibLensSettingTab extends PluginSettingTab {
 		providers: SourceProvider[],
 		installedIds: Set<string>
 	): void {
-		new Setting(container).setName('Translations').setHeading();
-		const inner = container.createDiv();
+		//new Setting(container).setName('Translations').setHeading();
+		//const inner = container.createDiv();
 
 		if (providers.length === 0) {
-			inner.createEl('p', { text: 'No translation providers available.', cls: 'setting-item-description' });
+			new Setting(container).setName('Translations').setDesc('No translation providers available.');
 			return;
 		}
 
@@ -373,7 +388,8 @@ export class BibLensSettingTab extends PluginSettingTab {
 			return null;
 		};
 
-		new Setting(inner)
+		new Setting(container)
+			.setName('Translations')
 			.addDropdown(provDrop => {
 				provDrop.addOptions(providerOptions);
 				provDrop.setValue(selectedProviderId);
