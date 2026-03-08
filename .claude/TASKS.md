@@ -20,24 +20,6 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 ## Next
 
-### Task 11 – Custom Book Abbreviations
-
-#### Goal
-Allow users to define custom abbreviations that supplement or override built-in Czech defaults.
-
-#### Scope
-- `src/books.ts`: implement `buildAbbreviationMap(custom: CustomAbbreviations): AbbreviationMap` — merges built-in defaults with custom; custom wins on conflict; keys are regex-escaped
-- `src/parser.ts`: implement `buildRefScanner(map: AbbreviationMap): RefScanner` — compiles regex once from map keys; `scanRefs` delegates to a default scanner built from the built-in map
-- `refDecorationsExtension(scanner)` and `refTooltipExtension(scanner, data)` become factory functions; `main.ts` wires them with the built scanner
-- Settings tab: add `Custom abbreviations` text area (one `KEY → OSIS_ID` entry per line)
-- Scanner rebuilt after settings save
-
-#### Definition of Done
-- Custom abbreviation is detected in hover preview and editor decorations after settings save
-- Regex compiled once at startup/settings change, not per keystroke
-- `npm run check` and `npm run ci` pass
-
-
 ### Task 13 – Copy Verse Text to Clipboard
 Issue: #2
 

@@ -285,28 +285,108 @@ Constraints:
 
 ## Version 0.4
 
+Issue: #10
 
+### Goal
 
+Allow BibLens to recognize Bible references written in any language by supporting independently
+downloadable **recognition language packs** (book names per language) and **reference format packs**
+(notation rules per style). Multiple formats can exist for one language (e.g. Protestant, Catholic, Jewish).
 
-### Book Abbreviation Configuration
+Data source: [openbibleinfo/Bible-Passage-Reference-Parser](https://github.com/openbibleinfo/Bible-Passage-Reference-Parser)
+provides book name data for many languages and serves as the catalog source for recognition language packs.
+Minimize plugin bundle size: do not bundle the full dataset; download only selected packs on demand.
 
-#### Goal
+---
 
-Allow users to define custom book abbreviations that supplement or override the built-in defaults.
+### Recognition Language Packs
 
-Features:
+A recognition language pack provides the book names and abbreviations needed to identify Bible references
+written in a specific natural language.
 
-- Settings include a `Custom abbreviations` field where the user maps input strings to USFM 3.0 book IDs.
-  Example: `Jr, Jer, Jeremiáš → JER`
-- Custom abbreviations are merged with built-in defaults; custom entries win on conflict.
-- The parser regex is compiled from the active merged map at plugin startup.
-- Reference detection and hover previews respect the active abbreviation set.
+Each pack:
+- maps standard book identifiers to canonical display abbreviations and recognized input aliases for that language
+- uses OSIS book identifiers as keys (e.g. `Gen`, `Matt`, `Rev`)
+- is downloaded from the Install sources catalog and stored in `recognition-languages/` in the plugin directory
+- contains rules for parsing
 
-#### Constraints
+Multiple language packs can be installed simultaneously.
+The active pack is selected via **Preferred language for reference recognition** in General settings.
 
-- Built-in abbreviations remain as the default; the user does not need to redefine them.
-- Abbreviation keys are validated to prevent broken regex patterns.
-- Parser performance is unaffected: regex is compiled once, not on every keystroke.
+---
+
+### Reference Format Packs
+
+A reference format pack defines the notation rules for a reference style — how chapter and verse are
+separated, how ranges are expressed, and what structural patterns are valid.
+
+Examples of distinct formats for the same language:
+- Czech Protestant: `1 Te 1,1 ` 
+- Czech Catholic: `1 Sol 1,1` 
+
+Each pack:
+- specifies separator characters and structural rules for parsing and formatting references
+- is language-tagged but not locked to one language (a format may apply across languages)
+- is downloaded from the Install sources catalog and stored in `reference-formats/` in the plugin directory
+
+Multiple format packs can be installed simultaneously.
+The active format is selected via **Standard reference format** in General settings.
+
+---
+
+### OSIS→USFM Mapping
+
+The openbibleinfo project uses OSIS book identifiers (e.g. `Gen`, `Matt`).
+BibLens uses USFM 3.0 identifiers internally (e.g. `GEN`, `MAT`).
+The plugin bundles a static OSIS→USFM mapping table. This table is not user-configurable and requires no download.
+
+---
+
+### Parsing Modes
+
+A **Parsing rules** setting controls how aggressively the parser identifies references:
+
+- **Strict** — only detect references that fully conform to the active reference format pack (separators, spacing, structure)
+- **Extended** — detect references using the active language pack's book names, but accept multiple separator variants (comma, colon, period, etc.) regardless of the active format pack; false positives are accepted (recall is favoured over precision)
+
+Both modes operate exclusively within the active language pack — book names from other languages are never matched.
+
+Default: Strict.
+
+---
+
+### Settings Changes
+
+#### General section additions
+
+- **Standard reference format** — dropdown from installed reference format packs
+- **Preferred language for reference recognition** — dropdown from installed recognition language packs;
+  description: “Biblical references are identified using this language”
+- **Parsing rules** — dropdown: Strict / Extended;
+  description: “Identify biblical references only when they follow a standard format”
+
+#### New sections (after Installed translations)
+
+- **Installed reference formats** — lists downloaded format packs; each entry shows name and language, with a Delete button
+- **Installed recognition languages** — lists downloaded language packs; each entry shows name and language, with a Delete button
+
+#### Install sources section
+
+Renamed from “Get translations”. Three sub-sections:
+
+1. **Translations** — existing translation download UI (unchanged)
+2. **Reference formats** — provider dropdown + format dropdown + Download button
+3. **Recognition languages** — provider dropdown + language dropdown + Download button
+
+---
+
+### Constraints
+
+- Recognition language packs and reference format packs are independent; any combination can be active.
+- The bundled Czech defaults remain available offline without downloading any pack.
+- All network access is explicit user action (download button); no silent background downloads by default.
+- Pack format and storage details are defined in `docs/ARCHITECTURE.md`.
+- Providers in the fetched catalog that reference an unknown pack type are silently ignored.
 
 
 

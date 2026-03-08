@@ -267,3 +267,37 @@ Consequences:
 - Settings UI gains: last-updated label, "Update Now" button, "Auto-update on startup" toggle
 Revisit: if catalog size grows enough that full replacement is wasteful (consider delta updates).
 Date: 2026-03-05
+
+## D019 – v0.4: Language pack and format pack architecture for multi-language reference recognition
+
+Decision: Reference recognition is generalized through two independently downloadable pack types:
+
+1. **Recognition language packs** — JSON files in `recognition-languages/`; provide book names and abbreviations per language keyed by OSIS identifiers; converted to `AbbreviationMap` via a new centralized `src/osisMapping.ts` module (OSIS→USFM 3.0 lookup table).
+2. **Reference format packs** — JSON files in `reference-formats/`; define notation rules (`ReferenceFormatRules`: separators, range notation) for a reference style; multiple formats can exist per language (e.g. Protestant, Catholic, Jewish).
+
+`buildRefScanner(map, format?, mode?)` is extended with optional `ReferenceFormatRules` and `ParsingMode` (`'strict' | 'extended'`). All parameters default to built-in Czech Protestant behaviour, preserving offline operation without any downloaded packs.
+
+`customAbbreviations` is removed from `settings.ts` and `books.ts`; language packs subsume its role. `buildAbbreviationMap(custom)` is removed; replaced by `getBuiltInAbbreviationMap()` (offline fallback).
+
+The source catalog schema advances from `schemaVersion: 1` to `schemaVersion: 2`, adding `languagePackProviders` and `referenceFormatProviders` arrays alongside the existing `translationProviders`. Older plugin versions reject a v2 catalog and fall back to bundled `KNOWN_PROVIDERS` — safe degradation via the existing `schemaVersion` guard (D016).
+
+A new pure module `src/osisMapping.ts` centralizes OSIS→USFM conversion, replacing per-adapter inline mappings in `adapters.ts`.
+
+New Obsidian-aware loader/registry pairs follow the translation pattern (D009, D012):
+- `src/languagePackLoader.ts` / `src/languagePackRegistry.ts` — `recognition-languages/` directory
+- `src/referenceFormatLoader.ts` / `src/referenceFormatRegistry.ts` — `reference-formats/` directory
+
+Reason: Decoupling book names (language pack) from notation rules (format pack) allows any combination to be active, enabling e.g. Czech book names with Catholic notation. OSIS-keyed pack format aligns directly with openbibleinfo data, minimizing transformation complexity. The catalog schema version bump ensures forward-compatible degradation in older plugin versions.
+
+Consequences:
+- `src/osisMapping.ts` — pure; no Obsidian imports
+- `src/languagePackLoader.ts`, `src/languagePackRegistry.ts` — Obsidian-aware
+- `src/referenceFormatLoader.ts`, `src/referenceFormatRegistry.ts` — Obsidian-aware
+- `src/settings.ts` gains: `preferredLanguage`, `standardReferenceFormat`, `parsingRules`; loses `customAbbreviations`
+- `src/books.ts` gains: `getBuiltInAbbreviationMap()`; loses `CustomAbbreviations` type and `buildAbbreviationMap(custom)`
+- `src/parser.ts` `buildRefScanner` signature extended (backwards-compatible via optional params)
+- `src/sources/catalog.ts` schema updated to v2; `KNOWN_PROVIDERS` structure updated accordingly
+- Settings UI gains: Preferred language and Standard reference format dropdowns; Parsing rules toggle; Installed recognition languages and Installed reference formats sections; Install sources extended with language pack and format pack sub-sections
+
+Supersedes: D013 (custom abbreviation mechanism — replaced by language packs).
+Date: 2026-03-08
