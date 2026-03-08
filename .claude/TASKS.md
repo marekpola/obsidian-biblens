@@ -18,41 +18,7 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 ## Active
 
-### Task 25 – openbibleinfo Language Pack Adapter
 
-#### Goal
-Implement the `"openbibleinfo"` adapter for recognition language packs and register it with provider entries in the source catalog.
-
-#### Data source
-`https://raw.githubusercontent.com/openbibleinfo/Bible-Passage-Reference-Parser/master/src/{lang}/data.txt`
-
-The `data.txt` file format:
-- Variable lines: `$KEY value1 value2 …` (e.g. `$FIRST První 1 I`)
-- Book alias lines: `OsisId alias1 alias2 …` (tab-separated; variable references like `$FIRST` are pre-expanded)
-- Preferred names section (after `# Preferred names` comment): `*OsisId Long Short Shorter Single` (tab-separated)
-- Order section (after `# Order` comment): `=OsisId` — canonical book order
-
-#### Scope
-- `src/sources/adapters.ts`:
-  - Implement `OpenbibleinfoLanguagePackAdapter` class implementing `LanguagePackAdapter`
-  - `buildUrl(provider, entry)`: returns `${provider.baseUrl}/src/${entry.remoteId}/data.txt`
-  - `transform(raw: unknown)`:
-    1. Parse alias lines: collect all aliases per OSIS id (from the non-`*` book lines, excluding `# Order` and `# Preferred names` sections; expand variable references like `$FIRST`→`První 1 I`)
-    2. Convert OSIS id → USFM via `osisMapping.ts`; skip any id that does not map (deuterocanonical books not in USFM 66-book canon)
-    3. Produce `LanguagePackFile` with `formatVersion: 1`, USFM keys, `source: "openbibleinfo/Bible-Passage-Reference-Parser"`
-  - Register under `getLanguagePackAdapter("openbibleinfo")`
-- `src/sources/catalog.ts`:
-  - Add `languagePackProviders` entry for openbibleinfo:
-    - `id: "openbibleinfo"`, `adapterType: "openbibleinfo"`, `baseUrl: "https://raw.githubusercontent.com/openbibleinfo/Bible-Passage-Reference-Parser/master"`
-    - Include at minimum these languages in `packs`: `cs` (Czech), `en` (English), `de` (German), `pl` (Polish), `sk` (Slovak), `hu` (Hungarian), `ro` (Romanian), `uk` (Ukrainian), `ru` (Russian), `fr` (French), `it` (Italian), `es` (Spanish), `pt` (Portuguese), `nl` (Dutch)
-    - Each entry: `{ id: "{lang}", displayName: "{Language}", language: "{lang}", remoteId: "{lang}" }`
-
-#### Definition of Done
-- `transform()` on Czech `data.txt` produces a `LanguagePackFile` with USFM keys covering all 66 canonical books, each with at least one alias
-- `transform()` skips deuterocanonical books not in USFM 66-book canon without throwing
-- `getLanguagePackAdapter("openbibleinfo")` returns the adapter without error
-- `adapters.ts` has no Obsidian imports
-- `npm run check` and `npm run ci` pass
 
 ## Next
 
@@ -109,28 +75,7 @@ The `Short` column (index 2) is the preferred canonical abbreviation; fall back 
 
 ---
 
-### Task 27 – Static Czech Protestant Reference Format Pack
 
-#### Goal
-Author and ship a hand-crafted Czech Protestant reference format pack as a bundled file.
-
-#### Scope
-- Create `reference-formats/cs-protestant.json` conforming to the `ReferenceFormatFile` schema (see `docs/ARCHITECTURE.md` → Pack File Formats)
-- Format rules:
-  - `chapterVerseSeparator: ","`
-  - `rangeSeparator: "-"`
-  - `bookChapterSeparator: " "`
-- `id: "cs-protestant"`, `displayName: "Czech Protestant"`, `lang: "cs"`, `formatVersion: 1`, `source: "manual"`
-- `books`: canonical Czech Protestant abbreviations for all 66 canonical USFM books, drawn from the openbibleinfo Czech preferred names `Short` column (and `Shorter` fallback); see the `data.txt` preferred names section researched for Tasks 25–26
-- Example entries: `"GEN": "Gn"`, `"MAT": "Mt"`, `"REV": "Zj"`
-
-#### Definition of Done
-- `reference-formats/cs-protestant.json` is valid JSON conforming to `ReferenceFormatFile` schema
-- `books` map covers exactly the 66 canonical USFM book ids (no deuterocanonical entries)
-- Loading the file via `referenceFormatLoader.ts` produces a correct `ReferenceFormatRules` object
-- `npm run check` and `npm run ci` pass (no build changes required — this is a data file only)
-
----
 
 ## Future 
 
@@ -160,6 +105,67 @@ Add a copy button to the hover popover and editor tooltip that copies the full f
 
 ---
 ## Done
+### Task 27 – Static Czech Protestant Reference Format Pack
+
+#### Goal
+Author and ship a hand-crafted Czech Protestant reference format pack as a bundled file.
+
+#### Scope
+- Create `reference-formats/cs-protestant.json` conforming to the `ReferenceFormatFile` schema (see `docs/ARCHITECTURE.md` → Pack File Formats)
+- Format rules:
+  - `chapterVerseSeparator: ","`
+  - `rangeSeparator: "-"`
+  - `bookChapterSeparator: " "`
+- `id: "cs-protestant"`, `displayName: "Czech Protestant"`, `lang: "cs"`, `formatVersion: 1`, `source: "manual"`
+- `books`: canonical Czech Protestant abbreviations for all 66 canonical USFM books, drawn from the openbibleinfo Czech preferred names `Short` column (and `Shorter` fallback); see the `data.txt` preferred names section researched for Tasks 25–26
+- Example entries: `"GEN": "Gn"`, `"MAT": "Mt"`, `"REV": "Zj"`
+
+#### Definition of Done
+- `reference-formats/cs-protestant.json` is valid JSON conforming to `ReferenceFormatFile` schema
+- `books` map covers exactly the 66 canonical USFM book ids (no deuterocanonical entries)
+- Loading the file via `referenceFormatLoader.ts` produces a correct `ReferenceFormatRules` object
+- `npm run check` and `npm run ci` pass (no build changes required — this is a data file only)
+
+---
+
+### Task 25 – openbibleinfo Language Pack Adapter
+
+#### Goal
+Implement the `"openbibleinfo"` adapter for recognition language packs and register it with provider entries in the source catalog.
+
+#### Data source
+`https://raw.githubusercontent.com/openbibleinfo/Bible-Passage-Reference-Parser/master/src/{lang}/data.txt`
+
+The `data.txt` file format:
+- Variable lines: `$KEY value1 value2 …` (e.g. `$FIRST První 1 I`)
+- Book alias lines: `OsisId alias1 alias2 …` (tab-separated; variable references like `$FIRST` are pre-expanded)
+- Preferred names section (after `# Preferred names` comment): `*OsisId Long Short Shorter Single` (tab-separated)
+- Order section (after `# Order` comment): `=OsisId` — canonical book order
+
+#### Scope
+- `src/sources/adapters.ts`:
+  - Implement `OpenbibleinfoLanguagePackAdapter` class implementing `LanguagePackAdapter`
+  - `buildUrl(provider, entry)`: returns `${provider.baseUrl}/src/${entry.remoteId}/data.txt`
+  - `transform(raw: unknown)`:
+    1. Parse alias lines: collect all aliases per OSIS id (from the non-`*` book lines, excluding `# Order` and `# Preferred names` sections; expand variable references like `$FIRST`→`První 1 I`)
+    2. Convert OSIS id → USFM via `osisMapping.ts`; skip any id that does not map (deuterocanonical books not in USFM 66-book canon)
+    3. Produce `LanguagePackFile` with `formatVersion: 1`, USFM keys, `source: "openbibleinfo/Bible-Passage-Reference-Parser"`
+  - Register under `getLanguagePackAdapter("openbibleinfo")`
+- `src/sources/catalog.ts`:
+  - Add `languagePackProviders` entry for openbibleinfo:
+    - `id: "openbibleinfo"`, `adapterType: "openbibleinfo"`, `baseUrl: "https://raw.githubusercontent.com/openbibleinfo/Bible-Passage-Reference-Parser/master"`
+    - Include at minimum these languages in `packs`: `cs` (Czech), `en` (English), `de` (German), `pl` (Polish), `sk` (Slovak), `hu` (Hungarian), `ro` (Romanian), `uk` (Ukrainian), `ru` (Russian), `fr` (French), `it` (Italian), `es` (Spanish), `pt` (Portuguese), `nl` (Dutch)
+    - Each entry: `{ id: "{lang}", displayName: "{Language}", language: "{lang}", remoteId: "{lang}" }`
+
+#### Definition of Done
+- `transform()` on Czech `data.txt` produces a `LanguagePackFile` with USFM keys covering all 66 canonical books, each with at least one alias
+- `transform()` skips deuterocanonical books not in USFM 66-book canon without throwing
+- `getLanguagePackAdapter("openbibleinfo")` returns the adapter without error
+- `adapters.ts` has no Obsidian imports
+- `npm run check` and `npm run ci` pass
+
+
+
 
 ### Task 28 – Open Plugin Settings Command
 
