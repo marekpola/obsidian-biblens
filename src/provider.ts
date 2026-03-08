@@ -1,10 +1,10 @@
-import type { BibleRef } from "./types";
+import type { BibleRef, ReferenceFormatRules } from "./types";
 import { formatRef } from "./parser";
 
 export type VerseEntry = { label: string; text: string };
 export type TranslationData = Record<string, string>;
 
-export function getVerses(data: TranslationData, ref: BibleRef): VerseEntry[] {
+export function getVerses(data: TranslationData, ref: BibleRef, refFormat?: ReferenceFormatRules): VerseEntry[] {
   const entries: VerseEntry[] = [];
 
   if (ref.verseStart === undefined) {
@@ -18,7 +18,7 @@ export function getVerses(data: TranslationData, ref: BibleRef): VerseEntry[] {
     for (const v of verseNums) {
       const text = data[`${prefix}${v}`];
       if (text === undefined) continue;
-      const label = entries.length === 0 ? formatRef(ref) : String(v);
+      const label = entries.length === 0 ? formatRef(ref, refFormat) : String(v);
       entries.push({ label, text });
     }
     return entries;
@@ -29,7 +29,7 @@ export function getVerses(data: TranslationData, ref: BibleRef): VerseEntry[] {
     const key = `${ref.bookId}.${ref.chapterStart}.${v}`;
     const text = data[key];
     if (text === undefined) continue;
-    const label = entries.length === 0 ? formatRef(ref) : String(v);
+    const label = entries.length === 0 ? formatRef(ref, refFormat) : String(v);
     entries.push({ label, text });
   }
 

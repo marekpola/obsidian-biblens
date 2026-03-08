@@ -8,6 +8,9 @@ export interface BibLensSettings {
 	verseInsertionFormat: InsertionFormat;
 	autoUpdateCatalog: boolean;
 	catalogLastUpdated: string;
+	preferredLanguage: string;
+	standardReferenceFormat: string;
+	parsingRules: 'strict' | 'extended';
 }
 
 export const DEFAULT_SETTINGS: BibLensSettings = {
@@ -16,4 +19,7 @@ export const DEFAULT_SETTINGS: BibLensSettings = {
 	verseInsertionFormat: 'blockquote',
 	autoUpdateCatalog: false,
 	catalogLastUpdated: '',
+	preferredLanguage: '',
+	standardReferenceFormat: '',
+	parsingRules: 'strict',
 };

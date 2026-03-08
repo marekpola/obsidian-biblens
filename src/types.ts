@@ -19,6 +19,8 @@ export type ReferenceFormatRules = {
   books: Record<string, string>;
 };
 
+export type ParsingMode = 'strict' | 'extended';
+
 export type TranslationMeta = {
   id: string;
   displayName: string;

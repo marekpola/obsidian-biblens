@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { parseCzechBibleRef, scanRefs } from "../src/parser";
+import { parseCzechBibleRef, scanRefs, buildRefScanner, formatRef } from "../src/parser";
+import { BOOK_ALIASES, BUILT_IN_FORMAT_RULES } from "../src/books";
 
 describe("parseCzechBibleRef", () => {
   it("parses Mt 1,3", () => {
@@ -29,6 +30,71 @@ describe("parseCzechBibleRef", () => {
     if (r.ok) {
       expect(r.ref).toEqual({ bookId: "ISA", chapterStart: 11 });
     }
+  });
+});
+
+describe("buildRefScanner – strict mode (BUILT_IN_FORMAT_RULES)", () => {
+  const scanner = buildRefScanner(BOOK_ALIASES, BUILT_IN_FORMAT_RULES, 'strict');
+
+  it("detects Matt 1:3", () => {
+    const matches = scanner.scan("Matt 1:3");
+    expect(matches).toHaveLength(1);
+    expect(matches[0]!.ref).toEqual({ bookId: "MAT", chapterStart: 1, verseStart: 3 });
+  });
+
+  it("detects Gen 22:1-19", () => {
+    const matches = scanner.scan("Gen 22:1-19");
+    expect(matches).toHaveLength(1);
+    expect(matches[0]!.ref).toEqual({ bookId: "GEN", chapterStart: 22, verseStart: 1, verseEnd: 19 });
+  });
+
+  it("does NOT detect Matt 1,3 in strict mode", () => {
+    const matches = scanner.scan("Matt 1,3");
+    expect(matches).toHaveLength(0);
+  });
+});
+
+describe("buildRefScanner – extended mode", () => {
+  const scanner = buildRefScanner(BOOK_ALIASES, BUILT_IN_FORMAT_RULES, 'extended');
+
+  it("detects Matt 1:3", () => {
+    const matches = scanner.scan("Matt 1:3");
+    expect(matches).toHaveLength(1);
+    expect(matches[0]!.ref.bookId).toBe("MAT");
+  });
+
+  it("additionally detects Matt 1,3", () => {
+    const matches = scanner.scan("Matt 1,3");
+    expect(matches).toHaveLength(1);
+    expect(matches[0]!.ref).toEqual({ bookId: "MAT", chapterStart: 1, verseStart: 3 });
+  });
+
+  it("additionally detects Gen 22,1-19", () => {
+    const matches = scanner.scan("Gen 22,1-19");
+    expect(matches).toHaveLength(1);
+    expect(matches[0]!.ref).toEqual({ bookId: "GEN", chapterStart: 22, verseStart: 1, verseEnd: 19 });
+  });
+
+  it("skips blockquote lines", () => {
+    expect(scanner.scan("> Matt 1:3")).toHaveLength(0);
+  });
+});
+
+describe("formatRef with BUILT_IN_FORMAT_RULES", () => {
+  it('produces "Gen 1:1" for GEN 1,1', () => {
+    expect(formatRef({ bookId: "GEN", chapterStart: 1, verseStart: 1 }, BUILT_IN_FORMAT_RULES)).toBe("Gen 1:1");
+  });
+
+  it('produces "Matt 1:3" for MAT 1,3', () => {
+    expect(formatRef({ bookId: "MAT", chapterStart: 1, verseStart: 3 }, BUILT_IN_FORMAT_RULES)).toBe("Matt 1:3");
+  });
+
+  it('produces "Gen 22:1-19" for range', () => {
+    expect(formatRef({ bookId: "GEN", chapterStart: 22, verseStart: 1, verseEnd: 19 }, BUILT_IN_FORMAT_RULES)).toBe("Gen 22:1-19");
+  });
+
+  it("falls back to Czech notation when no refFormat given", () => {
+    expect(formatRef({ bookId: "GEN", chapterStart: 1, verseStart: 1 })).toBe("Gn 1,1");
   });
 });
 
