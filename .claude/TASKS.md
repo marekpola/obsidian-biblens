@@ -19,31 +19,6 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 ## Active
 
 
-### Task 29 – Settings UI Reorganisation
-
-#### Goal
-Restructure the settings tab so each asset domain (translations, reference formats, recognition languages) is a self-contained collapsible section that includes both its installed items and a download control. Remove the separate "Install sources" section.
-
-#### Scope
-`src/settingsTab.ts` only — no other files.
-
-- Add three boolean class fields: `translationsExpanded`, `formatsExpanded`, `languagesExpanded` (all default `false`)
-- In `display()`: call `loadCatalog` once and pass the resulting `CatalogData` to each section render; do not call `loadCatalog` inside individual section renders
-- Remove `renderInstallSources`, `renderTranslationsSubsection`, `renderReferenceFormatsSubsection`, `renderLanguagePacksSubsection`
-- `renderInstalledTranslations(containerEl, catalog)`: wrap section in `<details>`; restore `open` from `translationsExpanded`; listen for `toggle` to update the field; keep existing active/others pattern unchanged; append "Install new" row at bottom (provider dropdown + translation dropdown + Download button; filter out already-installed translations from the translation dropdown)
-- `renderInstalledFormats(containerEl, catalog)`: wrap in `<details>`; restore/sync `formatsExpanded`; keep existing format list with Delete; append "Install new" row at bottom (provider dropdown + format dropdown + Download button)
-- `renderInstalledLanguages(containerEl, catalog)`: wrap in `<details>`; restore/sync `languagesExpanded`; keep existing language pack list with Delete; append "Install new" row at bottom (provider dropdown + language dropdown + Download button)
-- General section and Advanced section: unchanged
-
-#### Definition of Done
-- Settings tab renders five areas in order: General · Installed translations · Reference formats · Recognition languages · Advanced
-- All three collapsible sections start collapsed by default on first open
-- Collapse state survives `display()` re-renders within the same session (class fields)
-- Install new row appears at the bottom of each expanded section with correct provider/item dropdowns and Download button
-- `loadCatalog` called exactly once per `display()` invocation
-- No regressions: install, delete, Set as default all work as before
-- `npm run check` and `npm run ci` pass
-
 ---
 
 ## Next
@@ -77,6 +52,34 @@ Add a copy button to the hover popover and editor tooltip that copies the full f
 
 ---
 ## Done
+
+
+### Task 29 – Settings UI Reorganisation
+
+#### Goal
+Restructure the settings tab so each asset domain (translations, reference formats, recognition languages) is a self-contained collapsible section that includes both its installed items and a download control. Remove the separate "Install sources" section.
+
+#### Scope
+`src/settingsTab.ts` only — no other files.
+
+- Add three boolean class fields: `translationsExpanded`, `formatsExpanded`, `languagesExpanded` (all default `false`)
+- In `display()`: call `loadCatalog` once and pass the resulting `CatalogData` to each section render; do not call `loadCatalog` inside individual section renders
+- Remove `renderInstallSources`, `renderTranslationsSubsection`, `renderReferenceFormatsSubsection`, `renderLanguagePacksSubsection`
+- `renderInstalledTranslations(containerEl, catalog)`: wrap section in `<details>`; restore `open` from `translationsExpanded`; listen for `toggle` to update the field; keep existing active/others pattern unchanged; append "Install new" row at bottom (provider dropdown + translation dropdown + Download button; filter out already-installed translations from the translation dropdown)
+- `renderInstalledFormats(containerEl, catalog)`: wrap in `<details>`; restore/sync `formatsExpanded`; keep existing format list with Delete; append "Install new" row at bottom (provider dropdown + format dropdown + Download button)
+- `renderInstalledLanguages(containerEl, catalog)`: wrap in `<details>`; restore/sync `languagesExpanded`; keep existing language pack list with Delete; append "Install new" row at bottom (provider dropdown + language dropdown + Download button)
+- General section and Advanced section: unchanged
+
+#### Definition of Done
+- Settings tab renders five areas in order: General · Installed translations · Reference formats · Recognition languages · Advanced
+- All three collapsible sections start collapsed by default on first open
+- Collapse state survives `display()` re-renders within the same session (class fields)
+- Install new row appears at the bottom of each expanded section with correct provider/item dropdowns and Download button
+- `loadCatalog` called exactly once per `display()` invocation
+- No regressions: install, delete, Set as default all work as before
+- `npm run check` and `npm run ci` pass
+
+
 
 
 ### Task 26 – openbibleinfo Reference Format Pack Adapter

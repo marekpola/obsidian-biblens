@@ -18,6 +18,7 @@ export async function downloadLanguagePack(
 	file.id = entry.id;
 	file.displayName = entry.displayName;
 	file.lang = entry.language;
+	await vaultAdapter.mkdir(`${pluginDir}/recognition-languages`);
 	await vaultAdapter.write(
 		`${pluginDir}/recognition-languages/${entry.id}.json`,
 		JSON.stringify(file, null, 2)
@@ -46,6 +47,7 @@ export async function downloadReferenceFormat(
 	file.id = entry.id;
 	file.displayName = entry.displayName;
 	file.lang = entry.language;
+	await vaultAdapter.mkdir(`${pluginDir}/reference-formats`);
 	await vaultAdapter.write(
 		`${pluginDir}/reference-formats/${entry.id}.json`,
 		JSON.stringify(file, null, 2)

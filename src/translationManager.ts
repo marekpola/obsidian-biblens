@@ -48,6 +48,7 @@ export async function downloadFromSource(
 		throw new Error(`BibLens: adapter returned empty or invalid data for ${entry.id}`);
 	}
 
+	await vaultAdapter.mkdir(`${pluginDir}/translations`);
 	await vaultAdapter.write(
 		`${pluginDir}/translations/${entry.id}.json`,
 		buildV1Envelope(entry, provider, data)
