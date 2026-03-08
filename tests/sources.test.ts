@@ -47,7 +47,7 @@ describe("getbible-v2 adapter", () => {
   const adapter = getAdapter("getbible-v2");
 
   it("buildUrl constructs correct URL", () => {
-    const provider = KNOWN_PROVIDERS.find(p => p.id === "getbible-net")!;
+    const provider = KNOWN_PROVIDERS.translationProviders.find(p => p.id === "getbible-net")!;
     const entry = provider.translations.find(t => t.id === "bkr")!;
     expect(adapter.buildUrl(provider, entry)).toBe(
       "https://api.getbible.net/v2/bkr.json"
@@ -94,7 +94,7 @@ describe("beblia-xml adapter", () => {
   const adapter = getAdapter("beblia-xml");
 
   it("buildUrl constructs correct URL", () => {
-    const provider = KNOWN_PROVIDERS.find(p => p.id === "beblia-xml")!;
+    const provider = KNOWN_PROVIDERS.translationProviders.find(p => p.id === "beblia-xml")!;
     const entry = provider.translations.find(t => t.id === "cep2001")!;
     expect(adapter.buildUrl(provider, entry)).toBe(
       "https://raw.githubusercontent.com/Beblia/Holy-Bible-XML-Format/master/CzechEkumenickyBible.xml"
@@ -139,19 +139,24 @@ describe("beblia-xml adapter", () => {
 });
 
 describe("KNOWN_PROVIDERS", () => {
-  it("contains at least 2 providers", () => {
-    expect(KNOWN_PROVIDERS.length).toBeGreaterThanOrEqual(2);
+  it("contains at least 2 translation providers", () => {
+    expect(KNOWN_PROVIDERS.translationProviders.length).toBeGreaterThanOrEqual(2);
   });
 
-  it("each provider has a registered adapter type", () => {
-    for (const p of KNOWN_PROVIDERS) {
+  it("each translation provider has a registered adapter type", () => {
+    for (const p of KNOWN_PROVIDERS.translationProviders) {
       expect(() => getAdapter(p.adapterType)).not.toThrow();
     }
   });
 
-  it("each provider has at least one translation", () => {
-    for (const p of KNOWN_PROVIDERS) {
+  it("each translation provider has at least one translation", () => {
+    for (const p of KNOWN_PROVIDERS.translationProviders) {
       expect(p.translations.length).toBeGreaterThan(0);
     }
+  });
+
+  it("has languagePackProviders and referenceFormatProviders arrays", () => {
+    expect(Array.isArray(KNOWN_PROVIDERS.languagePackProviders)).toBe(true);
+    expect(Array.isArray(KNOWN_PROVIDERS.referenceFormatProviders)).toBe(true);
   });
 });

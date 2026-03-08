@@ -1,12 +1,27 @@
 // Pure module — no Obsidian imports, no DOM
 
 import type { TranslationData } from '../provider';
-import type { SourceProvider, RemoteTranslationEntry } from './catalog';
+import type {
+	SourceProvider, RemoteTranslationEntry,
+	LanguagePackProvider, RemoteLanguagePackEntry,
+	ReferenceFormatProvider, RemoteReferenceFormatEntry,
+} from './catalog';
+import type { LanguagePackFile, ReferenceFormatFile } from '../types';
 
 export interface SourceAdapter {
 	buildUrl(provider: SourceProvider, entry: RemoteTranslationEntry): string;
 	/** raw: string — either JSON text or XML text depending on the provider */
 	transform(raw: unknown): TranslationData;
+}
+
+export interface LanguagePackAdapter {
+	buildUrl(provider: LanguagePackProvider, entry: RemoteLanguagePackEntry): string;
+	transform(raw: unknown): LanguagePackFile;
+}
+
+export interface ReferenceFormatAdapter {
+	buildUrl(provider: ReferenceFormatProvider, entry: RemoteReferenceFormatEntry): string;
+	transform(raw: unknown): ReferenceFormatFile;
 }
 
 // Canonical USFM 3.0 book IDs in Protestant canonical order (position = book number - 1)
@@ -112,7 +127,7 @@ const bebliaXml: SourceAdapter = {
 };
 
 // ---------------------------------------------------------------------------
-// Registry
+// Translation registry
 // ---------------------------------------------------------------------------
 
 const REGISTRY: Record<string, SourceAdapter> = {
@@ -123,5 +138,43 @@ const REGISTRY: Record<string, SourceAdapter> = {
 export function getAdapter(adapterType: string): SourceAdapter {
 	const adapter = REGISTRY[adapterType];
 	if (!adapter) throw new Error(`BibLens: unknown adapter type "${adapterType}"`);
+	return adapter;
+}
+
+// ---------------------------------------------------------------------------
+// biblens-catalog reference format adapter
+// Fetches a pre-authored ReferenceFormatFile JSON from the BibLens repository.
+// ---------------------------------------------------------------------------
+
+const biblensCatalogFormatAdapter: ReferenceFormatAdapter = {
+	buildUrl(provider, entry) {
+		return `${provider.baseUrl}/${entry.remoteId}.json`;
+	},
+	transform(raw) {
+		return JSON.parse(raw as string) as ReferenceFormatFile;
+	},
+};
+
+// ---------------------------------------------------------------------------
+// Language pack and reference format registries
+// ---------------------------------------------------------------------------
+
+const LANG_REGISTRY: Record<string, LanguagePackAdapter> = {
+	// 'openbibleinfo' adapter to be added when remote providers are configured
+};
+
+const FORMAT_REGISTRY: Record<string, ReferenceFormatAdapter> = {
+	'biblens-catalog': biblensCatalogFormatAdapter,
+};
+
+export function getLanguagePackAdapter(adapterType: string): LanguagePackAdapter {
+	const adapter = LANG_REGISTRY[adapterType];
+	if (!adapter) throw new Error(`BibLens: unknown language pack adapter type "${adapterType}"`);
+	return adapter;
+}
+
+export function getReferenceFormatAdapter(adapterType: string): ReferenceFormatAdapter {
+	const adapter = FORMAT_REGISTRY[adapterType];
+	if (!adapter) throw new Error(`BibLens: unknown reference format adapter type "${adapterType}"`);
 	return adapter;
 }

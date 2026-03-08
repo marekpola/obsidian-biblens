@@ -1,4 +1,5 @@
 import type { BookId} from "./books";
+import type { SourceProvider, LanguagePackProvider, ReferenceFormatProvider } from "./sources/catalog";
 
 export type LanguagePackMeta = {
   id: string;
@@ -39,3 +40,32 @@ export type BibleRef = {
 export type ParseResult =
   | { ok: true; ref: BibleRef }
   | { ok: false; error: string };
+
+export type CatalogData = {
+  translationProviders: SourceProvider[];
+  languagePackProviders: LanguagePackProvider[];
+  referenceFormatProviders: ReferenceFormatProvider[];
+};
+
+export type LanguagePackFile = {
+  id: string;
+  displayName: string;
+  lang: string;
+  formatVersion: number;
+  source?: string;
+  books: Record<string, { aliases: string[] }>;
+};
+
+export type ReferenceFormatFile = {
+  id: string;
+  displayName: string;
+  lang: string;
+  formatVersion: number;
+  source?: string;
+  books: Record<string, string>;
+  rules: {
+    chapterVerseSeparator: string;
+    rangeSeparator: string;
+    bookChapterSeparator: string;
+  };
+};

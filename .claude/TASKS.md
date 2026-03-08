@@ -18,11 +18,6 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 ## Active
 
-
----
-## Next
-
-
 ### Task 24 – Settings UI and main.ts Wiring
 Issue: #10
 
@@ -50,6 +45,8 @@ Wire language pack and reference format pack loading into plugin startup; expose
 - `npm run check` and `npm run ci` pass
 
 ---
+## Next
+
 
 ### Task 13 – Copy Verse Text to Clipboard
 Issue: #2

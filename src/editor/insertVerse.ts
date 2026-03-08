@@ -3,6 +3,7 @@ import type { TranslationData, VerseEntry } from "../provider";
 import { getVerses } from "../provider";
 import type { RefScanner } from "../parser";
 import { formatRef } from "../parser";
+import type { ReferenceFormatRules } from "../types";
 
 export type InsertionFormat = 'inline' | 'blockquote';
 
@@ -13,7 +14,8 @@ function formatEntries(entries: VerseEntry[]): string {
 export function insertAfterLastRefCommand(
 	scanner: RefScanner,
 	data: TranslationData,
-	format: InsertionFormat
+	format: InsertionFormat,
+	refFormat?: ReferenceFormatRules
 ) {
 	return (view: EditorView): boolean => {
 		const cursor = view.state.selection.main.head;
@@ -22,7 +24,7 @@ export function insertAfterLastRefCommand(
 		const last = matches[matches.length - 1];
 		if (!last) return false;
 
-		const entries = getVerses(data, last.ref);
+		const entries = getVerses(data, last.ref, refFormat);
 		if (entries.length === 0) return false;
 
 		const verseText = formatEntries(entries);
@@ -30,7 +32,7 @@ export function insertAfterLastRefCommand(
 		if (format === 'blockquote') {
 			const atLineStart = last.start === 0 || text[last.start - 1] === '\n';
 			const prefix = atLineStart ? '' : '\n';
-			view.dispatch({ changes: { from: last.start, to: last.end, insert: `${prefix}> ${formatRef(last.ref)} ${verseText}\n` } });
+			view.dispatch({ changes: { from: last.start, to: last.end, insert: `${prefix}> ${formatRef(last.ref, refFormat)} ${verseText}\n` } });
 		} else {
 			view.dispatch({ changes: { from: last.end, insert: ` — ${verseText}` } });
 		}
