@@ -85,12 +85,13 @@ Extend the parser with `buildRefScanner` that compiles a regex once from a given
   - Extended mode: accept all plausible separator variants regardless of format pack
   - Falls back to `BUILT_IN_FORMAT_RULES` (from `books.ts`) when no format pack is provided
 - `src/parser.ts`: extend `formatRef(ref: BibleRef, refFormat?: ReferenceFormatRules): string` — when `refFormat` is provided, uses `refFormat.books[ref.bookId]` for abbreviation and `refFormat.rules.*` for separators; falls back to built-in English defaults when omitted
+- `src/provider.ts`: extend `getVerses(data: TranslationData, ref: BibleRef, refFormat?: ReferenceFormatRules): VerseEntry[]` — passes `refFormat` to `formatRef` for the first-entry label; no Obsidian imports
 - `src/books.ts`: export `BUILT_IN_FORMAT_RULES: ReferenceFormatRules` — hardcoded English colon-notation separators and canonical abbreviations for all 66 books (e.g. `GEN → "Gen"`, `MAT → "Matt"`); no Obsidian imports
 - `src/settings.ts`: add `preferredLanguage: string` (default `""`), `standardReferenceFormat: string` (default `""`), `parsingRules: 'strict' | 'extended'` (default `'strict'`) to `BibLensSettings` and `DEFAULT_SETTINGS`
 
 #### Definition of Done
-- `buildRefScanner` with built-in defaults detects `Mt 1,3` and `Gn 22,1-19` in strict mode
-- Extended mode detects the same references with colon or period as chapter/verse separator
+- `buildRefScanner` with built-in English defaults detects `Matt 1:3` and `Gen 22:1-19` in strict mode
+- Extended mode additionally detects `Matt 1,3` and `Gen 22,1-19` (comma separator variant)
 - `formatRef(ref, BUILT_IN_FORMAT_RULES)` produces `"Gen 1:1"` for `{ bookId: "GEN", chapterStart: 1, verseStart: 1 }`
 - `src/parser.ts` and `src/books.ts` have no Obsidian imports
 - `npm run check` and `npm run ci` pass
@@ -104,6 +105,11 @@ Issue: #10
 Wire language pack and reference format pack loading into plugin startup; expose new settings controls in the settings tab.
 
 #### Scope
+- `src/types.ts`: add `LanguagePackFile`, `ReferenceFormatFile`, `CatalogData` types
+- `src/sources/catalog.ts`: restructure `KNOWN_PROVIDERS` to `CatalogData` shape (`{ translationProviders, languagePackProviders, referenceFormatProviders }`)
+- `src/sources/catalogManager.ts`: change `loadCatalog` return type from `SourceProvider[]` to `CatalogData`
+- `src/sources/adapters.ts`: add `LanguagePackAdapter` and `ReferenceFormatAdapter` interfaces; add `getLanguagePackAdapter` and `getReferenceFormatAdapter` registry functions
+- `src/packManager.ts`: new Obsidian-aware module; exports `downloadLanguagePack`, `deleteLanguagePack`, `downloadReferenceFormat`, `deleteReferenceFormat`
 - `src/main.ts`:
   - On `onload()`: call `loadCatalog()` → `CatalogData`; load active language pack via `languagePackLoader.ts` (fall back to `getBuiltInAbbreviationMap()` if none selected); load active format pack via `referenceFormatLoader.ts` (fall back to `BUILT_IN_FORMAT_RULES` from `books.ts` if none selected); call `buildRefScanner(map, formatRules, settings.parsingRules)` and pass resulting `RefScanner` to editor extensions and insert commands; pass active `ReferenceFormatRules` as `refFormat` to `refTooltipExtension`, `insertVerseCommand`, and `insertAfterLastRefCommand`
 - `src/settingsTab.ts`:
