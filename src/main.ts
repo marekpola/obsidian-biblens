@@ -14,7 +14,6 @@ import { buildVerseDOM } from './ui/verseDOM';
 import { loadTranslation } from './translationLoader';
 import { loadLanguagePack } from './languagePackLoader';
 import { loadReferenceFormat } from './referenceFormatLoader';
-//import { buildAbbreviationMap, BUILT_IN_FORMAT_RULES } from './books';
 import { buildAbbreviationMap, BUILT_IN_FORMAT_RULES, BOOK_ALIASES } from './books';
 import type { BibLensSettings } from './settings';
 import { DEFAULT_SETTINGS } from './settings';
