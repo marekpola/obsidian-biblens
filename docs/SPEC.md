@@ -178,8 +178,8 @@ Translation files must be valid JSON objects with the following structure:
 - `lang` — BCP 47 language tag (e.g. `"cs"`, `"en"`)
 - `source` — free-text provenance or attribution; informational only, not displayed in the UI
 - `formatVersion` — integer; must be `1` for this format; used by the loader to select the correct parsing path
-- `canonicalAbbreviations` — optional map of USFM 3.0 book ID → preferred display abbreviation for this translation; when present, `formatRef` uses these abbreviations instead of the built-in defaults while this translation is active
-- `allowedAbbreviations` — optional map of USFM 3.0 book ID → array of recognized input strings; when present, these are merged into the active abbreviation map (extends built-in defaults; does not replace them)
+- `canonicalAbbreviations` — *deprecated as of v0.4*; silently ignored when a reference format pack is active; canonical abbreviations are now owned by the active format pack's `books` map
+- `allowedAbbreviations` — *deprecated as of v0.4*; silently ignored when a recognition language pack is active; input aliases are now owned by the active language pack's `books[].aliases`
 - `verses` — map of `"USFM_ID CHAPTER:VERSE"` keys to verse text strings
 
 #### Book identifiers
@@ -305,13 +305,23 @@ A recognition language pack provides the book names and abbreviations needed to 
 written in a specific natural language.
 
 Each pack:
-- maps standard book identifiers to canonical display abbreviations and recognized input aliases for that language
-- uses OSIS book identifiers as keys (e.g. `Gen`, `Matt`, `Rev`)
-- is downloaded from the Install sources catalog and stored in `recognition-languages/` in the plugin directory
-- contains rules for parsing
+- maps USFM book identifiers (e.g. `GEN`, `MAT`, `REV`) to recognized input aliases for that language
+- canonical display abbreviations are defined by the active reference format pack, not the language pack
+- is stored in `recognition-languages/` in the plugin directory
 
 Multiple language packs can be installed simultaneously.
 The active pack is selected via **Preferred language for reference recognition** in General settings.
+
+#### Sourcing recognition language packs
+
+Language packs reach the plugin through two paths:
+
+- **Download** — via the Install sources panel; fetched from the openbibleinfo/Bible-Passage-Reference-Parser
+  repository using the `"openbibleinfo"` adapter
+- **Manual drop** — user places a correctly formatted JSON file into `recognition-languages/` directly;
+  the pack appears in the installed list on next settings tab open
+
+Language packs are not bundled with the plugin; the built-in English book names serve as the offline fallback when no pack is selected.
 
 ---
 
@@ -321,16 +331,29 @@ A reference format pack defines the notation rules for a reference style — how
 separated, how ranges are expressed, and what structural patterns are valid.
 
 Examples of distinct formats for the same language:
-- Czech Protestant: `1 Te 1,1 ` 
-- Czech Catholic: `1 Sol 1,1` 
+- Czech Protestant: `1 Te 1,1`
+- Czech Catholic: `1 Sol 1,1`
 
 Each pack:
 - specifies separator characters and structural rules for parsing and formatting references
 - is language-tagged but not locked to one language (a format may apply across languages)
-- is downloaded from the Install sources catalog and stored in `reference-formats/` in the plugin directory
+- is stored in `reference-formats/` in the plugin directory
 
 Multiple format packs can be installed simultaneously.
 The active format is selected via **Standard reference format** in General settings.
+
+#### Sourcing reference format packs
+
+Reference format packs reach the plugin through three paths:
+
+- **Bundled** — selected well-known notation styles are shipped with the plugin as pre-authored JSON files
+  placed in `reference-formats/` at install time. The English pack (`en`) is always bundled.
+  The actual offline fallback when no pack is selected is a hardcoded code-level constant (`BUILT_IN_FORMAT_RULES`)
+  using English notation; the bundled file is shipped for discoverability only.
+- **Download** — via the Install sources panel; fetched from the BibLens GitHub repository
+  (`catalog/reference-formats/`) using the `"biblens-catalog"` adapter; no transformation needed
+- **Manual drop** — user places a correctly formatted JSON file into `reference-formats/` directly;
+  the pack appears in the installed list on next settings tab open
 
 ---
 
@@ -338,7 +361,8 @@ The active format is selected via **Standard reference format** in General setti
 
 The openbibleinfo project uses OSIS book identifiers (e.g. `Gen`, `Matt`).
 BibLens uses USFM 3.0 identifiers internally (e.g. `GEN`, `MAT`).
-The plugin bundles a static OSIS→USFM mapping table. This table is not user-configurable and requires no download.
+Recognition language pack files store USFM keys. The OSIS→USFM conversion happens inside the `"openbibleinfo"` adapter during download, before the pack file is written to disk.
+The plugin bundles a static OSIS→USFM mapping table used by adapters. This table is not user-configurable and requires no download.
 
 ---
 
@@ -383,10 +407,11 @@ Renamed from “Get translations”. Three sub-sections:
 ### Constraints
 
 - Recognition language packs and reference format packs are independent; any combination can be active.
-- The bundled Czech defaults remain available offline without downloading any pack.
+- The built-in English format rules and English book names (hardcoded constants, not read from disk) ensure offline operation without downloading any pack.
 - All network access is explicit user action (download button); no silent background downloads by default.
-- Pack format and storage details are defined in `docs/ARCHITECTURE.md`.
+- Manually dropped pack files must conform to the format defined in `docs/ARCHITECTURE.md`; malformed files are rejected with an error.
 - Providers in the fetched catalog that reference an unknown pack type are silently ignored.
+- Pack file format and sourcing details are defined in `docs/ARCHITECTURE.md`.
 
 
 

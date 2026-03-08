@@ -20,6 +20,7 @@ All source files live under `src/`:
 - src/translationRegistry.ts
 - src/translationDownloader.ts
 - src/translationManager.ts
+- src/packManager.ts
 - src/sources/catalog.ts
 - src/sources/adapters.ts
 - src/sources/catalogManager.ts
@@ -50,10 +51,10 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - Exposes `reloadTranslation()` — mutates `translationData` in-place so all consumers (editor extensions, hover) see updated data without re-registration
   - Registers CM6 extensions via `this.registerEditorExtension([...])`
   - Calls `loadTranslation` on `onload()`; stores `translationData`; passes it to UI layers
-  - Loads active language pack via `languagePackLoader.ts` (falls back to built-in Czech defaults if none selected)
-  - Loads active reference format pack via `referenceFormatLoader.ts` (falls back to built-in Czech Protestant defaults if none selected)
-  - Builds `AbbreviationMap` from language pack data via `osisMapping.ts`; falls back to `books.ts: getBuiltInAbbreviationMap()`
-  - Builds `RefScanner` via `buildRefScanner(map, formatRules, settings.parsingRules)` and passes it to editor extension factories
+  - Loads active language pack via `languagePackLoader.ts` (falls back to built-in English defaults if none selected)
+  - Loads active reference format pack via `referenceFormatLoader.ts` (falls back to `books.ts: BUILT_IN_FORMAT_RULES` — English notation — if none selected)
+  - Builds `AbbreviationMap` from language pack data (USFM keys read directly); falls back to `books.ts: getBuiltInAbbreviationMap()`
+  - Builds `RefScanner` via `buildRefScanner(map, formatRules, settings.parsingRules)` and passes it to editor extension factories; passes active `ReferenceFormatRules` as `refFormat` to `refTooltipExtension`, `insertVerseCommand`, and `insertAfterLastRefCommand`; also passes `refFormat` to `getVerses` when building Reading View hover content (before calling `PopoverManager.show`)
   - Registers `biblens-insert-verse` command via `this.addCommand(...)`
 - src/settingsTab.ts
   - `BibLensSettingTab` class: Obsidian settings UI; imported and registered by `main.ts`
@@ -64,7 +65,7 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - Exports: `parseCzechBibleRef`, `scanRefs`, `formatRef`, `RefMatch`
   - Exports: `type RefScanner = { scan(text: string): RefMatch[] }`
   - Exports: `type ParsingMode = 'strict' | 'extended'`
-  - Exports: `buildRefScanner(map: AbbreviationMap, format?: ReferenceFormatRules, mode?: ParsingMode): RefScanner` — compiles regex once; format and mode default to built-in Czech Protestant behaviour; strict mode enforces format pack separators, extended mode matches all plausible references
+  - Exports: `buildRefScanner(map: AbbreviationMap, format?: ReferenceFormatRules, mode?: ParsingMode): RefScanner` — compiles regex once; format and mode default to built-in English behaviour (`BUILT_IN_FORMAT_RULES`); strict mode enforces format pack separators, extended mode matches all plausible references
   - `scanRefs` remains as a convenience default using the built-in map and strict mode
 - src/types.ts
   - Shared types (BibleRef, ParseResult, TranslationMeta, etc.)
@@ -72,20 +73,22 @@ Reference format pack files live under `reference-formats/` in the plugin direct
 - src/settings.ts
   - Plugin settings shape and defaults
   - `preferredTranslation: string` (default: `"cep"`)
-  - `preferredLanguage: string` (default: `""` — use built-in Czech defaults)
-  - `standardReferenceFormat: string` (default: `""` — use built-in Czech Protestant defaults)
+  - `preferredLanguage: string` (default: `""` — use built-in English defaults)
+  - `standardReferenceFormat: string` (default: `""` — use built-in English defaults)
   - `parsingRules: 'strict' | 'extended'` (default: `'strict'`)
   - `verseInsertionFormat: 'inline' | 'blockquote'` (default: `'inline'`)
   - `autoUpdateCatalog: boolean` (default: `false`) — fetch catalog from GitHub on plugin load if cache is stale
   - `catalogLastUpdated: string` (default: `""`) — ISO timestamp of last successful catalog fetch; shown in settings UI
 - src/books.ts
   - Definition of standard representation of biblical books and built-in abbreviation mapping
-  - Exports: `getBuiltInAbbreviationMap(): AbbreviationMap` — returns the built-in Czech abbreviation map; used as offline fallback when no language pack is active
+  - Exports: `getBuiltInAbbreviationMap(): AbbreviationMap` — returns the built-in English abbreviation map (standard short forms: `Gen`, `Exod`, `Matt`, etc.); used as offline fallback when no language pack is active
+  - Exports: `BUILT_IN_FORMAT_RULES: ReferenceFormatRules` — hardcoded English format rules: colon chapter-verse separator, hyphen range separator, space book-chapter separator, and canonical English abbreviations for all 66 books (e.g. `Gen`, `Matt`); used as offline fallback when no format pack is selected; does not depend on the bundled `en.json` being present on disk
 - src/provider.ts
   - Pure data-access module (no Obsidian imports, no DOM)
   - `type VerseEntry = { label: string; text: string }`
   - `type TranslationData = Record<string, string>`
-  - Exports: `getVerses(data: TranslationData, ref: BibleRef): VerseEntry[]`
+  - Exports: `getVerses(data: TranslationData, ref: BibleRef, refFormat?: ReferenceFormatRules): VerseEntry[]`
+  - `refFormat` is passed to `formatRef` for the first-entry label; falls back to built-in English defaults when omitted
   - Key format: `${bookId}.${chapterStart}.${verse}` matching cep.json keys
   - Chapter-only refs (no `verseStart`) return all verses found in the chapter (see D011)
 - src/translationLoader.ts
@@ -112,11 +115,11 @@ Reference format pack files live under `reference-formats/` in the plugin direct
 - src/osisMapping.ts
   - Pure module (no Obsidian imports)
   - Exports: `osisToUsfm(osisId: string): BookId | undefined` — converts an OSIS book identifier (e.g. `Gen`, `Matt`) to USFM 3.0 `BookId` (e.g. `GEN`, `MAT`)
-  - Used by language pack loader and adapters; centralizes what was previously duplicated per-adapter
+  - Used by adapters during download transformation (e.g. openbibleinfo data uses OSIS keys; adapter converts to USFM before writing the pack file); not used by the loader (pack files store USFM keys)
 - src/languagePackLoader.ts
   - Obsidian-aware; may import from 'obsidian'
   - Exports: `loadLanguagePack(adapter: DataAdapter, pluginDir: string, id: string): Promise<{ map: AbbreviationMap; meta: LanguagePackMeta }>`
-  - Reads `${pluginDir}/recognition-languages/${id}.json`; converts OSIS book keys to USFM via `osisMapping.ts`; returns an `AbbreviationMap` ready for `buildRefScanner`
+  - Reads `${pluginDir}/recognition-languages/${id}.json`; book keys are USFM (no conversion needed); flattens aliases into `AbbreviationMap` ready for `buildRefScanner`
 - src/languagePackRegistry.ts
   - Obsidian-aware; may import from 'obsidian'
   - Exports: `listAvailableLanguagePacks(adapter: DataAdapter, pluginDir: string): Promise<LanguagePackMeta[]>`
@@ -131,19 +134,31 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - Scans `${pluginDir}/reference-formats/` and returns metadata for each `.json` file found
 - src/sources/adapters.ts
   - Pure module (no Obsidian imports, no DOM)
-  - Exports: `interface SourceAdapter { buildUrl(provider: SourceProvider, entry: RemoteTranslationEntry): string; transform(raw: unknown): TranslationData }`
-  - Exports: `getAdapter(adapterType: string): SourceAdapter` — registry lookup; throws on unknown type
-  - Each adapter is responsible for: URL construction, raw-to-`TranslationData` transformation, OSIS book ID mapping
+  - Exports: `interface SourceAdapter { buildUrl(provider: SourceProvider, entry: RemoteTranslationEntry): string; transform(raw: unknown): TranslationData }` — translation adapter
+  - Exports: `interface LanguagePackAdapter { buildUrl(provider: LanguagePackProvider, entry: RemoteLanguagePackEntry): string; transform(raw: unknown): LanguagePackFile }` — language pack adapter
+  - Exports: `interface ReferenceFormatAdapter { buildUrl(provider: ReferenceFormatProvider, entry: RemoteReferenceFormatEntry): string; transform(raw: unknown): ReferenceFormatFile }` — format pack adapter
+  - Exports: `getAdapter(adapterType: string): SourceAdapter` — translation adapter registry; throws on unknown type
+  - Exports: `getLanguagePackAdapter(adapterType: string): LanguagePackAdapter` — language pack adapter registry; throws on unknown type
+  - Exports: `getReferenceFormatAdapter(adapterType: string): ReferenceFormatAdapter` — format pack adapter registry; throws on unknown type
+  - Each adapter is responsible for: URL construction, raw data transformation, OSIS→USFM book ID conversion (via `osisMapping.ts`) when the source uses OSIS identifiers
 - src/translationManager.ts
   - Obsidian-aware; may import from 'obsidian' (uses `requestUrl` and `DataAdapter`)
   - Orchestrates the full download pipeline: `requestUrl` → `getAdapter().transform()` → validate → `adapter.write()`
   - Exports: `downloadFromSource(vaultAdapter: DataAdapter, pluginDir: string, provider: SourceProvider, entry: RemoteTranslationEntry): Promise<void>`
   - Exports: `deleteTranslation(vaultAdapter: DataAdapter, pluginDir: string, id: string): Promise<void>`
   - Wraps and supersedes `translationDownloader.ts` for source-catalog flows; raw-URL download remains in `translationDownloader.ts`
+- src/packManager.ts
+  - Obsidian-aware; may import from 'obsidian' (uses `requestUrl` and `DataAdapter`)
+  - Orchestrates language pack and reference format pack download and delete; mirrors `translationManager.ts` for pack types
+  - Exports: `downloadLanguagePack(vaultAdapter: DataAdapter, pluginDir: string, provider: LanguagePackProvider, entry: RemoteLanguagePackEntry): Promise<void>`
+  - Exports: `deleteLanguagePack(vaultAdapter: DataAdapter, pluginDir: string, id: string): Promise<void>`
+  - Exports: `downloadReferenceFormat(vaultAdapter: DataAdapter, pluginDir: string, provider: ReferenceFormatProvider, entry: RemoteReferenceFormatEntry): Promise<void>`
+  - Exports: `deleteReferenceFormat(vaultAdapter: DataAdapter, pluginDir: string, id: string): Promise<void>`
+  - Download pipeline per pack type: `requestUrl` → `getLanguagePackAdapter()/getReferenceFormatAdapter()` → `transform(raw)` → validate → `DataAdapter.write`
 - src/sources/catalogManager.ts
   - Obsidian-aware; may import from 'obsidian' (uses `requestUrl` and `DataAdapter`)
   - Constant: `CATALOG_REMOTE_URL` — hardcoded GitHub raw URL pointing to `catalog/providers.json` in the BibLens repo; not user-configurable
-  - Exports: `loadCatalog(adapter: DataAdapter, pluginDir: string): Promise<SourceProvider[]>` — returns cached `catalog.json` if present and parseable, falls back to bundled `KNOWN_PROVIDERS`
+  - Exports: `loadCatalog(adapter: DataAdapter, pluginDir: string): Promise<CatalogData>` — returns cached `catalog.json` if present and parseable, falls back to bundled `KNOWN_PROVIDERS`; `CatalogData` contains all three provider arrays
   - Exports: `fetchCatalogUpdate(adapter: DataAdapter, pluginDir: string): Promise<CatalogUpdateResult>` — fetches remote catalog, validates `SourceProvider[]` schema, filters entries with unknown `adapterType`, writes to `catalog.json`, returns result with `updatedAt` timestamp
   - `type CatalogUpdateResult = { ok: true; updatedAt: string; providerCount: number } | { ok: false; error: string }`
   - Providers with unknown `adapterType` are silently filtered (forward-compatibility: newer catalog entries don't crash older plugin versions)
@@ -165,17 +180,17 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - Uses `scanner.scan()`; may import from `@codemirror/*`
 - src/editor/refTooltip.ts
   - CM6 `hoverTooltip` extension that shows verse content on hover in the editor
-  - Exports: `refTooltipExtension(scanner: RefScanner, data: TranslationData): Extension` — factory function
-  - Uses `formatRef`, `scanner.scan()` from parser.ts; `getVerses` from provider.ts; may import from `@codemirror/*`
+  - Exports: `refTooltipExtension(scanner: RefScanner, data: TranslationData, refFormat?: ReferenceFormatRules): Extension` — factory function
+  - Uses `formatRef`, `scanner.scan()` from parser.ts; `getVerses` from provider.ts; passes `refFormat` to `getVerses`; may import from `@codemirror/*`
 - src/editor/insertVerse.ts
   - CM6 command factory; no Obsidian imports
   - `InsertionFormat = 'inline' | 'blockquote'`
-  - Exports: `insertVerseCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat): Command`
-    - Finds reference spanning cursor on current line → `getVerses` → format text → CM6 transaction dispatch
+  - Exports: `insertVerseCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat, refFormat?: ReferenceFormatRules): Command`
+    - Finds reference spanning cursor on current line → `getVerses(data, ref, refFormat)` → format text → CM6 transaction dispatch
     - No-op if cursor is not on a detected reference
-  - Exports: `insertAfterLastRefCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat): Command`
+  - Exports: `insertAfterLastRefCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat, refFormat?: ReferenceFormatRules): Command`
     - Scans full document via `view.state.doc.toString()` — permitted for user-triggered commands (see D018)
-    - Finds last `RefMatch` whose end position is at or before the cursor → `getVerses` → format text → CM6 transaction dispatch at match end position
+    - Finds last `RefMatch` whose end position is at or before the cursor → `getVerses(data, ref, refFormat)` → format text → CM6 transaction dispatch at match end position
     - No-op if no references exist before the cursor
 
 ## Boundaries
@@ -193,6 +208,7 @@ Reference format pack files live under `reference-formats/` in the plugin direct
 - sources/adapters.ts must not import from 'obsidian' or use DOM APIs
 - sources/catalogManager.ts may import from 'obsidian'
 - src/osisMapping.ts must not import from 'obsidian'
+- src/packManager.ts may import from 'obsidian'
 - src/languagePackLoader.ts may import from 'obsidian'
 - src/languagePackRegistry.ts may import from 'obsidian'
 - src/referenceFormatLoader.ts may import from 'obsidian'
@@ -307,8 +323,7 @@ Language pack load:
 main.ts
 → settings.preferredLanguage
 → languagePackLoader.ts: loadLanguagePack()
-  → osisMapping.ts: osisToUsfm() (convert OSIS keys to USFM)
-  → AbbreviationMap
+  → AbbreviationMap (USFM keys read directly from pack; no conversion step)
   OR → books.ts: getBuiltInAbbreviationMap() (if no pack selected)
 
 Reference format load:
@@ -317,7 +332,7 @@ main.ts
 → settings.standardReferenceFormat
 → referenceFormatLoader.ts: loadReferenceFormat()
   → ReferenceFormatRules
-  OR → built-in Czech Protestant defaults (if no pack selected)
+  OR → books.ts: BUILT_IN_FORMAT_RULES (built-in English defaults, if no pack selected)
 
 Scanner construction:
 
@@ -332,23 +347,35 @@ Language pack download (explicit user action):
 
 settings UI
 → sources/catalog.ts (languagePackProviders, RemoteLanguagePackEntry)
-→ translationManager.ts (or equivalent pack manager)
-  → sources/adapters.ts: getAdapter(provider.adapterType).buildUrl()
+→ packManager.ts: downloadLanguagePack()
+  → sources/adapters.ts: getLanguagePackAdapter(provider.adapterType).buildUrl()
   → requestUrl (Obsidian API)
-  → sources/adapters.ts: getAdapter(provider.adapterType).transform(raw)
-  → validate LanguagePack format
+  → sources/adapters.ts: getLanguagePackAdapter(provider.adapterType).transform(raw)
+  → validate LanguagePackFile format
   → DataAdapter.write → recognition-languages/${id}.json
+
+Language pack delete (explicit user action):
+
+settings UI
+→ packManager.ts: deleteLanguagePack()
+→ DataAdapter.remove → recognition-languages/${id}.json
 
 Reference format download (explicit user action):
 
 settings UI
 → sources/catalog.ts (referenceFormatProviders, RemoteReferenceFormatEntry)
-→ translationManager.ts (or equivalent pack manager)
-  → sources/adapters.ts: getAdapter(provider.adapterType).buildUrl()
+→ packManager.ts: downloadReferenceFormat()
+  → sources/adapters.ts: getReferenceFormatAdapter(provider.adapterType).buildUrl()
   → requestUrl (Obsidian API)
-  → sources/adapters.ts: getAdapter(provider.adapterType).transform(raw)
-  → validate ReferenceFormat
+  → sources/adapters.ts: getReferenceFormatAdapter(provider.adapterType).transform(raw)
+  → validate ReferenceFormatFile format
   → DataAdapter.write → reference-formats/${id}.json
+
+Reference format delete (explicit user action):
+
+settings UI
+→ packManager.ts: deleteReferenceFormat()
+→ DataAdapter.remove → reference-formats/${id}.json
 
 Reference detection:
 
@@ -452,13 +479,122 @@ type LanguagePackMeta     = { id: string; displayName: string; lang: string };
 type ReferenceFormatMeta  = { id: string; displayName: string; lang: string };
 
 type ReferenceFormatRules = {
-  chapterVerseSeparator: string;  // e.g. "," or ":"
-  rangeSeparator: string;         // e.g. "-"
-  bookChapterSeparator: string;   // e.g. " "
+  chapterVerseSeparator: string;       // e.g. "," or ":"
+  rangeSeparator: string;              // e.g. "-"
+  bookChapterSeparator: string;        // e.g. " "
+  books: Record<string, string>;       // USFM BookId → canonical display abbreviation, e.g. { "GEN": "Gn", "MAT": "Mt" }
 };
+
+// AbbreviationMap: recognized input string → USFM 3.0 BookId
+// Built by languagePackLoader directly from a language pack's books[USFM_ID].aliases
+// (book keys in the pack file are already USFM; no conversion needed in the loader).
+// Falls back to books.ts: getBuiltInAbbreviationMap() when no pack is selected.
+type AbbreviationMap = Record<string, BookId>;
 
 type ParsingMode = 'strict' | 'extended';
 ```
+
+---
+
+## Pack File Formats
+
+### Recognition language pack (`recognition-languages/${id}.json`)
+
+```json
+{
+  "id": "cs",
+  "displayName": "Czech",
+  "lang": "cs",
+  "formatVersion": 1,
+  "source": "openbibleinfo/Bible-Passage-Reference-Parser",
+  "books": {
+    "GEN": {
+      "aliases": ["Gn", "Gen", "Genesis", "1. Mojžíšova"]
+    },
+    "MAT": {
+      "aliases": ["Mt", "Mat", "Matouš"]
+    }
+  }
+}
+```
+
+**Mandatory fields:** `id`, `displayName`, `lang`, `formatVersion`, `books`
+
+**Optional fields:** `source`
+
+**Field definitions:**
+- `id` — BCP 47 language tag used as the unique identifier and filename base (`${id}.json`); one pack per language; also used as `settings.preferredLanguage`
+- `displayName` — human-readable name shown in settings UI
+- `lang` — BCP 47 language tag (e.g. `"cs"`, `"en"`); same value as `id` for language packs
+- `source` — free-text provenance; informational only
+- `formatVersion` — integer; must be `1` for this format
+- `books` — map of **USFM 3.0 book identifiers** (e.g. `GEN`, `MAT`) to book name data:
+  - `aliases` — all recognized input strings for this language; flattened into `AbbreviationMap` (string → USFM `BookId`) by `languagePackLoader.ts`; no OSIS conversion needed in the loader
+
+---
+
+### Reference format pack (`reference-formats/${id}.json`)
+
+```json
+{
+  "id": "cs-protestant",
+  "displayName": "Czech Protestant",
+  "lang": "cs",
+  "formatVersion": 1,
+  "source": "manual",
+  "books": {
+    "GEN": "Gn",
+    "EXO": "Ex",
+    "MAT": "Mt"
+  },
+  "rules": {
+    "chapterVerseSeparator": ",",
+    "rangeSeparator": "-",
+    "bookChapterSeparator": " "
+  }
+}
+```
+
+**Mandatory fields:** `id`, `displayName`, `lang`, `formatVersion`, `books`, `rules`
+
+**Optional fields:** `source`
+
+**Field definitions:**
+- `id` — unique identifier; used as filename base and as `settings.standardReferenceFormat`
+- `displayName` — shown in settings UI
+- `lang` — BCP 47 language tag; informational (a format may apply across languages, e.g. Catholic notation shared by multiple languages)
+- `formatVersion` — integer; must be `1`
+- `source` — free-text provenance (`"manual"` for hand-authored packs, URL or repo reference for downloaded ones)
+- `books` — map of USFM 3.0 book identifiers → canonical display abbreviation for this format style; used by `formatRef` to render references while this format pack is active; must cover all 66 canonical books
+- `rules` — notation rule fields; all three are mandatory within `rules`:
+  - `chapterVerseSeparator` — character between chapter and verse number (e.g. `","` or `":"`)
+  - `rangeSeparator` — character between start and end of a verse range (e.g. `"-"`)
+  - `bookChapterSeparator` — character between book abbreviation and chapter number (e.g. `" "`)
+
+---
+
+## Pack Sourcing
+
+Packs reach the plugin directory through three independent paths; all three are supported simultaneously.
+
+### Bundled packs (shipped with the plugin)
+
+Reference format packs for well-known notation styles are bundled in the plugin release as pre-authored JSON files. They are placed in `reference-formats/` inside the plugin directory at install time (same mechanism as `translations/cep.json`).
+
+Bundled format packs at v0.4 release: `en` (English — colon notation, standard English abbreviations).
+
+The code-level `BUILT_IN_FORMAT_RULES` constant in `books.ts` is the actual offline fallback when no format pack is selected; the bundled `en.json` file is shipped for discoverability (it appears in the Installed formats list) but the plugin never reads it as a fallback.
+
+Language packs are **not** bundled; the built-in `books.ts: getBuiltInAbbreviationMap()` (English aliases) serves as the offline fallback when no language pack is selected. Additional language packs require a download or manual drop.
+
+### Manual drop
+
+A user can place a correctly formatted JSON file directly into `recognition-languages/` or `reference-formats/` using the file system. The registry scans the directory on settings tab open; the new pack appears in the installed list immediately without restarting the plugin. This is the same pattern as dropping a translation file into `translations/`.
+
+### Download from source catalog
+
+- **Language packs** — adapter type `"openbibleinfo"`: fetches raw language data from the openbibleinfo/Bible-Passage-Reference-Parser GitHub repository; the openbibleinfo source uses OSIS book identifiers, so the adapter converts them to USFM via `osisMapping.ts` during transformation; writes the result (with USFM keys) to `recognition-languages/${id}.json`.
+- **Reference format packs** — adapter type `"biblens-catalog"`: fetches a pre-authored pack JSON file from the BibLens GitHub repository at `catalog/reference-formats/${remoteId}.json`, writes to `reference-formats/${id}.json`. No transformation needed — the file is already in BibLens format.
 
 Catalog manager types live in `src/sources/catalogManager.ts`:
 
@@ -466,6 +602,41 @@ Catalog manager types live in `src/sources/catalogManager.ts`:
 type CatalogUpdateResult =
   | { ok: true;  updatedAt: string; providerCount: number }
   | { ok: false; error: string };
+```
+
+Shared types (defined in `src/types.ts`):
+
+```ts
+type CatalogData = {
+  translationProviders: SourceProvider[];
+  languagePackProviders: LanguagePackProvider[];
+  referenceFormatProviders: ReferenceFormatProvider[];
+};
+
+// Shape written to recognition-languages/${id}.json
+type LanguagePackFile = {
+  id: string;
+  displayName: string;
+  lang: string;
+  formatVersion: number;
+  source?: string;
+  books: Record<string, { aliases: string[] }>;  // USFM BookId → alias list
+};
+
+// Shape written to reference-formats/${id}.json
+type ReferenceFormatFile = {
+  id: string;
+  displayName: string;
+  lang: string;
+  formatVersion: number;
+  source?: string;
+  books: Record<string, string>;                 // USFM BookId → canonical abbreviation
+  rules: {
+    chapterVerseSeparator: string;
+    rangeSeparator: string;
+    bookChapterSeparator: string;
+  };
+};
 ```
 
 Remote catalog file shape — `schemaVersion: 2` (stored in repo at `catalog/providers.json`, cached locally as `catalog.json`):
@@ -486,15 +657,16 @@ Remote catalog file shape — `schemaVersion: 2` (stored in repo at `catalog/pro
 
 - `src/parser.ts` exports: `parseCzechBibleRef(input: string): ParseResult`
 - `src/parser.ts` exports: `scanRefs(text: string): RefMatch[]`
-- `src/parser.ts` exports: `formatRef(ref: BibleRef): string`
+- `src/parser.ts` exports: `formatRef(ref: BibleRef, refFormat?: ReferenceFormatRules): string` — when `refFormat` is provided, uses `refFormat.books[ref.bookId]` for the abbreviation and `refFormat.rules.*` for separators; falls back to built-in English defaults when omitted
 - `src/parser.ts` exports: `buildRefScanner(map: AbbreviationMap, format?: ReferenceFormatRules, mode?: ParsingMode): RefScanner`
+- `src/provider.ts` exports: `getVerses(data: TranslationData, ref: BibleRef, refFormat?: ReferenceFormatRules): VerseEntry[]`
 - `src/ui/hover.ts` exports: `PopoverManager` (methods: `show`, `hide`)
 - `src/ui/verseDOM.ts` exports: `buildVerseDOM(entries: VerseEntry[], options?: { copyButton?: boolean }): HTMLElement`
 - `src/ui/verseDOM.ts` exports: `formatVerseText(entries: VerseEntry[]): string`
 - `src/editor/refDecorations.ts` exports: `refDecorationsExtension(scanner: RefScanner): Extension`
-- `src/editor/refTooltip.ts` exports: `refTooltipExtension(scanner: RefScanner, data: TranslationData): Extension`
-- `src/editor/insertVerse.ts` exports: `insertVerseCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat): Command`
-- `src/editor/insertVerse.ts` exports: `insertAfterLastRefCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat): Command`
+- `src/editor/refTooltip.ts` exports: `refTooltipExtension(scanner: RefScanner, data: TranslationData, refFormat?: ReferenceFormatRules): Extension`
+- `src/editor/insertVerse.ts` exports: `insertVerseCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat, refFormat?: ReferenceFormatRules): Command`
+- `src/editor/insertVerse.ts` exports: `insertAfterLastRefCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat, refFormat?: ReferenceFormatRules): Command`
 - `src/translationRegistry.ts` exports: `listAvailableTranslations(adapter: DataAdapter, pluginDir: string): Promise<TranslationMeta[]>`
 - `src/translationDownloader.ts` exports: `downloadTranslation(adapter: DataAdapter, pluginDir: string, url: string, name: string): Promise<void>`
 

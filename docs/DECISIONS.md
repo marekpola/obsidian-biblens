@@ -272,8 +272,8 @@ Date: 2026-03-05
 
 Decision: Reference recognition is generalized through two independently downloadable pack types:
 
-1. **Recognition language packs** — JSON files in `recognition-languages/`; provide book names and abbreviations per language keyed by OSIS identifiers; converted to `AbbreviationMap` via a new centralized `src/osisMapping.ts` module (OSIS→USFM 3.0 lookup table).
-2. **Reference format packs** — JSON files in `reference-formats/`; define notation rules (`ReferenceFormatRules`: separators, range notation) for a reference style; multiple formats can exist per language (e.g. Protestant, Catholic, Jewish).
+1. **Recognition language packs** — JSON files in `recognition-languages/`; one pack per language (id = BCP 47 language tag); provide recognized input aliases per book keyed by **USFM 3.0 identifiers**; loader builds `AbbreviationMap` directly without any conversion step.
+2. **Reference format packs** — JSON files in `reference-formats/`; define notation rules (`ReferenceFormatRules`: separators, range notation) **and canonical display abbreviations per book** for a reference style; multiple formats can exist per language (e.g. Protestant, Catholic, Jewish). Canonical abbreviations live here, not in the language pack.
 
 `buildRefScanner(map, format?, mode?)` is extended with optional `ReferenceFormatRules` and `ParsingMode` (`'strict' | 'extended'`). All parameters default to built-in Czech Protestant behaviour, preserving offline operation without any downloaded packs.
 
@@ -281,13 +281,13 @@ Decision: Reference recognition is generalized through two independently downloa
 
 The source catalog schema advances from `schemaVersion: 1` to `schemaVersion: 2`, adding `languagePackProviders` and `referenceFormatProviders` arrays alongside the existing `translationProviders`. Older plugin versions reject a v2 catalog and fall back to bundled `KNOWN_PROVIDERS` — safe degradation via the existing `schemaVersion` guard (D016).
 
-A new pure module `src/osisMapping.ts` centralizes OSIS→USFM conversion, replacing per-adapter inline mappings in `adapters.ts`.
+A new pure module `src/osisMapping.ts` centralizes OSIS→USFM conversion for use by adapters (e.g. the `"openbibleinfo"` adapter converts OSIS keys during download transformation before writing USFM-keyed pack files). The loader does not use `osisMapping.ts` — pack files already contain USFM keys.
 
 New Obsidian-aware loader/registry pairs follow the translation pattern (D009, D012):
 - `src/languagePackLoader.ts` / `src/languagePackRegistry.ts` — `recognition-languages/` directory
 - `src/referenceFormatLoader.ts` / `src/referenceFormatRegistry.ts` — `reference-formats/` directory
 
-Reason: Decoupling book names (language pack) from notation rules (format pack) allows any combination to be active, enabling e.g. Czech book names with Catholic notation. OSIS-keyed pack format aligns directly with openbibleinfo data, minimizing transformation complexity. The catalog schema version bump ensures forward-compatible degradation in older plugin versions.
+Reason: Decoupling book names (language pack) from notation rules and canonical abbreviations (format pack) allows any combination to be active, enabling e.g. Czech book names with Catholic notation. Storing USFM keys in pack files means the loader is a simple read with no conversion; OSIS→USFM conversion is isolated to adapters where the openbibleinfo source data is handled. The catalog schema version bump ensures forward-compatible degradation in older plugin versions.
 
 Consequences:
 - `src/osisMapping.ts` — pure; no Obsidian imports
@@ -300,4 +300,63 @@ Consequences:
 - Settings UI gains: Preferred language and Standard reference format dropdowns; Parsing rules toggle; Installed recognition languages and Installed reference formats sections; Install sources extended with language pack and format pack sub-sections
 
 Supersedes: D013 (custom abbreviation mechanism — replaced by language packs).
+Date: 2026-03-08
+
+## D020 – v0.4 architectural completions: adapter interfaces, pack manager, formatRef, built-in fallback, translation field deprecation
+
+Decision: Five open architectural questions from v0.4 are resolved as follows.
+
+**1. Separate adapter interfaces per pack type.**
+`src/sources/adapters.ts` defines three independent adapter interfaces: `SourceAdapter` (translations, unchanged), `LanguagePackAdapter`, and `ReferenceFormatAdapter`. Each has its own `buildUrl` and `transform` typed to the correct input/output. Three separate registry functions: `getAdapter`, `getLanguagePackAdapter`, `getReferenceFormatAdapter`. This preserves type safety without generics complexity.
+
+**2. New `src/packManager.ts` for pack downloads and deletes.**
+Language pack and format pack lifecycle (download, delete) is handled by a new `src/packManager.ts` module (Obsidian-aware), parallel to `translationManager.ts`. It exports `downloadLanguagePack`, `deleteLanguagePack`, `downloadReferenceFormat`, `deleteReferenceFormat`. `translationManager.ts` is unchanged.
+
+**3. `loadCatalog` returns `CatalogData`, not `SourceProvider[]`.**
+`CatalogData = { translationProviders, languagePackProviders, referenceFormatProviders }`. This aligns the return type with the v2 catalog schema and makes all three provider arrays accessible to callers. The bundled `KNOWN_PROVIDERS` fallback is restructured to the same shape.
+
+**4. `formatRef` extended with optional `format` parameter.**
+Signature: `formatRef(ref: BibleRef, format?: ReferenceFormatRules): string`. When provided, uses `format.books[ref.bookId]` for canonical abbreviation and `format.rules.*` for separators. Falls back to built-in Czech Protestant defaults when omitted. All call sites in `refTooltip.ts`, `hover.ts`, and `insertVerse.ts` pass the active `ReferenceFormatRules` from `main.ts`. Change is backwards-compatible.
+
+**5. `BUILT_IN_FORMAT_RULES` exported from `books.ts`.**
+A hardcoded `BUILT_IN_FORMAT_RULES: ReferenceFormatRules` constant in `books.ts` provides Czech Protestant separators and canonical abbreviations for all 66 books as a code-level fallback when no format pack is selected. Does not depend on the bundled `cs-protestant.json` file being present. The bundled file is still shipped for discoverability (appears in installed list), but the plugin's offline operation never reads it as a fallback.
+
+**6. `canonicalAbbreviations` and `allowedAbbreviations` in translation files deprecated.**
+Both optional v0.3 fields in translation files are silently ignored in v0.4 when a format pack or language pack is active. The format pack `books` map and language pack `aliases` are the sole authoritative sources. Existing translation files with these fields continue to load without error. No migration required.
+
+Consequences:
+- `src/sources/adapters.ts` gains `LanguagePackAdapter`, `ReferenceFormatAdapter` interfaces and `getLanguagePackAdapter`, `getReferenceFormatAdapter` registry functions
+- `src/packManager.ts` — new Obsidian-aware module
+- `src/sources/catalogManager.ts` `loadCatalog` return type changes to `CatalogData`
+- `src/sources/catalog.ts` `KNOWN_PROVIDERS` restructured to `CatalogData` shape
+- `src/parser.ts` `formatRef` gains optional second parameter
+- `src/books.ts` gains `BUILT_IN_FORMAT_RULES: ReferenceFormatRules`
+- `src/types.ts` gains `LanguagePackFile`, `ReferenceFormatFile`, `CatalogData` types
+- Translation loader silently ignores `canonicalAbbreviations` and `allowedAbbreviations`
+Date: 2026-03-08
+
+## D021 – v0.4: `refFormat` propagation through call stack; English as international default; `CatalogData` in types.ts
+
+**B1 — `refFormat` propagation.**
+`getVerses` gains an optional third parameter `refFormat?: ReferenceFormatRules` and passes it to `formatRef` for the first-entry label. The editor factory functions `refTooltipExtension`, `insertVerseCommand`, and `insertAfterLastRefCommand` each gain a corresponding optional `refFormat?` parameter and forward it to `getVerses`. `main.ts` passes the active `ReferenceFormatRules` to all three factories at construction time. All changes use optional parameters for backwards compatibility.
+The parameter is named `refFormat` (not `format`) to avoid collision with the existing `format: InsertionFormat` parameter in the insert commands.
+
+**C1 — English as the international default.**
+The built-in fallback is changed from Czech Protestant to English (colon notation):
+- `getBuiltInAbbreviationMap()` in `books.ts` returns English aliases (`Gen`, `Exod`, `Matt`, etc.)
+- `BUILT_IN_FORMAT_RULES` in `books.ts` uses colon chapter-verse separator, hyphen range separator, space book-chapter separator, and standard English canonical abbreviations for all 66 books
+- The bundled format pack shipped with the plugin is `en` (English); the Czech Protestant pack is available for download, not bundled
+- The code-level constants are the actual offline fallback; the bundled `en.json` file is for discoverability only
+Reason: the plugin targets international users; Czech-specific defaults are inappropriate as a universal fallback. English (SBL/common notation) is the most widely recognised Bible reference format internationally.
+
+**C2 — `CatalogData` lives in `src/types.ts`.**
+Consistent with all other shared types. `catalogManager.ts` references `CatalogData` from `src/types.ts`; it does not define it.
+
+Consequences:
+- `src/provider.ts` `getVerses` signature gains optional `refFormat?: ReferenceFormatRules`
+- `src/editor/refTooltip.ts` `refTooltipExtension` gains optional `refFormat?: ReferenceFormatRules`
+- `src/editor/insertVerse.ts` `insertVerseCommand` and `insertAfterLastRefCommand` gain optional `refFormat?: ReferenceFormatRules`
+- `src/books.ts` `getBuiltInAbbreviationMap()` returns English aliases; `BUILT_IN_FORMAT_RULES` uses English notation
+- Bundled format pack changes from `cs-protestant` to `en`
+- `CatalogData` type defined in `src/types.ts`
 Date: 2026-03-08

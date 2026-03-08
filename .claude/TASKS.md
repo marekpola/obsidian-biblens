@@ -20,6 +20,106 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 ## Next
 
+### Task 20 – OSIS→USFM Mapping
+Issue: #10
+
+#### Goal
+Implement the static OSIS→USFM 3.0 lookup table used by adapters to convert OSIS book identifiers (e.g. `Gen`, `Matt`) to USFM identifiers (e.g. `GEN`, `MAT`) during download transformation. Pack files store USFM keys; this module is not used by the loaders.
+
+#### Scope
+- `src/osisMapping.ts`: implement `osisToUsfm(osisId: string): BookId | undefined` — static map covering all 66 canonical books; no Obsidian imports
+
+#### Definition of Done
+- `osisToUsfm("Gen")` returns `"GEN"`, `osisToUsfm("Matt")` returns `"MAT"`, unknown input returns `undefined`
+- Module has no Obsidian imports
+- `npm run check` and `npm run ci` pass
+
+---
+
+### Task 21 – Language Pack Loader and Registry
+Issue: #10
+
+#### Goal
+Implement reading and listing of recognition language packs from `recognition-languages/` in the plugin directory.
+
+#### Scope
+- `src/languagePackLoader.ts`: implement `loadLanguagePack(adapter, pluginDir, id): Promise<{ map: AbbreviationMap; meta: LanguagePackMeta }>` — reads `recognition-languages/${id}.json`; book keys are USFM (no conversion needed); flattens `books[usfmId].aliases` into `AbbreviationMap`
+- `src/languagePackRegistry.ts`: implement `listAvailableLanguagePacks(adapter, pluginDir): Promise<LanguagePackMeta[]>` — scans `recognition-languages/` and returns metadata from each `.json` file
+
+#### Definition of Done
+- Loading a valid language pack JSON (USFM-keyed) produces a correct `AbbreviationMap`
+- `languagePackLoader.ts` does not import `osisMapping.ts`
+- Registry returns an empty array (not an error) when the directory does not exist
+- Both modules may import from `obsidian`; neither imports from DOM APIs
+- `npm run check` and `npm run ci` pass
+
+---
+
+### Task 22 – Reference Format Loader and Registry
+Issue: #10
+
+#### Goal
+Implement reading and listing of reference format packs from `reference-formats/` in the plugin directory.
+
+#### Scope
+- `src/referenceFormatLoader.ts`: implement `loadReferenceFormat(adapter, pluginDir, id): Promise<{ rules: ReferenceFormatRules; meta: ReferenceFormatMeta }>` — reads `reference-formats/${id}.json`, validates mandatory fields (`rules` + `books`), returns `ReferenceFormatRules` (which includes `books: Record<string, string>`)
+- `src/referenceFormatRegistry.ts`: implement `listAvailableReferenceFormats(adapter, pluginDir): Promise<ReferenceFormatMeta[]>` — scans `reference-formats/` and returns metadata from each `.json` file
+
+#### Definition of Done
+- Loading a valid format pack JSON produces a correct `ReferenceFormatRules` object including `books` (USFM → canonical abbreviation map)
+- Registry returns an empty array (not an error) when the directory does not exist
+- Both modules may import from `obsidian`; neither imports from DOM APIs
+- `npm run check` and `npm run ci` pass
+
+---
+
+### Task 23 – buildRefScanner: Format Rules and Parsing Mode
+Issue: #10
+
+#### Goal
+Extend the parser with `buildRefScanner` that compiles a regex once from a given `AbbreviationMap`, optional `ReferenceFormatRules`, and `ParsingMode`; add v0.4 settings fields.
+
+#### Scope
+- `src/parser.ts`: implement `buildRefScanner(map: AbbreviationMap, format?: ReferenceFormatRules, mode?: ParsingMode): RefScanner`
+  - Strict mode: enforce format pack separators (chapterVerseSeparator, rangeSeparator, bookChapterSeparator)
+  - Extended mode: accept all plausible separator variants regardless of format pack
+  - Falls back to `BUILT_IN_FORMAT_RULES` (from `books.ts`) when no format pack is provided
+- `src/parser.ts`: extend `formatRef(ref: BibleRef, refFormat?: ReferenceFormatRules): string` — when `refFormat` is provided, uses `refFormat.books[ref.bookId]` for abbreviation and `refFormat.rules.*` for separators; falls back to built-in English defaults when omitted
+- `src/books.ts`: export `BUILT_IN_FORMAT_RULES: ReferenceFormatRules` — hardcoded English colon-notation separators and canonical abbreviations for all 66 books (e.g. `GEN → "Gen"`, `MAT → "Matt"`); no Obsidian imports
+- `src/settings.ts`: add `preferredLanguage: string` (default `""`), `standardReferenceFormat: string` (default `""`), `parsingRules: 'strict' | 'extended'` (default `'strict'`) to `BibLensSettings` and `DEFAULT_SETTINGS`
+
+#### Definition of Done
+- `buildRefScanner` with built-in defaults detects `Mt 1,3` and `Gn 22,1-19` in strict mode
+- Extended mode detects the same references with colon or period as chapter/verse separator
+- `formatRef(ref, BUILT_IN_FORMAT_RULES)` produces `"Gen 1:1"` for `{ bookId: "GEN", chapterStart: 1, verseStart: 1 }`
+- `src/parser.ts` and `src/books.ts` have no Obsidian imports
+- `npm run check` and `npm run ci` pass
+
+---
+
+### Task 24 – Settings UI and main.ts Wiring
+Issue: #10
+
+#### Goal
+Wire language pack and reference format pack loading into plugin startup; expose new settings controls in the settings tab.
+
+#### Scope
+- `src/main.ts`:
+  - On `onload()`: call `loadCatalog()` → `CatalogData`; load active language pack via `languagePackLoader.ts` (fall back to `getBuiltInAbbreviationMap()` if none selected); load active format pack via `referenceFormatLoader.ts` (fall back to `BUILT_IN_FORMAT_RULES` from `books.ts` if none selected); call `buildRefScanner(map, formatRules, settings.parsingRules)` and pass resulting `RefScanner` to editor extensions and insert commands; pass active `ReferenceFormatRules` as `refFormat` to `refTooltipExtension`, `insertVerseCommand`, and `insertAfterLastRefCommand`
+- `src/settingsTab.ts`:
+  - General section: add **Preferred language for reference recognition** dropdown (from `listAvailableLanguagePacks`), **Standard reference format** dropdown (from `listAvailableReferenceFormats`), **Parsing rules** dropdown (Strict / Extended); changes trigger scanner rebuild via `plugin.reloadScanner()`
+  - After Installed translations: add **Installed reference formats** section (name, language, Delete button) and **Installed recognition languages** section (name, language, Delete button); Delete calls `packManager.ts: deleteReferenceFormat()`/`deleteLanguagePack()`
+  - Install sources section renamed from "Get translations" to "Install sources"; add **Reference formats** sub-section (provider dropdown + format dropdown + Download button) and **Recognition languages** sub-section (provider dropdown + language dropdown + Download button); Download calls `packManager.ts: downloadReferenceFormat()`/`downloadLanguagePack()`
+
+#### Definition of Done
+- Changing Preferred language or Standard reference format in settings immediately re-applies detection without plugin restart
+- Installed packs appear in their respective sections with working Delete buttons
+- Install sources section downloads a format or language pack and the new pack appears in the installed list
+- `formatRef` uses the active format pack's canonical abbreviations when formatting references in tooltips and insertions
+- `npm run check` and `npm run ci` pass
+
+---
+
 ### Task 13 – Copy Verse Text to Clipboard
 Issue: #2
 
