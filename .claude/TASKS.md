@@ -18,6 +18,162 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 ## Active
 
+
+## Next
+
+
+### Task 13 – Copy Verse Text to Clipboard
+Issue: #2
+
+#### Goal
+Add a copy button to the hover popover and editor tooltip that copies the full formatted verse text to the clipboard.
+
+#### Scope
+- `src/ui/verseDOM.ts`: implement `buildVerseDOM` `copyButton` option — when `true`, append a `<button>` that calls `navigator.clipboard.writeText(formatVerseText(entries))`
+- `src/ui/verseDOM.ts`: implement `formatVerseText(entries: VerseEntry[]): string` — join entries as `<label> <text>` separated by single space
+- `src/ui/hover.ts` and `src/editor/refTooltip.ts`: pass `{ copyButton: true }` when calling `buildVerseDOM`
+- No Obsidian imports — `navigator.clipboard` is Web API; mobile-compatible
+
+#### Definition of Done
+- Copy button appears in both Reading View popover and editor tooltip
+- Clicking the button copies plain-text verse content to clipboard
+- `src/ui/verseDOM.ts` has no Obsidian imports
+- `npm run check` and `npm run ci` pass
+
+---
+
+### Task 25 – openbibleinfo Language Pack Adapter
+
+#### Goal
+Implement the `"openbibleinfo"` adapter for recognition language packs and register it with provider entries in the source catalog.
+
+#### Data source
+`https://raw.githubusercontent.com/openbibleinfo/Bible-Passage-Reference-Parser/master/src/{lang}/data.txt`
+
+The `data.txt` file format:
+- Variable lines: `$KEY value1 value2 …` (e.g. `$FIRST První 1 I`)
+- Book alias lines: `OsisId alias1 alias2 …` (tab-separated; variable references like `$FIRST` are pre-expanded)
+- Preferred names section (after `# Preferred names` comment): `*OsisId Long Short Shorter Single` (tab-separated)
+- Order section (after `# Order` comment): `=OsisId` — canonical book order
+
+#### Scope
+- `src/sources/adapters.ts`:
+  - Implement `OpenbibleinfoLanguagePackAdapter` class implementing `LanguagePackAdapter`
+  - `buildUrl(provider, entry)`: returns `${provider.baseUrl}/src/${entry.remoteId}/data.txt`
+  - `transform(raw: unknown)`:
+    1. Parse alias lines: collect all aliases per OSIS id (from the non-`*` book lines, excluding `# Order` and `# Preferred names` sections; expand variable references like `$FIRST`→`První 1 I`)
+    2. Convert OSIS id → USFM via `osisMapping.ts`; skip any id that does not map (deuterocanonical books not in USFM 66-book canon)
+    3. Produce `LanguagePackFile` with `formatVersion: 1`, USFM keys, `source: "openbibleinfo/Bible-Passage-Reference-Parser"`
+  - Register under `getLanguagePackAdapter("openbibleinfo")`
+- `src/sources/catalog.ts`:
+  - Add `languagePackProviders` entry for openbibleinfo:
+    - `id: "openbibleinfo"`, `adapterType: "openbibleinfo"`, `baseUrl: "https://raw.githubusercontent.com/openbibleinfo/Bible-Passage-Reference-Parser/master"`
+    - Include at minimum these languages in `packs`: `cs` (Czech), `en` (English), `de` (German), `pl` (Polish), `sk` (Slovak), `hu` (Hungarian), `ro` (Romanian), `uk` (Ukrainian), `ru` (Russian), `fr` (French), `it` (Italian), `es` (Spanish), `pt` (Portuguese), `nl` (Dutch)
+    - Each entry: `{ id: "{lang}", displayName: "{Language}", language: "{lang}", remoteId: "{lang}" }`
+
+#### Definition of Done
+- `transform()` on Czech `data.txt` produces a `LanguagePackFile` with USFM keys covering all 66 canonical books, each with at least one alias
+- `transform()` skips deuterocanonical books not in USFM 66-book canon without throwing
+- `getLanguagePackAdapter("openbibleinfo")` returns the adapter without error
+- `adapters.ts` has no Obsidian imports
+- `npm run check` and `npm run ci` pass
+
+---
+
+### Task 26 – openbibleinfo Reference Format Pack Adapter
+
+#### Goal
+Implement the `"openbibleinfo"` adapter for reference format packs, sourcing canonical abbreviations from openbibleinfo preferred names data combined with notation rules defined in the catalog entry.
+
+#### Data source
+Same `data.txt` as Task 25. Relevant section:
+
+```
+# Preferred names
+# OSIS	Long	Short	Shorter	Single (Ps)
+*Gen	Genesis	Gen	Gn
+*Matt	Matouš	Mat	Mt
+```
+
+The `Short` column (index 2) is the preferred canonical abbreviation; fall back to `Shorter` (index 3) only when `Short` is absent.
+
+#### Scope
+- `src/sources/catalog.ts`:
+  - Extend `RemoteReferenceFormatEntry` with optional `rules` field:
+    ```ts
+    rules?: { chapterVerseSeparator: string; rangeSeparator: string; bookChapterSeparator: string }
+    ```
+    (The openbibleinfo adapter reads separator rules from the catalog entry rather than the remote data, since `data.txt` does not define all three rule fields.)
+  - Add `referenceFormatProviders` entry for openbibleinfo:
+    - `id: "openbibleinfo"`, `adapterType: "openbibleinfo"`, `baseUrl: "https://raw.githubusercontent.com/openbibleinfo/Bible-Passage-Reference-Parser/master"`
+    - Include at minimum: `cs` (Czech, `,` chapter-verse), `en` (English, `:` chapter-verse), `de` (German, `,` chapter-verse)
+    - Each entry example:
+      ```json
+      { "id": "cs", "displayName": "Czech", "language": "cs", "remoteId": "cs",
+        "rules": { "chapterVerseSeparator": ",", "rangeSeparator": "-", "bookChapterSeparator": " " } }
+      ```
+- `src/sources/adapters.ts`:
+  - Implement `OpenbibleinfoReferenceFormatAdapter` class implementing `ReferenceFormatAdapter`
+  - `buildUrl(provider, entry)`: returns `${provider.baseUrl}/src/${entry.remoteId}/data.txt`
+  - `transform(raw: unknown, entry: RemoteReferenceFormatEntry)`:
+    1. Parse the preferred names section (lines starting with `*`): extract OSIS id and `Short` abbreviation (fall back to `Shorter`)
+    2. Convert OSIS → USFM via `osisMapping.ts`; skip non-canonical books
+    3. Read separator rules from `entry.rules`; throw if `entry.rules` is missing
+    4. Produce `ReferenceFormatFile` with USFM keys in `books`, rules from `entry.rules`, `source: "openbibleinfo/Bible-Passage-Reference-Parser"`
+  - Register under `getReferenceFormatAdapter("openbibleinfo")`
+- `src/types.ts`: update `RemoteReferenceFormatEntry` to add the optional `rules` field (or place the extended type in `catalog.ts` if preferred — document the decision)
+
+#### Definition of Done
+- `transform()` on Czech `data.txt` + Czech catalog entry produces a `ReferenceFormatFile` with `chapterVerseSeparator: ","` and USFM `books` map covering all 66 canonical books
+- `transform()` throws a descriptive error when `entry.rules` is absent
+- `getReferenceFormatAdapter("openbibleinfo")` returns the adapter without error
+- `adapters.ts` has no Obsidian imports
+- `npm run check` and `npm run ci` pass
+
+---
+
+### Task 27 – Static Czech Protestant Reference Format Pack
+
+#### Goal
+Author and ship a hand-crafted Czech Protestant reference format pack as a bundled file.
+
+#### Scope
+- Create `reference-formats/cs-protestant.json` conforming to the `ReferenceFormatFile` schema (see `docs/ARCHITECTURE.md` → Pack File Formats)
+- Format rules:
+  - `chapterVerseSeparator: ","`
+  - `rangeSeparator: "-"`
+  - `bookChapterSeparator: " "`
+- `id: "cs-protestant"`, `displayName: "Czech Protestant"`, `lang: "cs"`, `formatVersion: 1`, `source: "manual"`
+- `books`: canonical Czech Protestant abbreviations for all 66 canonical USFM books, drawn from the openbibleinfo Czech preferred names `Short` column (and `Shorter` fallback); see the `data.txt` preferred names section researched for Tasks 25–26
+- Example entries: `"GEN": "Gn"`, `"MAT": "Mt"`, `"REV": "Zj"`
+
+#### Definition of Done
+- `reference-formats/cs-protestant.json` is valid JSON conforming to `ReferenceFormatFile` schema
+- `books` map covers exactly the 66 canonical USFM book ids (no deuterocanonical entries)
+- Loading the file via `referenceFormatLoader.ts` produces a correct `ReferenceFormatRules` object
+- `npm run check` and `npm run ci` pass (no build changes required — this is a data file only)
+
+---
+
+## Future (Not MVP)
+- Parallel text support
+- Morphology
+- Configurable abbreviation systems
+
+---
+## Done
+
+### Task 28 – Open Plugin Settings Command
+
+#### Goal
+Add a command to open the BibLens plugin settings tab directly from the command palette.
+
+#### Definition of Done
+- Command `BibLens: Open settings` is available in the command palette ✓
+- Invoking it opens the Obsidian Settings modal on the BibLens tab ✓
+
+---
+
 ### Task 24 – Settings UI and main.ts Wiring
 Issue: #10
 
@@ -45,36 +201,7 @@ Wire language pack and reference format pack loading into plugin startup; expose
 - `npm run check` and `npm run ci` pass
 
 ---
-## Next
 
-
-### Task 13 – Copy Verse Text to Clipboard
-Issue: #2
-
-#### Goal
-Add a copy button to the hover popover and editor tooltip that copies the full formatted verse text to the clipboard.
-
-#### Scope
-- `src/ui/verseDOM.ts`: implement `buildVerseDOM` `copyButton` option — when `true`, append a `<button>` that calls `navigator.clipboard.writeText(formatVerseText(entries))`
-- `src/ui/verseDOM.ts`: implement `formatVerseText(entries: VerseEntry[]): string` — join entries as `<label> <text>` separated by single space
-- `src/ui/hover.ts` and `src/editor/refTooltip.ts`: pass `{ copyButton: true }` when calling `buildVerseDOM`
-- No Obsidian imports — `navigator.clipboard` is Web API; mobile-compatible
-
-#### Definition of Done
-- Copy button appears in both Reading View popover and editor tooltip
-- Clicking the button copies plain-text verse content to clipboard
-- `src/ui/verseDOM.ts` has no Obsidian imports
-- `npm run check` and `npm run ci` pass
-
----
-
-## Future (Not MVP)
-- Parallel text support
-- Morphology
-- Configurable abbreviation systems
-
----
-## Done
 
 ### Task 23 – buildRefScanner: Format Rules and Parsing Mode
 Issue: #10
