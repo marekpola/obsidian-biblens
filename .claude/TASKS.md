@@ -3,6 +3,17 @@
 This file defines the active development tasks.
 Each task must include a clear Definition of Done (DoD).
 
+## Definition of Done
+
+Each task defines its own acceptance criteria in `.claude/TASKS.md`. The following is the minimum technical bar that must also pass for every task:
+
+1. npm run check passes
+2. npm run ci passes
+3. All tests green
+4. Plugin builds successfully
+
+Both the task's own DoD and this global DoD must pass before a task is marked Done.
+
 ---
 
 ## Active

@@ -261,3 +261,14 @@ Every implementation task must:
 2. Provide manual test steps.
 3. Update `docs/TESTPLAN.md` if behavior changes.
 4. Remain reviewable (avoid large refactors).
+
+
+
+# Important Notes for Claude
+
+- Do not expand project scope beyond `docs/SPEC.md` unless in role Architect.
+- Prefer minimal changes over architectural redesign.
+- When uncertain, ask before making large changes.
+- Always show `git diff` before committing changes.
+
+---

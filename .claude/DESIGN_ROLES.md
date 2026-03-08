@@ -23,6 +23,7 @@ Rules:
 - Do not write code.
 - Do not create `.claude/TASKS.md` items.
 - Prefer ideas consistent with `docs/SPEC.md`, but new ideas may extend the product beyond it.
+- Elaborate items `TBD` from `docs/SPEC.md`, suggest changes in this document.
 - When a proposal would significantly expand scope or affect architecture, flag it for Architect review.
 - Keep issues short and clearly scoped.
 - Prefer issues that can be implemented in a small number of tasks.
@@ -31,7 +32,7 @@ Output format:
 Propose **1–3 GitHub issues**.
 Each issue must contain only:
 - Title
-- Description
+- Description - keep it as short as possible
 
 The output must include a ready-to-run command:
 `gh issue create --title "..." --body "..."`
