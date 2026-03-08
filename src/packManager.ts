@@ -41,7 +41,11 @@ export async function downloadReferenceFormat(
 	const adapter = getReferenceFormatAdapter(provider.adapterType);
 	const url = adapter.buildUrl(provider, entry);
 	const response = await requestUrl({ url });
-	const file = adapter.transform(response.text);
+	const file = adapter.transform(response.text, entry);
+	// Populate metadata from catalog entry — remote data may not include these fields
+	file.id = entry.id;
+	file.displayName = entry.displayName;
+	file.lang = entry.language;
 	await vaultAdapter.write(
 		`${pluginDir}/reference-formats/${entry.id}.json`,
 		JSON.stringify(file, null, 2)

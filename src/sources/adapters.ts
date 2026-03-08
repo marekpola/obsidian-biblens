@@ -22,7 +22,7 @@ export interface LanguagePackAdapter {
 
 export interface ReferenceFormatAdapter {
 	buildUrl(provider: ReferenceFormatProvider, entry: RemoteReferenceFormatEntry): string;
-	transform(raw: unknown): ReferenceFormatFile;
+	transform(raw: unknown, entry: RemoteReferenceFormatEntry): ReferenceFormatFile;
 }
 
 // Canonical USFM 3.0 book IDs in Protestant canonical order (position = book number - 1)
@@ -246,8 +246,58 @@ const biblensCatalogFormatAdapter: ReferenceFormatAdapter = {
 	buildUrl(provider, entry) {
 		return `${provider.baseUrl}/${entry.remoteId}.json`;
 	},
-	transform(raw) {
+	transform(raw, _entry) {
 		return JSON.parse(raw as string) as ReferenceFormatFile;
+	},
+};
+
+// ---------------------------------------------------------------------------
+// openbibleinfo reference format adapter
+// URL: ${baseUrl}/src/${lang}/data.txt
+// Reads the "Preferred names" section (lines starting with *):
+//   *OsisId  Long  Short  Shorter  Single
+// Uses Short (index 2) as the canonical abbreviation; falls back to Shorter (index 3).
+// Separator rules are taken from entry.rules (not present in data.txt).
+// ---------------------------------------------------------------------------
+
+const openbibleinfoReferenceFormatAdapter: ReferenceFormatAdapter = {
+	buildUrl(provider, entry) {
+		return `${provider.baseUrl}/src/${entry.remoteId}/data.txt`;
+	},
+	transform(raw, entry) {
+		if (!entry.rules) {
+			throw new Error('BibLens: openbibleinfo reference format adapter requires entry.rules to be defined in the catalog entry');
+		}
+		const lines = (raw as string).split('\n').map(l => l.trimEnd());
+		const books: Record<string, string> = {};
+
+		for (const line of lines) {
+			if (!line.startsWith('*')) continue;
+			const parts = line.slice(1).split('\t');
+			const osisId = parts[0]?.trim();
+			if (!osisId) continue;
+
+			const usfmId = osisToUsfm(osisId);
+			if (!usfmId || !CANONICAL_USFM_SET.has(usfmId)) continue;
+
+			// Short is at index 2, Shorter at index 3
+			const short   = parts[2]?.trim();
+			const shorter = parts[3]?.trim();
+			const abbr = (short && short.length > 0) ? short : shorter;
+			if (!abbr) continue;
+
+			books[usfmId] = abbr;
+		}
+
+		return {
+			id: '',          // populated by packManager from catalog entry
+			displayName: '', // populated by packManager from catalog entry
+			lang: '',        // populated by packManager from catalog entry
+			formatVersion: 1,
+			source: 'openbibleinfo/Bible-Passage-Reference-Parser',
+			books,
+			rules: entry.rules,
+		};
 	},
 };
 
@@ -261,6 +311,7 @@ const LANG_REGISTRY: Record<string, LanguagePackAdapter> = {
 
 const FORMAT_REGISTRY: Record<string, ReferenceFormatAdapter> = {
 	'biblens-catalog': biblensCatalogFormatAdapter,
+	'openbibleinfo':   openbibleinfoReferenceFormatAdapter,
 };
 
 export function getLanguagePackAdapter(adapterType: string): LanguagePackAdapter {

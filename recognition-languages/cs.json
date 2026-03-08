@@ -1,0 +1,773 @@
+{
+  "id": "cs",
+  "displayName": "Czech",
+  "lang": "cs",
+  "formatVersion": 1,
+  "source": "openbibleinfo/Bible-Passage-Reference-Parser",
+  "books": {
+    "GEN": {
+      "aliases": [
+        "První Mojžíšova",
+        "1 Mojžíšova",
+        "I Mojžíšova",
+        "Genesis",
+        "První kniha Mojžíšova",
+        "1 kniha Mojžíšova",
+        "I kniha Mojžíšova"
+      ]
+    },
+    "EXO": {
+      "aliases": [
+        "Druhá Mojžíšova",
+        "Druhý Mojžíšova",
+        "2 Mojžíšova",
+        "II Mojžíšova",
+        "Exodus",
+        "Ex",
+        "Druhá kniha Mojžíšova",
+        "Druhý kniha Mojžíšova",
+        "2 kniha Mojžíšova",
+        "II kniha Mojžíšova"
+      ]
+    },
+    "LEV": {
+      "aliases": [
+        "Třetí Mojžíšova",
+        "3 Mojžíšova",
+        "III Mojžíšova",
+        "Leviticus",
+        "Lv",
+        "Třetí kniha Mojžíšova",
+        "3 kniha Mojžíšova",
+        "III kniha Mojžíšova",
+        "Levitikus",
+        "Leviticusi"
+      ]
+    },
+    "NUM": {
+      "aliases": [
+        "Čtvrtá Mojžíšova",
+        "4 Mojžíšova",
+        "IV Mojžíšova",
+        "Numeri",
+        "Num",
+        "Čtvrtá kniha Mojžíšova",
+        "4 kniha Mojžíšova",
+        "IV kniha Mojžíšova",
+        "Nu",
+        "Nm"
+      ]
+    },
+    "DEU": {
+      "aliases": [
+        "Pátá Mojžíšova",
+        "5 Mojžíšova",
+        "V Mojžíšova",
+        "Deuteronomium",
+        "Dt",
+        "Pátá kniha Mojžíšova",
+        "5 kniha Mojžíšova",
+        "V kniha Mojžíšova"
+      ]
+    },
+    "JOS": {
+      "aliases": [
+        "Jozue",
+        "Joz",
+        "Jz"
+      ]
+    },
+    "JDG": {
+      "aliases": [
+        "Soudců",
+        "Sdc",
+        "Sd"
+      ]
+    },
+    "RUT": {
+      "aliases": [
+        "Rút",
+        "Rt"
+      ]
+    },
+    "1SA": {
+      "aliases": [
+        "První Samuelova",
+        "1 Samuelova",
+        "I Samuelova",
+        "První Samuel",
+        "1 Samuel",
+        "I Samuel",
+        "První Sam",
+        "1 Sam",
+        "I Sam",
+        "První kniha Samuelova",
+        "1 kniha Samuelova",
+        "I kniha Samuelova",
+        "První S",
+        "1 S",
+        "I S"
+      ]
+    },
+    "2SA": {
+      "aliases": [
+        "Druhá Samuelova",
+        "Druhý Samuelova",
+        "2 Samuelova",
+        "II Samuelova",
+        "Druhá Samuel",
+        "Druhý Samuel",
+        "2 Samuel",
+        "II Samuel",
+        "Druhá Sam",
+        "Druhý Sam",
+        "2 Sam",
+        "II Sam",
+        "Druhá kniha Samuelova",
+        "Druhý kniha Samuelova",
+        "2 kniha Samuelova",
+        "II kniha Samuelova",
+        "Druhá S",
+        "Druhý S",
+        "2 S",
+        "II S"
+      ]
+    },
+    "1KI": {
+      "aliases": [
+        "První Královská",
+        "1 Královská",
+        "I Královská",
+        "První Král",
+        "1 Král",
+        "I Král",
+        "První kniha královská",
+        "1 kniha královská",
+        "I kniha královská",
+        "První Kr",
+        "1 Kr",
+        "I Kr"
+      ]
+    },
+    "2KI": {
+      "aliases": [
+        "Druhá Královská",
+        "Druhý Královská",
+        "2 Královská",
+        "II Královská",
+        "Druhá Král",
+        "Druhý Král",
+        "2 Král",
+        "II Král",
+        "Druhá kniha královská",
+        "Druhý kniha královská",
+        "2 kniha královská",
+        "II kniha královská",
+        "Druhá Kr",
+        "Druhý Kr",
+        "2 Kr",
+        "II Kr"
+      ]
+    },
+    "1CH": {
+      "aliases": [
+        "První Letopisu",
+        "1 Letopisu",
+        "I Letopisu",
+        "První Letopisů",
+        "1 Letopisů",
+        "I Letopisů",
+        "První Paralipomenon",
+        "1 Paralipomenon",
+        "I Paralipomenon",
+        "První kniha kronik",
+        "1 kniha kronik",
+        "I kniha kronik",
+        "První Kronik",
+        "1 Kronik",
+        "I Kronik",
+        "První Kron",
+        "1 Kron",
+        "I Kron",
+        "První Pa",
+        "1 Pa",
+        "I Pa"
+      ]
+    },
+    "2CH": {
+      "aliases": [
+        "Druhá Letopisu",
+        "Druhý Letopisu",
+        "2 Letopisu",
+        "II Letopisu",
+        "Druhá Letopisů",
+        "Druhý Letopisů",
+        "2 Letopisů",
+        "II Letopisů",
+        "Druhá Paralipomenon",
+        "Druhý Paralipomenon",
+        "2 Paralipomenon",
+        "II Paralipomenon",
+        "Druhá kniha kronik",
+        "Druhý kniha kronik",
+        "2 kniha kronik",
+        "II kniha kronik",
+        "Druhá Kronik",
+        "Druhý Kronik",
+        "2 Kronik",
+        "II Kronik",
+        "Druhá Kron",
+        "Druhý Kron",
+        "2 Kron",
+        "II Kron",
+        "Druhá Pa",
+        "Druhý Pa",
+        "2 Pa",
+        "II Pa"
+      ]
+    },
+    "EZR": {
+      "aliases": [
+        "Ezdráš",
+        "Ezd"
+      ]
+    },
+    "NEH": {
+      "aliases": [
+        "Nehemjáš",
+        "Nehemiáš",
+        "Neh"
+      ]
+    },
+    "EST": {
+      "aliases": [
+        "Ester",
+        "Est"
+      ]
+    },
+    "JOB": {
+      "aliases": [
+        "Jób",
+        "Job",
+        "Jb"
+      ]
+    },
+    "PSA": {
+      "aliases": [
+        "Žalmy",
+        "Žalm",
+        "Ž",
+        "Žl",
+        "Kniha žalmů"
+      ]
+    },
+    "PRO": {
+      "aliases": [
+        "Přísloví",
+        "Přís",
+        "Přísloví Šalomounova",
+        "Př"
+      ]
+    },
+    "ECC": {
+      "aliases": [
+        "Kazatel",
+        "Kohelet",
+        "Kaz"
+      ]
+    },
+    "SNG": {
+      "aliases": [
+        "Píseň písní",
+        "Píseň",
+        "Píseň Šalamounova",
+        "Pís"
+      ]
+    },
+    "ISA": {
+      "aliases": [
+        "Izajáš",
+        "Izaiáš",
+        "Iz",
+        "Is"
+      ]
+    },
+    "JER": {
+      "aliases": [
+        "Jeremjáš",
+        "Jeremiáš",
+        "Jer",
+        "Jr"
+      ]
+    },
+    "LAM": {
+      "aliases": [
+        "Pláč",
+        "Pláč Jeremjášův",
+        "Kniha nářků",
+        "Pláč Jeremiášův",
+        "Pl"
+      ]
+    },
+    "EZK": {
+      "aliases": [
+        "Ezechiel",
+        "Ez"
+      ]
+    },
+    "DAN": {
+      "aliases": [
+        "Daniel",
+        "Da"
+      ]
+    },
+    "HOS": {
+      "aliases": [
+        "Ozeáš",
+        "Oz"
+      ]
+    },
+    "JOL": {
+      "aliases": [
+        "Jóel",
+        "Joel",
+        "Jo",
+        "Jl"
+      ]
+    },
+    "AMO": {
+      "aliases": [
+        "Ámos",
+        "Amos",
+        "Am"
+      ]
+    },
+    "OBA": {
+      "aliases": [
+        "Abdijáš",
+        "Abdiáš",
+        "Obadjáš",
+        "Obadjá",
+        "Abd"
+      ]
+    },
+    "JON": {
+      "aliases": [
+        "Jonáš",
+        "Jon"
+      ]
+    },
+    "MIC": {
+      "aliases": [
+        "Micheáš",
+        "Mich",
+        "Mi",
+        "Michaáš"
+      ]
+    },
+    "NAM": {
+      "aliases": [
+        "Nahum",
+        "Na"
+      ]
+    },
+    "HAB": {
+      "aliases": [
+        "Abakuk",
+        "Abk"
+      ]
+    },
+    "ZEP": {
+      "aliases": [
+        "Sofonjáš",
+        "Sofoniáš",
+        "Sf",
+        "Sof"
+      ]
+    },
+    "HAG": {
+      "aliases": [
+        "Ageus",
+        "Aggeus",
+        "Ag"
+      ]
+    },
+    "ZEC": {
+      "aliases": [
+        "Zacharjáš",
+        "Zachariáš",
+        "Za",
+        "Zach"
+      ]
+    },
+    "MAL": {
+      "aliases": [
+        "Malachiáš",
+        "Mal"
+      ]
+    },
+    "MAT": {
+      "aliases": [
+        "Matouš",
+        "Mat",
+        "Mt",
+        "Matoušovo evangelium",
+        "Evangelium podle Matouše"
+      ]
+    },
+    "MRK": {
+      "aliases": [
+        "Marek",
+        "Mk",
+        "Markovo evangelium",
+        "Evangelium podle Marka"
+      ]
+    },
+    "LUK": {
+      "aliases": [
+        "Lukáš",
+        "Lk",
+        "L",
+        "Lukášovo evangelium",
+        "Evangelium podle Lukáše"
+      ]
+    },
+    "JHN": {
+      "aliases": [
+        "Jan",
+        "J",
+        "Janovo evangelium",
+        "Evangelium podle Jana"
+      ]
+    },
+    "ACT": {
+      "aliases": [
+        "Skutky apoštolské",
+        "Skutky",
+        "Skutky apoštolů",
+        "Skutky apoštolü",
+        "Sk"
+      ]
+    },
+    "ROM": {
+      "aliases": [
+        "Římanům",
+        "Řím",
+        "Ř",
+        "List Římanům"
+      ]
+    },
+    "1CO": {
+      "aliases": [
+        "První list Korintským",
+        "1 list Korintským",
+        "I list Korintským",
+        "První Korintským",
+        "1 Korintským",
+        "I Korintským",
+        "První Kor",
+        "1 Kor",
+        "I Kor",
+        "První list Korinským",
+        "1 list Korinským",
+        "I list Korinským"
+      ]
+    },
+    "2CO": {
+      "aliases": [
+        "Druhá list Korintským",
+        "Druhý list Korintským",
+        "2 list Korintským",
+        "II list Korintským",
+        "Druhá Korintským",
+        "Druhý Korintským",
+        "2 Korintským",
+        "II Korintským",
+        "2Kor",
+        "Druhá list Korinským",
+        "Druhý list Korinským",
+        "2 list Korinským",
+        "II list Korinským"
+      ]
+    },
+    "GAL": {
+      "aliases": [
+        "Galatským",
+        "List Galatským"
+      ]
+    },
+    "EPH": {
+      "aliases": [
+        "Efezským",
+        "Efeským",
+        "Ef",
+        "List Efezským",
+        "List Efezanům",
+        "List Efézským"
+      ]
+    },
+    "PHP": {
+      "aliases": [
+        "Filipským",
+        "Fp",
+        "Flp",
+        "List Filipským",
+        "Filipenským"
+      ]
+    },
+    "COL": {
+      "aliases": [
+        "Koloským",
+        "List Koloským",
+        "Kolosanům",
+        "Kolosenským",
+        "List Kolosanům",
+        "Kolossenským"
+      ]
+    },
+    "1TH": {
+      "aliases": [
+        "První list Tesalonickým",
+        "1 list Tesalonickým",
+        "I list Tesalonickým",
+        "První Tesalonickým",
+        "1 Tesalonickým",
+        "I Tesalonickým",
+        "První Te",
+        "1 Te",
+        "I Te",
+        "První Sol",
+        "1 Sol",
+        "I Sol",
+        "První list Soluňským",
+        "1 list Soluňským",
+        "I list Soluňským",
+        "První Soluňským",
+        "1 Soluňským",
+        "I Soluňským",
+        "První Tessalonicenským",
+        "1 Tessalonicenským",
+        "I Tessalonicenským"
+      ]
+    },
+    "2TH": {
+      "aliases": [
+        "Druhá list Tesalonickým",
+        "Druhý list Tesalonickým",
+        "2 list Tesalonickým",
+        "II list Tesalonickým",
+        "Druhá Tesalonickým",
+        "Druhý Tesalonickým",
+        "2 Tesalonickým",
+        "II Tesalonickým",
+        "Druhá Te",
+        "Druhý Te",
+        "2 Te",
+        "II Te",
+        "Druhá Sol",
+        "Druhý Sol",
+        "2 Sol",
+        "II Sol",
+        "Druhá list Soluňským",
+        "Druhý list Soluňským",
+        "2 list Soluňským",
+        "II list Soluňským",
+        "Druhá Soluňským",
+        "Druhý Soluňským",
+        "2 Soluňským",
+        "II Soluňským",
+        "Druhá Tessalonicenským",
+        "Druhý Tessalonicenským",
+        "2 Tessalonicenským",
+        "II Tessalonicenským"
+      ]
+    },
+    "1TI": {
+      "aliases": [
+        "První list Timoteovi",
+        "1 list Timoteovi",
+        "I list Timoteovi",
+        "První Timoteus",
+        "1 Timoteus",
+        "I Timoteus",
+        "První list Timeteovi",
+        "1 list Timeteovi",
+        "I list Timeteovi",
+        "První list Timotejovi",
+        "1 list Timotejovi",
+        "I list Timotejovi"
+      ]
+    },
+    "2TI": {
+      "aliases": [
+        "Druhá list Timoteovi",
+        "Druhý list Timoteovi",
+        "2 list Timoteovi",
+        "II list Timoteovi",
+        "Druhá Timoteus",
+        "Druhý Timoteus",
+        "2 Timoteus",
+        "II Timoteus",
+        "Druhá list Timetejovi",
+        "Druhý list Timetejovi",
+        "2 list Timetejovi",
+        "II list Timetejovi",
+        "Druhá list Timotejovi",
+        "Druhý list Timotejovi",
+        "2 list Timotejovi",
+        "II list Timotejovi"
+      ]
+    },
+    "TIT": {
+      "aliases": [
+        "Titovi",
+        "Titus",
+        "List Titovi"
+      ]
+    },
+    "PHM": {
+      "aliases": [
+        "Filemonovi",
+        "Filemon",
+        "Flm",
+        "Fm",
+        "List Filemonovi"
+      ]
+    },
+    "HEB": {
+      "aliases": [
+        "Židům",
+        "Žd",
+        "Žid",
+        "List Židům",
+        "List Hebrejům",
+        "Hebrejům"
+      ]
+    },
+    "JAS": {
+      "aliases": [
+        "List Jakubův",
+        "Jakubův",
+        "Jakub",
+        "Jak",
+        "Jk"
+      ]
+    },
+    "1PE": {
+      "aliases": [
+        "První list Petrův",
+        "1 list Petrův",
+        "I list Petrův",
+        "První Petr",
+        "1 Petr",
+        "I Petr",
+        "První Petrův",
+        "1 Petrův",
+        "I Petrův",
+        "První Petrova",
+        "1 Petrova",
+        "I Petrova"
+      ]
+    },
+    "2PE": {
+      "aliases": [
+        "Druhá list Petrův",
+        "Druhý list Petrův",
+        "2 list Petrův",
+        "II list Petrův",
+        "Druhá Petr",
+        "Druhý Petr",
+        "2 Petr",
+        "II Petr",
+        "Druhá Petrův",
+        "Druhý Petrův",
+        "2 Petrův",
+        "II Petrův",
+        "Druhá Petrova",
+        "Druhý Petrova",
+        "2 Petrova",
+        "II Petrova"
+      ]
+    },
+    "1JN": {
+      "aliases": [
+        "První list Janův",
+        "1 list Janův",
+        "I list Janův",
+        "První Jan",
+        "1 Jan",
+        "I Jan",
+        "První J",
+        "1 J",
+        "I J",
+        "První Janův",
+        "1 Janův",
+        "I Janův",
+        "První Janova",
+        "1 Janova",
+        "I Janova"
+      ]
+    },
+    "2JN": {
+      "aliases": [
+        "Druhá list Janův",
+        "Druhý list Janův",
+        "2 list Janův",
+        "II list Janův",
+        "Druhá Jan",
+        "Druhý Jan",
+        "2 Jan",
+        "II Jan",
+        "Druhá J",
+        "Druhý J",
+        "2 J",
+        "II J",
+        "Druhá Janův",
+        "Druhý Janův",
+        "2 Janův",
+        "II Janův",
+        "Druhá Janova",
+        "Druhý Janova",
+        "2 Janova",
+        "II Janova"
+      ]
+    },
+    "3JN": {
+      "aliases": [
+        "Třetí list Janův",
+        "3 list Janův",
+        "III list Janův",
+        "Třetí Jan",
+        "3 Jan",
+        "III Jan",
+        "Třetí J",
+        "3 J",
+        "III J",
+        "Třetí Janův",
+        "3 Janův",
+        "III Janův",
+        "Třetí Janova",
+        "3 Janova",
+        "III Janova"
+      ]
+    },
+    "JUD": {
+      "aliases": [
+        "List Judův",
+        "Judův",
+        "Juda",
+        "Judova"
+      ]
+    },
+    "REV": {
+      "aliases": [
+        "Zjevení Janovo",
+        "Zjevení",
+        "Zj",
+        "Zjeveni svatého Jana",
+        "Apokalypsa",
+        "Kniha Zjevení"
+      ]
+    }
+  }
+}

@@ -3,7 +3,7 @@
   "displayName": "Czech Protestant",
   "lang": "cs",
   "formatVersion": 1,
-  "source": "manual",
+  "source": "biblens",
   "books": {
     "GEN": "Gn",
     "EXO": "Ex",

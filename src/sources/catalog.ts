@@ -35,6 +35,7 @@ export type RemoteReferenceFormatEntry = {
 	displayName: string;
 	language: string;
 	remoteId: string;
+	rules?: { chapterVerseSeparator: string; rangeSeparator: string; bookChapterSeparator: string };
 };
 
 export type ReferenceFormatProvider = {
@@ -101,5 +102,17 @@ export const KNOWN_PROVIDERS = {
 			],
 		},
 	] as LanguagePackProvider[],
-	referenceFormatProviders: [] as ReferenceFormatProvider[],
+	referenceFormatProviders: [
+		{
+			id: 'openbibleinfo',
+			displayName: 'openbibleinfo (Bible-Passage-Reference-Parser)',
+			baseUrl: 'https://raw.githubusercontent.com/openbibleinfo/Bible-Passage-Reference-Parser/master',
+			adapterType: 'openbibleinfo',
+			formats: [
+				{ id: 'cs', displayName: 'Czech',    language: 'cs', remoteId: 'cs', rules: { chapterVerseSeparator: ',', rangeSeparator: '-', bookChapterSeparator: ' ' } },
+				{ id: 'en', displayName: 'English',  language: 'en', remoteId: 'en', rules: { chapterVerseSeparator: ':', rangeSeparator: '-', bookChapterSeparator: ' ' } },
+				{ id: 'de', displayName: 'German',   language: 'de', remoteId: 'de', rules: { chapterVerseSeparator: ',', rangeSeparator: '-', bookChapterSeparator: ' ' } },
+			],
+		},
+	] as ReferenceFormatProvider[],
 };

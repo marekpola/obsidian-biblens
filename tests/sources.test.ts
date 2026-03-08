@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { isCatalogStale } from "../src/sources/catalogUtils";
-import { getAdapter, getLanguagePackAdapter } from "../src/sources/adapters";
+import { getAdapter, getLanguagePackAdapter, getReferenceFormatAdapter } from "../src/sources/adapters";
 import { KNOWN_PROVIDERS } from "../src/sources/catalog";
 
 describe("isCatalogStale", () => {
@@ -183,6 +183,25 @@ describe("KNOWN_PROVIDERS", () => {
       expect(() => getLanguagePackAdapter(p.adapterType)).not.toThrow();
     }
   });
+
+  it("has openbibleinfo as a referenceFormatProvider", () => {
+    const provider = KNOWN_PROVIDERS.referenceFormatProviders.find(p => p.id === "openbibleinfo");
+    expect(provider).toBeDefined();
+  });
+
+  it("openbibleinfo referenceFormatProvider includes cs, en, de", () => {
+    const provider = KNOWN_PROVIDERS.referenceFormatProviders.find(p => p.id === "openbibleinfo")!;
+    const ids = provider.formats.map(f => f.id);
+    expect(ids).toContain("cs");
+    expect(ids).toContain("en");
+    expect(ids).toContain("de");
+  });
+
+  it("each referenceFormatProvider has a registered adapter type", () => {
+    for (const p of KNOWN_PROVIDERS.referenceFormatProviders) {
+      expect(() => getReferenceFormatAdapter(p.adapterType)).not.toThrow();
+    }
+  });
 });
 
 describe("getLanguagePackAdapter", () => {
@@ -278,5 +297,86 @@ describe("openbibleinfo language pack adapter", () => {
     const txt = ["# only comments", "$FIRST\tFirst", "Tob\tTobit"].join("\n");
     const result = adapter.transform(txt);
     expect(Object.keys(result.books)).toHaveLength(0);
+  });
+});
+
+describe("getReferenceFormatAdapter", () => {
+  it("throws for unknown adapter type", () => {
+    expect(() => getReferenceFormatAdapter("unknown-fmt-adapter")).toThrow(
+      'BibLens: unknown reference format adapter type "unknown-fmt-adapter"'
+    );
+  });
+
+  it("returns adapter for openbibleinfo", () => {
+    expect(() => getReferenceFormatAdapter("openbibleinfo")).not.toThrow();
+  });
+
+  it("returns adapter for biblens-catalog", () => {
+    expect(() => getReferenceFormatAdapter("biblens-catalog")).not.toThrow();
+  });
+});
+
+describe("openbibleinfo reference format adapter", () => {
+  const adapter = getReferenceFormatAdapter("openbibleinfo");
+  const provider = KNOWN_PROVIDERS.referenceFormatProviders.find(p => p.id === "openbibleinfo")!;
+  const csEntry = provider.formats.find(f => f.id === "cs")!;
+
+  it("buildUrl constructs correct URL for Czech", () => {
+    expect(adapter.buildUrl(provider, csEntry)).toBe(
+      "https://raw.githubusercontent.com/openbibleinfo/Bible-Passage-Reference-Parser/master/src/cs/data.txt"
+    );
+  });
+
+  it("transform throws when entry.rules is absent", () => {
+    const entryNoRules = { id: "cs", displayName: "Czech", language: "cs", remoteId: "cs" };
+    expect(() => adapter.transform("*Gen\tGenesis\tGen\tGn", entryNoRules)).toThrow(
+      "entry.rules"
+    );
+  });
+
+  it("transform extracts Short (index 2) as canonical abbreviation", () => {
+    const txt = "*Gen\tGenesis\tGen\tGn\n*Matt\tMatouš\tMat\tMt";
+    const result = adapter.transform(txt, csEntry);
+    expect(result.books["GEN"]).toBe("Gen");
+    expect(result.books["MAT"]).toBe("Mat");
+  });
+
+  it("transform falls back to Shorter (index 3) when Short is absent", () => {
+    const txt = "*Gen\tGenesis\t\tGn";
+    const result = adapter.transform(txt, csEntry);
+    expect(result.books["GEN"]).toBe("Gn");
+  });
+
+  it("transform skips non-canonical OSIS ids", () => {
+    const txt = "*Gen\tGenesis\tGen\tGn\n*Tob\tTóbijáš\tTob\tTb";
+    const result = adapter.transform(txt, csEntry);
+    expect(result.books["GEN"]).toBe("Gen");
+    expect(Object.keys(result.books)).not.toContain("TOB");
+  });
+
+  it("transform reads rules from entry.rules", () => {
+    const txt = "*Gen\tGenesis\tGen\tGn";
+    const result = adapter.transform(txt, csEntry);
+    expect(result.rules.chapterVerseSeparator).toBe(",");
+    expect(result.rules.rangeSeparator).toBe("-");
+    expect(result.rules.bookChapterSeparator).toBe(" ");
+  });
+
+  it("transform sets formatVersion 1 and source field", () => {
+    const result = adapter.transform("*Gen\tGenesis\tGen\tGn", csEntry);
+    expect(result.formatVersion).toBe(1);
+    expect(result.source).toBe("openbibleinfo/Bible-Passage-Reference-Parser");
+  });
+
+  it("transform ignores non-preferred-names lines", () => {
+    const txt = [
+      "# Preferred names",
+      "Gen\tGenesis\tGn",
+      "$FIRST\tPrvní",
+      "=Gen",
+      "*Gen\tGenesis\tGn\tGn",
+    ].join("\n");
+    const result = adapter.transform(txt, csEntry);
+    expect(Object.keys(result.books)).toEqual(["GEN"]);
   });
 });
