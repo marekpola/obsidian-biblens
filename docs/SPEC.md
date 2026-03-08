@@ -381,26 +381,18 @@ Default: Strict.
 
 ### Settings Changes
 
-#### General section additions
+#### Settings tab structure
 
-- **Standard reference format** — dropdown from installed reference format packs
-- **Preferred language for reference recognition** — dropdown from installed recognition language packs;
-  description: “Biblical references are identified using this language”
-- **Parsing rules** — dropdown: Strict / Extended;
-  description: “Identify biblical references only when they follow a standard format”
+The settings tab is organized into five areas in order:
 
-#### New sections (after Installed translations)
-
-- **Installed reference formats** — lists downloaded format packs; each entry shows name and language, with a Delete button
-- **Installed recognition languages** — lists downloaded language packs; each entry shows name and language, with a Delete button
-
-#### Install sources section
-
-Renamed from “Get translations”. Three sub-sections:
-
-1. **Translations** — existing translation download UI (unchanged)
-2. **Reference formats** — provider dropdown + format dropdown + Download button
-3. **Recognition languages** — provider dropdown + language dropdown + Download button
+- **General** (flat, no heading) — Verse insertion format · Preferred translation · Preferred language for reference recognition · Standard reference format · Parsing rules
+  - **Standard reference format** — dropdown from installed reference format packs
+  - **Preferred language for reference recognition** — dropdown from installed recognition language packs; description: “Biblical references are identified using this language”
+  - **Parsing rules** — dropdown: Strict / Extended; description: “Identify biblical references only when they follow a standard format”
+- **Installed translations** (collapsible, collapsed by default) — list of installed translations; active translation shown first; Delete and Set as default buttons; “Install new” row at the bottom with provider + translation dropdowns and Download button (already-installed translations are excluded from the dropdown)
+- **Reference formats** (collapsible, collapsed by default) — list of installed format packs with Delete button; “Install new” row at the bottom with provider + format dropdowns and Download button
+- **Recognition languages** (collapsible, collapsed by default) — list of installed language packs with Delete button; “Install new” row at the bottom with provider + language dropdowns and Download button
+- **Advanced** — catalog update button and auto-update toggle
 
 ---
 
