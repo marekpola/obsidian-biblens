@@ -78,7 +78,8 @@ Expected:
 - A popover appears on hover over each plain-text reference.
 - Popover shows verse content (superscript label + verse text), or `Verš nenalezen` in italics if not found.
 - Popover is fully visible within the viewport (does not clip at edges).
-- Popover disappears when mouse leaves the span.
+- Popover disappears when mouse leaves **both** the reference span and the popover itself.
+- Moving the mouse from the reference span into the popover keeps the popover open.
 - The Markdown link remains clickable; no popover appears when hovering it.
 - No console errors during any of the above steps.
 
@@ -426,7 +427,7 @@ Expected:
 ### 18c – Verse text visible after switching to downloaded translation
 
 Steps:
-1. Open Preferred translation dropdown, select "Bible Kralická" (bkr).
+1. Open Settings → BibLens → Installed translations, click **Set as default** on "Bible Kralická" (bkr).
 2. Open a note in Reading View containing `Gn 1,1`.
 3. Hover over `Gn 1,1`.
 
@@ -582,7 +583,8 @@ Steps:
 2. Inspect the General (flat, no heading) area at the top of the settings tab.
 
 Expected:
-- Exactly three controls are present: **Verse insertion format**, **Preferred translation**, **Parsing rules**.
+- No dropdown labelled "Verse insertion format".
+- No dropdown labelled "Preferred translation".
 - No dropdown labelled "Preferred language for reference recognition".
 - No dropdown labelled "Standard reference format".
 - No console errors.
@@ -654,6 +656,206 @@ Expected:
 
 Covered by `tests/sources.test.ts`:
 - If a preferred-names Short form is identical to an alias already present in the alias line, it appears only once in `aliases`.
+
+---
+
+## Task 36 – Two Insert Commands
+
+Setup:
+- Create a note in Live Preview with:
+  ```
+  Gn 1,1 some text after
+  Mt 5,3 more text
+  ```
+
+### 36a – Insert verse after previous reference (manual)
+
+Steps:
+1. Place cursor after `Gn 1,1` (anywhere after the reference on the line, or on the next line).
+2. Command palette → `BibLens: Insert verse after previous reference`.
+
+Expected:
+- Verse text appended inline immediately after `Gn 1,1`: e.g. `Gn 1,1 — Na počátku stvořil Bůh nebe a zemi.`
+- No blockquote prefix.
+- No console errors.
+
+### 36b – Replace previous reference with quote (manual)
+
+Steps:
+1. Place cursor after `Mt 5,3`.
+2. Command palette → `BibLens: Replace previous reference with quote`.
+
+Expected:
+- `Mt 5,3` is replaced with a blockquote line: `> Mt 5,3 verse text`
+- The blockquote is on its own line with a trailing newline.
+- No console errors.
+
+### 36c – No-op when no reference before cursor (manual)
+
+Steps:
+1. Place cursor at the very beginning of the note (before any reference).
+2. Run both commands.
+
+Expected:
+- Neither command inserts or modifies any text.
+- No console errors.
+
+### 36d – No "Verse insertion format" in settings (manual)
+
+Steps:
+1. Open Settings → BibLens.
+
+Expected:
+- No dropdown or control labelled "Verse insertion format" anywhere in the settings tab.
+
+### 36e – Both commands appear in command palette (manual)
+
+Steps:
+1. Open command palette, type "BibLens".
+
+Expected:
+- `BibLens: Insert verse after previous reference` is listed.
+- `BibLens: Replace previous reference with quote` is listed.
+- No command named `BibLens: Insert verse text after previous reference` (old name).
+
+---
+
+## Task 37 – Hover: Scrollable Content and Text Selection
+
+Setup:
+- Create a note in Reading View containing a chapter-only reference, e.g. `Gn 1`.
+- Ensure `translations/cep.json` is loaded (Genesis chapter 1 has 31 verses).
+
+### 37a – Popover scrolls for large content (manual)
+
+Steps:
+1. Hover over `Gn 1` in Reading View.
+
+Expected:
+- Popover appears and does not exceed viewport height.
+- A scrollbar is visible on the right side of the popover (or scroll gesture works).
+- Scrolling inside the popover reveals additional verses without closing the popover.
+
+### 37b – Popover stays open when mouse moves into it (manual)
+
+Steps:
+1. Hover over a reference to open the popover.
+2. Slowly move the mouse from the reference span into the popover area.
+
+Expected:
+- Popover remains open while mouse is inside it.
+- Popover closes only after mouse leaves both the reference and the popover.
+
+### 37c – Text selection and copy in Reading View popover (manual)
+
+Steps:
+1. Hover over a reference; keep mouse inside the popover.
+2. Click and drag to select part of the verse text.
+3. Press Cmd+C (macOS) or Ctrl+C (Windows/Linux).
+4. Paste into a text editor.
+
+Expected:
+- Text is selectable by dragging.
+- Selected text is copied to clipboard.
+- Pasted content matches the selected verse text.
+
+### 37d – Text selection in editor tooltip (manual)
+
+Steps:
+1. Open the note in Live Preview.
+2. Hover over a reference to show the editor tooltip.
+3. Click inside the tooltip to place cursor.
+4. Press Cmd+A then Cmd+C.
+5. Paste into another location.
+
+Expected:
+- Keyboard selection and copy work within the tooltip.
+- Note: drag-selection starting outside the tooltip is not supported and is not tested here.
+
+### 37e – No regression: popover still hides on mouse leave (manual)
+
+Steps:
+1. Hover over a reference to open the popover.
+2. Move mouse entirely away from both the reference and the popover.
+
+Expected:
+- Popover closes.
+- No popover remains stuck open.
+
+---
+
+## Task 38 – Settings General Section Redesign
+
+### 38a – General section shows three read-only status rows (manual)
+
+Setup:
+- At least one translation, one reference format pack, and one language pack installed and set as default.
+
+Steps:
+1. Open Settings → BibLens.
+2. Inspect the General area.
+
+Expected:
+- A **Translation** row shows the display name of the active translation (e.g. "CEP").
+- A **Reference format** row shows the display name of the active format pack.
+- A **Recognition language** row shows the display name of the active language pack.
+- A **Parsing rules** dropdown is present and editable.
+- No "Preferred translation" dropdown.
+- No console errors.
+
+### 38b – Fallback values when nothing is installed (manual)
+
+Setup:
+- No translation files, no format packs, no language packs installed.
+
+Steps:
+1. Open Settings → BibLens.
+
+Expected:
+- Translation row shows "None — verse text unavailable".
+- Reference format row shows "Built-in English".
+- Recognition language row shows "Built-in English".
+
+### 38c – Auto-default on first download (manual)
+
+Setup:
+- No translation installed (`translations/` folder empty or only non-JSON files).
+- `settings.preferredTranslation` is empty.
+
+Steps:
+1. Open Settings → BibLens → Installed translations.
+2. Download any translation.
+3. After download completes, close and reopen the settings tab.
+
+Expected:
+- The downloaded translation is automatically set as default (no manual "Set as default" step required).
+- Translation row in General shows the downloaded translation's name.
+- Hovering a reference shows verse text from that translation.
+
+### 38d – Auto-default on active-item deletion (manual)
+
+Setup:
+- Two translations installed; one set as default.
+
+Steps:
+1. Open Settings → BibLens → Installed translations.
+2. Delete the currently active translation.
+3. Observe the General section on next tab open.
+
+Expected:
+- The remaining translation is automatically set as default.
+- Translation row in General shows the remaining translation's name.
+- No "None — verse text unavailable" shown when another translation is available.
+
+### 38e – Exactly one async round-trip per display() (developer check)
+
+Steps:
+1. Open developer console → Network tab.
+2. Open Settings → BibLens.
+
+Expected:
+- `loadCatalog`, `listAvailableTranslations`, `listAvailableReferenceFormats`, `listAvailableLanguagePacks` are each called exactly once per settings tab open (visible in console logs or network if remote catalog is fetched).
+- No duplicate calls.
 
 ---
 

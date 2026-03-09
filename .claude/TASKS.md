@@ -20,7 +20,124 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 ---
 
+
+
+### Task 36 – Two Insert Commands
+
+Issue: D023
+
+#### Goal
+
+Replace the single configurable insert command with two named commands; remove the `verseInsertionFormat` setting entirely.
+
+#### Scope
+
+- `src/editor/insertVerse.ts`:
+  - Remove `InsertionFormat` type export
+  - Remove `format: InsertionFormat` parameter from `insertAfterLastRefCommand`; function always appends ` — verse text` inline after the reference
+  - Add `replaceLastRefWithQuoteCommand(scanner: RefScanner, data: TranslationData, refFormat?: ReferenceFormatRules): Command` — replaces last ref before cursor with `> Ref verse text\n`
+- `src/settings.ts`:
+  - Remove `InsertionFormat` type export
+  - Remove `verseInsertionFormat: InsertionFormat` field from `BibLensSettings` and `DEFAULT_SETTINGS`
+- `src/main.ts`:
+  - Remove `verseInsertionFormat` pass-through from `insertAfterLastRefCommand` call
+  - Import and register `replaceLastRefWithQuoteCommand` as command `id: 'replace-ref-with-quote'`, `name: 'Replace previous reference with quote'`
+- `src/settingsTab.ts`:
+  - Remove the "Verse insertion format" `Setting` block from `renderGeneral()`
+- `docs/TESTPLAN.md`:
+  - Update Task 33a: remove "Verse insertion format" from expected controls
+  - Add Task 36 test section
+
+#### Definition of Done
+
+- Command `BibLens: Insert verse after previous reference` appends ` — verse text` inline after last ref before cursor
+- Command `BibLens: Replace previous reference with quote` replaces last ref before cursor with `> Ref verse text\n`
+- No "Verse insertion format" setting exists in `src/settings.ts`
+- No "Verse insertion format" dropdown appears in the settings tab
+- `src/editor/insertVerse.ts` has no `InsertionFormat` type and no `format` parameter
+- `npm run check` and `npm run ci` pass
+
+---
 ## Next
+
+
+### Task 37 – Hover: Scrollable Content and Text Selection
+
+Issue: D024
+
+#### Goal
+
+Allow users to scroll through large verse blocks in the hover popover and select/copy verse text using standard OS shortcuts.
+
+#### Scope
+
+- `styles.css`:
+  - `.biblens-popover`: remove `pointer-events: none`; add `pointer-events: auto; user-select: text; max-height: 40vh; overflow-y: auto`
+  - `.biblens-editor-tooltip`: add `user-select: text; pointer-events: auto; max-height: 40vh; overflow-y: auto`
+- `src/ui/hover.ts` (`PopoverManager`):
+  - Add `private _popoverHovered = false` flag
+  - In `show()`: after appending popover to body, attach `mouseenter` listener (sets `_popoverHovered = true`) and `mouseleave` listener (sets `_popoverHovered = false`, then calls `hide()`)
+  - Add `requestHide(): void` — calls `hide()` only when `!this._popoverHovered`
+- `src/main.ts`:
+  - Span `mouseleave` handler: change `this.popover.hide()` → `this.popover.requestHide()`
+- `src/ui/verseDOM.ts`:
+  - Container element: change from `<span>` to `<div class="biblens-verse-content">`
+- `docs/TESTPLAN.md`:
+  - Update Task 3: popover stay-visible and scroll behaviour
+  - Add Task 37 test section
+
+#### Definition of Done
+
+- Hovering a chapter-only ref (e.g. `Gn 22`) in Reading View shows a scrollable popover; content beyond `40vh` is accessible by scrolling
+- Moving mouse from the reference span into the popover keeps it open
+- Moving mouse out of both ref and popover hides it
+- Text in Reading View popover is selectable and copyable with Cmd/Ctrl+C
+- Text in editor tooltip carries `user-select: text`; keyboard copy (click inside, select, Cmd/Ctrl+C) works
+- `buildVerseDOM` returns a `<div class="biblens-verse-content">` container
+- `src/ui/hover.ts` has no Obsidian imports
+- `npm run check` and `npm run ci` pass
+
+---
+
+### Task 38 – Settings General Section Redesign
+
+Issue: D025
+
+#### Goal
+
+Replace the General section's asset-selection dropdowns with a read-only status panel; restructure `display()` to use a single async round-trip with auto-default logic.
+
+#### Scope
+
+`src/settingsTab.ts` only:
+
+- `display()`: replace the separate async chains with a single `Promise.all([loadCatalog, listAvailableTranslations, listAvailableReferenceFormats, listAvailableLanguagePacks])`; after all resolve: (1) run auto-default checks, (2) call `renderGeneral(status)`, (3) call each `renderInstalledX` with pre-fetched data
+- Auto-default logic (runs in `display()` before rendering): for each asset type, if `settings.preferredX === ''` and the corresponding list is non-empty, set `settings.preferredX = list[0].id`, save settings, call the appropriate reload (`reloadTranslation()` for translation; `reloadScanner()` for format and language)
+- `renderGeneral(status: { translName: string; fmtName: string; langName: string })`:
+  - Remove "Preferred translation" dropdown
+  - Render three read-only `Setting` rows: **Translation** (`translName` or `"None — verse text unavailable"`), **Reference format** (`fmtName` or `"Built-in English"`), **Recognition language** (`langName` or `"Built-in English"`)
+  - Keep Parsing rules dropdown unchanged
+- `renderInstalledTranslations(container, catalog, translations)`: accept pre-fetched `translations` param; remove internal `listAvailableTranslations` call
+- `renderInstalledFormats(container, catalog, formats)`: accept pre-fetched `formats` param; remove internal `listAvailableReferenceFormats` call
+- `renderInstalledLanguages(container, catalog, packs)`: accept pre-fetched `packs` param; remove internal `listAvailableLanguagePacks` call
+- `docs/TESTPLAN.md`:
+  - Update Task 33a: reflect new General layout
+  - Update Task 18c: remove "Preferred translation dropdown" step
+  - Add Task 38 test section
+
+#### Recommended order
+
+Implement after Task 36 (which removes `verseInsertionFormat` from `settings.ts` and the dropdown from `settingsTab.ts`).
+
+#### Definition of Done
+
+- General section shows Translation, Reference format, Recognition language as read-only rows with correct display names or fallback values
+- No "Preferred translation" dropdown in General
+- `loadCatalog` and all three `listAvailableX` calls happen exactly once per `display()` invocation
+- Status rows never show a stale "None" when auto-default has fired in the same render cycle
+- Downloading or dropping the first item of any type automatically sets it as default; status row reflects this on next tab open
+- Deleting the active item when others remain auto-selects the next available one
+- `npm run check` and `npm run ci` pass
 
 ---
 
