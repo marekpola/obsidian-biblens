@@ -14,7 +14,7 @@ import { buildVerseDOM } from './ui/verseDOM';
 import { loadTranslation } from './translationLoader';
 import { loadLanguagePack } from './languagePackLoader';
 import { loadReferenceFormat } from './referenceFormatLoader';
-import { buildAbbreviationMap, BUILT_IN_FORMAT_RULES} from './books';
+import { getBuiltInAbbreviationMap, BUILT_IN_FORMAT_RULES} from './books';
 import type { BibLensSettings } from './settings';
 import { DEFAULT_SETTINGS } from './settings';
 import type { ReferenceFormatRules } from './types';
@@ -167,7 +167,7 @@ export default class BibLensPlugin extends Plugin {
 
 	async reloadScanner() {
 		// Load language pack (or fall back to built-in)
-		let map = buildAbbreviationMap({});
+		let map = getBuiltInAbbreviationMap();
 		if (this.settings.preferredLanguage) {
 			try {
 				const { map: packMap } = await loadLanguagePack(

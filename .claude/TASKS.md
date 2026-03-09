@@ -22,46 +22,6 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 ## Next
 
-### Task 31 – Replace `buildAbbreviationMap` with `getBuiltInAbbreviationMap`
-
-#### Goal
-Complete D019/D021 compliance: introduce `getBuiltInAbbreviationMap()` returning English aliases
-as the offline fallback, and remove the now-superseded `buildAbbreviationMap(custom)` and
-`CustomAbbreviations` type.
-
-#### Findings addressed
-- Finding 3 (Significant): `getBuiltInAbbreviationMap()` missing; `buildAbbreviationMap` and
-  `CustomAbbreviations` still present
-
-#### Scope
-
-- `src/books.ts`
-  - Add `export function getBuiltInAbbreviationMap(): AbbreviationMap` — derive the map by
-    inverting `BUILT_IN_FORMAT_RULES.books` (canonical abbreviation → BookId), so the built-in
-    English aliases (`"Gen"` → `"GEN"`, `"Exod"` → `"EXO"`, `"Matt"` → `"MAT"`, etc.) match the
-    built-in format rules. This keeps the two in sync automatically.
-  - Remove `export function buildAbbreviationMap(custom: CustomAbbreviations)`
-  - Remove `export type CustomAbbreviations`
-
-- `src/main.ts`
-  - Replace `import { buildAbbreviationMap, … }` with `import { getBuiltInAbbreviationMap, … }`
-  - Replace `buildAbbreviationMap({})` call with `getBuiltInAbbreviationMap()`
-
-- `src/settings.ts`
-  - Remove `import type { CustomAbbreviations } from './books'`
-  - Remove `customAbbreviations: CustomAbbreviations` field from `BibLensSettings`
-  - Remove the corresponding entry from `DEFAULT_SETTINGS`
-
-#### Definition of Done
-- `getBuiltInAbbreviationMap()` exists in `src/books.ts` and returns an `AbbreviationMap` with
-  English aliases covering all 66 canonical books (e.g. `"Gen"` → `"GEN"`, `"Matt"` → `"MAT"`)
-- `buildAbbreviationMap` and `CustomAbbreviations` do not exist anywhere in the codebase
-- `src/main.ts` calls `getBuiltInAbbreviationMap()` for the offline fallback abbreviation map
-- `src/settings.ts` has no `customAbbreviations` field
-- `npm run check` and `npm run ci` pass
-
----
-
 ### Task 32 – Refresh Editor Views After Scanner Reload
 
 #### Goal
@@ -116,6 +76,17 @@ Add a copy button to the hover popover and editor tooltip that copies the full f
 
 ---
 ## Done
+
+### Task 31 – Replace `buildAbbreviationMap` with `getBuiltInAbbreviationMap` ✓
+
+- `getBuiltInAbbreviationMap()` added to `src/books.ts` (inverts `BUILT_IN_FORMAT_RULES.books`; covers all 66 canonical books)
+- `buildAbbreviationMap` and `CustomAbbreviations` removed from `src/books.ts`
+- `src/main.ts` updated to call `getBuiltInAbbreviationMap()`
+- `src/settings.ts` `customAbbreviations` field removed
+- `tests/settings.test.ts` updated to test `getBuiltInAbbreviationMap`
+- `npm run check` and `npm run ci` pass ✓
+
+---
 
 
 ### Task 30 – Fix `biblens-data` repository URL and path references ✓

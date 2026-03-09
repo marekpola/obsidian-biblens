@@ -37,8 +37,6 @@ export const ALL_BOOK_IDS = [
 
 export type BookId = (typeof ALL_BOOK_IDS)[number];
 
-export type CustomAbbreviations = Record<string, BookId>;
-
 export type AbbreviationMap = Record<string, BookId>;
 
 const BOOK_ID_SET: ReadonlySet<string> = new Set(ALL_BOOK_IDS);
@@ -303,8 +301,12 @@ export function resolveBookId(rawBook: string): BookId | undefined {
   return undefined;
 }
 
-export function buildAbbreviationMap(custom: CustomAbbreviations): AbbreviationMap {
-  return { ...BOOK_ALIASES, ...custom };
+export function getBuiltInAbbreviationMap(): AbbreviationMap {
+  const map: AbbreviationMap = {};
+  for (const [bookId, abbr] of Object.entries(BUILT_IN_FORMAT_RULES.books)) {
+    map[abbr] = bookId as BookId;
+  }
+  return map;
 }
 
 export const BUILT_IN_FORMAT_RULES: ReferenceFormatRules = {
