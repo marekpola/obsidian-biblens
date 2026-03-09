@@ -335,6 +335,58 @@ Consequences:
 - Translation loader silently ignores `canonicalAbbreviations` and `allowedAbbreviations`
 Date: 2026-03-08
 
+## D023 – Two insert commands replace configurable insertion mode
+
+Decision: The `settings.verseInsertionFormat` setting and the "Verse insertion format" dropdown are removed. In their place, two independently named commands are registered:
+
+- `BibLens: Insert verse after previous reference` — appends verse text inline after the last reference before the cursor (` — verse text`)
+- `BibLens: Replace previous reference with quote` — replaces the last reference before the cursor with a blockquote line (`> Ref verse text`)
+
+Both commands operate on the last reference whose end is at or before the cursor (same cursor-relative logic as D018).
+
+Reason: Two named commands make the different insertion behaviours self-documenting in the command palette. Users no longer need to visit Settings to switch modes; the intent is expressed by the command chosen. The format parameter is removed from `insertAfterLastRefCommand`; a new `replaceLastRefWithQuoteCommand` factory is added.
+
+Consequences:
+- `src/editor/insertVerse.ts`: `insertAfterLastRefCommand` loses `format` param; new `replaceLastRefWithQuoteCommand` export; `InsertionFormat` type removed
+- `src/settings.ts`: `verseInsertionFormat` field and `InsertionFormat` type removed from `BibLensSettings` and `DEFAULT_SETTINGS`
+- `src/main.ts`: two commands registered (`insert-verse-after-last`, `replace-ref-with-quote`); `verseInsertionFormat` pass-through removed
+- `src/settingsTab.ts`: "Verse insertion format" `Setting` block removed from `renderGeneral()`
+
+Supersedes: D014 (which introduced the configurable insertion format).
+Date: 2026-03-09
+
+## D024 – Hover popover: scrollable content and text selection
+
+Decision: The Reading View popover and editor tooltip are updated to allow scrolling through large verse blocks and selecting text with standard OS shortcuts (Cmd/Ctrl+C).
+
+Root cause: `styles.css` sets `pointer-events: none` on `.biblens-popover`, which prevents all mouse interaction including text selection. This is removed.
+
+**Reading View popover (`PopoverManager`):**
+- `pointer-events: none` removed from `.biblens-popover`; `pointer-events: auto; user-select: text` added
+- `max-height: 40vh; overflow-y: auto` added to `.biblens-popover`
+- `PopoverManager.show()` sets up `mouseenter`/`mouseleave` on the popover element, tracking a `_popoverHovered` flag
+- New `requestHide()` method: hides only when `_popoverHovered` is false; called by the anchor span's `mouseleave` handler in `main.ts` (replacing the direct `hide()` call)
+- `hide()` remains for unconditional teardown on plugin unload
+
+**Editor tooltip (`refTooltip.ts` / `.biblens-editor-tooltip`):**
+- `user-select: text; pointer-events: auto; max-height: 40vh; overflow-y: auto` added to `.biblens-editor-tooltip` CSS
+- No code change to `refTooltip.ts` — CSS only
+- Limitation: CM6's `hoverTooltip` dismisses when the mouse leaves the decorated token range; drag-selection from outside the tooltip into the tooltip DOM is not supported. Text selection within the visible tooltip (click inside, Cmd/Ctrl+A/C) works.
+
+**`verseDOM.ts`:**
+- Container element changed from `<span>` to `<div class="biblens-verse-content">`; `user-select: text` applied via this class
+- `buildVerseDOM` signature unchanged (no options parameter)
+
+Reason: Scrollability is essential for chapter-only references (D011) which may return dozens of verses. Text selection is a baseline expectation for any displayed text content.
+
+Consequences:
+- `styles.css`: updated `.biblens-popover` and `.biblens-editor-tooltip` rules
+- `src/ui/hover.ts`: `_popoverHovered` flag; `requestHide()` method; `show()` sets up popover mouse events
+- `src/main.ts`: span `mouseleave` handler changed from `popover.hide()` to `popover.requestHide()`
+- `src/ui/verseDOM.ts`: container `<span>` → `<div class="biblens-verse-content">`
+
+Date: 2026-03-09
+
 ## D022 – Separate `biblens-data` repository for distributable data packages
 
 Decision: Distributable data packages (translations, language packs, reference format packs) are maintained in a dedicated `biblens-data` repository, separate from the main BibLens plugin source.

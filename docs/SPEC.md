@@ -91,20 +91,19 @@ This separation allows multiple abbreviation systems to map to the same internal
 
 ## Version 0.2
 
-### Insert Verse After Last Reference
+### Insert Commands
 
 Issue: #3
 
 #### Goal
 
-Allow the user to insert verse text after the Bible reference last detected before cursor position
+Allow the user to insert verse text from the Bible reference last detected before cursor position, using two distinct commands.
 
 Features:
 
-- Command `BibLens: Insert verse text after previous reference` available in the Obsidian command palette.
-- Scans the entire document, finds the last detected Bible reference before cursor position, and inserts its verse text immediately after it.
-- Uses the same insertion format as `BibLens: Insert verse text` (inline or blockquote, per settings).
-- Command is a no-op if no references are detected in the note.
+- Command `BibLens: Insert verse after previous reference` — scans the entire document, finds the last detected Bible reference before cursor position, and appends its verse text inline immediately after it (` — verse text`).
+- Command `BibLens: Replace previous reference with quote` — finds the last detected Bible reference before cursor position and replaces it with a blockquote line (`> Ref verse text`).
+- Both commands are a no-op if no references are detected before the cursor.
 
 #### Constraints
 
@@ -385,7 +384,7 @@ Default: Strict.
 
 The settings tab is organized into five areas in order:
 
-- **General** (flat, no heading) — Verse insertion format · Preferred translation · Preferred language for reference recognition · Standard reference format · Parsing rules
+- **General** (flat, no heading) — Preferred translation · Preferred language for reference recognition · Standard reference format · Parsing rules
   - **Standard reference format** — dropdown from installed reference format packs
   - **Preferred language for reference recognition** — dropdown from installed recognition language packs; description: “Biblical references are identified using this language”
   - **Parsing rules** — dropdown: Strict / Extended; description: “Identify biblical references only when they follow a standard format”

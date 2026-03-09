@@ -54,7 +54,7 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - Loads active language pack via `languagePackLoader.ts` (falls back to built-in English defaults if none selected)
   - Loads active reference format pack via `referenceFormatLoader.ts` (falls back to `books.ts: BUILT_IN_FORMAT_RULES` — English notation — if none selected)
   - Builds `AbbreviationMap` from language pack data (USFM keys read directly); falls back to `books.ts: getBuiltInAbbreviationMap()`
-  - Builds `RefScanner` via `buildRefScanner(map, formatRules, settings.parsingRules)` and passes it to editor extension factories; passes active `ReferenceFormatRules` as `refFormat` to `refTooltipExtension`, `insertVerseCommand`, and `insertAfterLastRefCommand`; also passes `refFormat` to `getVerses` when building Reading View hover content (before calling `PopoverManager.show`)
+  - Builds `RefScanner` via `buildRefScanner(map, formatRules, settings.parsingRules)` and passes it to editor extension factories; passes active `ReferenceFormatRules` as `refFormat` to `refTooltipExtension`, `insertAfterLastRefCommand`, and `replaceLastRefWithQuoteCommand`; also passes `refFormat` to `getVerses` when building Reading View hover content (before calling `PopoverManager.show`)
   - Registers `biblens-insert-verse` command via `this.addCommand(...)`
 - src/settingsTab.ts
   - `BibLensSettingTab` class: Obsidian settings UI; imported and registered by `main.ts`
@@ -76,7 +76,6 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - `preferredLanguage: string` (default: `""` — use built-in English defaults)
   - `standardReferenceFormat: string` (default: `""` — use built-in English defaults)
   - `parsingRules: 'strict' | 'extended'` (default: `'strict'`)
-  - `verseInsertionFormat: 'inline' | 'blockquote'` (default: `'inline'`)
   - `autoUpdateCatalog: boolean` (default: `false`) — fetch catalog from GitHub on plugin load if cache is stale
   - `catalogLastUpdated: string` (default: `""`) — ISO timestamp of last successful catalog fetch; shown in settings UI
 - src/books.ts
@@ -164,15 +163,15 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - Providers with unknown `adapterType` are silently filtered (forward-compatibility: newer catalog entries don't crash older plugin versions)
 - src/ui/verseDOM.ts
   - DOM builder for verse content (no Obsidian imports)
-  - Exports: `buildVerseDOM(entries: VerseEntry[], options?: { copyButton?: boolean }): HTMLElement`
-    - If `copyButton` is true, appends a button that calls `navigator.clipboard.writeText(formatVerseText(entries))`
-    - `navigator.clipboard` is Web API — no Obsidian import required; mobile-compatible
-  - Exports: `formatVerseText(entries: VerseEntry[]): string` — plain-text representation for clipboard
-    - Format: `<label> <text>` for first entry; `<label> <text>` for subsequent entries; joined by single space
-  - Used by both `hover.ts` (via main.ts) and `refTooltip.ts`; both pass `{ copyButton: true }`
+  - Exports: `buildVerseDOM(entries: VerseEntry[]): HTMLElement`
+    - Returns a `<div class="biblens-verse-content">` containing verse entries as `<sup>label</sup> text` nodes
+    - When `entries` is empty, returns a div containing `<em>Verš nenalezen</em>`
+  - Used by both `hover.ts` (via main.ts) and `refTooltip.ts`
 - src/ui/hover.ts
   - `PopoverManager` class: DOM popover creation, positioning, and teardown
-  - `show(anchor: HTMLElement, content: HTMLElement): void` — accepts DOM element
+  - `show(anchor: HTMLElement, content: HTMLElement): void` — creates popover, positions it, sets up `mouseenter`/`mouseleave` on the popover element to track hover state
+  - `requestHide(): void` — hides the popover only if the mouse is not currently over the popover element; called by the anchor's `mouseleave` handler in `main.ts`
+  - `hide(): void` — unconditional teardown; called on plugin unload
   - Used in Reading View only
 - src/editor/refDecorations.ts
   - CM6 ViewPlugin that scans visible ranges and applies underline decorations to detected references
@@ -184,13 +183,13 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - Uses `formatRef`, `scanner.scan()` from parser.ts; `getVerses` from provider.ts; passes `refFormat` to `getVerses`; may import from `@codemirror/*`
 - src/editor/insertVerse.ts
   - CM6 command factory; no Obsidian imports
-  - `InsertionFormat = 'inline' | 'blockquote'`
-  - Exports: `insertVerseCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat, refFormat?: ReferenceFormatRules): Command`
-    - Finds reference spanning cursor on current line → `getVerses(data, ref, refFormat)` → format text → CM6 transaction dispatch
-    - No-op if cursor is not on a detected reference
-  - Exports: `insertAfterLastRefCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat, refFormat?: ReferenceFormatRules): Command`
+  - Exports: `insertAfterLastRefCommand(scanner: RefScanner, data: TranslationData, refFormat?: ReferenceFormatRules): Command`
     - Scans full document via `view.state.doc.toString()` — permitted for user-triggered commands (see D018)
-    - Finds last `RefMatch` whose end position is at or before the cursor → `getVerses(data, ref, refFormat)` → format text → CM6 transaction dispatch at match end position
+    - Finds last `RefMatch` whose end position is at or before the cursor → `getVerses(data, ref, refFormat)` → appends ` — verse text` after the reference via CM6 transaction
+    - No-op if no references exist before the cursor
+  - Exports: `replaceLastRefWithQuoteCommand(scanner: RefScanner, data: TranslationData, refFormat?: ReferenceFormatRules): Command`
+    - Scans full document via `view.state.doc.toString()` — permitted for user-triggered commands (see D018)
+    - Finds last `RefMatch` whose end position is at or before the cursor → `getVerses(data, ref, refFormat)` → replaces the reference with `> Ref verse text` via CM6 transaction
     - No-op if no references exist before the cursor
 
 ## Boundaries
@@ -660,13 +659,12 @@ Remote catalog file shape — `schemaVersion: 2` (stored in `biblens-data` repo 
 - `src/parser.ts` exports: `formatRef(ref: BibleRef, refFormat?: ReferenceFormatRules): string` — when `refFormat` is provided, uses `refFormat.books[ref.bookId]` for the abbreviation and `refFormat.rules.*` for separators; falls back to built-in English defaults when omitted
 - `src/parser.ts` exports: `buildRefScanner(map: AbbreviationMap, format?: ReferenceFormatRules, mode?: ParsingMode): RefScanner`
 - `src/provider.ts` exports: `getVerses(data: TranslationData, ref: BibleRef, refFormat?: ReferenceFormatRules): VerseEntry[]`
-- `src/ui/hover.ts` exports: `PopoverManager` (methods: `show`, `hide`)
-- `src/ui/verseDOM.ts` exports: `buildVerseDOM(entries: VerseEntry[], options?: { copyButton?: boolean }): HTMLElement`
-- `src/ui/verseDOM.ts` exports: `formatVerseText(entries: VerseEntry[]): string`
+- `src/ui/hover.ts` exports: `PopoverManager` (methods: `show`, `requestHide`, `hide`)
+- `src/ui/verseDOM.ts` exports: `buildVerseDOM(entries: VerseEntry[]): HTMLElement`
 - `src/editor/refDecorations.ts` exports: `refDecorationsExtension(scanner: RefScanner): Extension`
 - `src/editor/refTooltip.ts` exports: `refTooltipExtension(scanner: RefScanner, data: TranslationData, refFormat?: ReferenceFormatRules): Extension`
-- `src/editor/insertVerse.ts` exports: `insertVerseCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat, refFormat?: ReferenceFormatRules): Command`
-- `src/editor/insertVerse.ts` exports: `insertAfterLastRefCommand(scanner: RefScanner, data: TranslationData, format: InsertionFormat, refFormat?: ReferenceFormatRules): Command`
+- `src/editor/insertVerse.ts` exports: `insertAfterLastRefCommand(scanner: RefScanner, data: TranslationData, refFormat?: ReferenceFormatRules): Command`
+- `src/editor/insertVerse.ts` exports: `replaceLastRefWithQuoteCommand(scanner: RefScanner, data: TranslationData, refFormat?: ReferenceFormatRules): Command`
 - `src/translationRegistry.ts` exports: `listAvailableTranslations(adapter: DataAdapter, pluginDir: string): Promise<TranslationMeta[]>`
 - `src/translationDownloader.ts` exports: `downloadTranslation(adapter: DataAdapter, pluginDir: string, url: string, name: string): Promise<void>`
 
