@@ -267,7 +267,7 @@ describe("openbibleinfo language pack adapter", () => {
     expect(Object.keys(result.books)).not.toContain("SIR");
   });
 
-  it("transform ignores comment, variable-def, preferred-names, and order lines", () => {
+  it("transform ignores comment, variable-def, and order lines; adds Short from preferred-names", () => {
     const txt = [
       "# comment line",
       "$FIRST\tPrvní",
@@ -277,8 +277,12 @@ describe("openbibleinfo language pack adapter", () => {
     ].join("\n");
     const result = adapter.transform(txt);
     expect(result.books["GEN"]).toBeDefined();
-    // Only the book alias line contributes — preferred names line must not add aliases
-    expect(result.books["GEN"]!.aliases).toEqual(["Genesis"]);
+    // Alias line contributes "Genesis"; preferred-names Short "Gn" is added as additional alias
+    expect(result.books["GEN"]!.aliases).toContain("Genesis");
+    expect(result.books["GEN"]!.aliases).toContain("Gn");
+    // Comment, variable-def, and order lines contribute nothing
+    expect(result.books["GEN"]!.aliases).not.toContain("Preferred Genesis");
+    expect(result.books["GEN"]!.aliases).not.toContain("První");
   });
 
   it("transform deduplicates identical aliases", () => {

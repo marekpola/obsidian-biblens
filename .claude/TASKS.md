@@ -20,54 +20,9 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 ---
 
-
-
-### Task 33 – Remove Preferred Language and Standard Reference Format Dropdowns from General Settings
-
-#### Goal
-Remove the two redundant dropdowns from the General settings section. The same settings are already controlled by "Set as default" buttons in the collapsible "Recognition languages" and "Reference formats" sections. Removing the General-section dropdowns eliminates confusing duplicate controls.
-
-#### Scope
-- `src/settingsTab.ts`: Remove the `langContainer` block ("Preferred language for reference recognition" dropdown, lines ~91–111) and the `fmtContainer` block ("Standard reference format" dropdown, lines ~113–134) from `renderGeneral()`
-- Keep Verse insertion format, Preferred translation, and Parsing rules dropdowns unchanged
-- `settings.ts` fields `preferredLanguage` and `standardReferenceFormat` are untouched — only the UI controls are removed
-
-#### Definition of Done
-- General settings section renders exactly: Verse insertion format · Preferred translation · Parsing rules
-- No language pack dropdown or reference format dropdown in the General section
-- "Set as default" buttons in the collapsible sections remain the sole UI path for activating a language pack or reference format
-- `settings.preferredLanguage` and `settings.standardReferenceFormat` still persist and are loaded correctly on startup
-- `npm run check` and `npm run ci` pass
-
----
-
-### Task 34 – Fix openbibleinfo Language Pack Adapter: Include Canonical Abbreviations as Recognition Aliases
-
-#### Goal
-Fix a parsing failure where references written with canonical abbreviations (e.g. `Matt 1:3`, `Gen 1:1`) are not recognized when an openbibleinfo-sourced language pack is active.
-
-#### Root Cause
-The openbibleinfo `data.txt` has two relevant sections:
-- **Alias lines** — e.g. `Matt\tMatthew\tMat\tMt` — OSIS id in col 1, aliases in cols 2+
-- **Preferred names lines** — e.g. `*Matt\tMatthew\tMatt\tMt` — prefixed with `*`; cols: Long / Short / Shorter
-
-`openbibleinfoLanguagePackAdapter.transform()` explicitly skips `*` lines, so the Short form (`"Matt"`) is never added to the recognition aliases. `openbibleinfoReferenceFormatAdapter.transform()` reads those same `*` lines and sets `books["MAT"] = "Matt"` as the canonical display abbreviation.
-
-The result: "Matt" is the displayed canonical form (format pack) but is absent from the recognition alias map (language pack). A user typing `Matt 1:3` gets zero matches.
-
-#### Scope
-- `src/sources/adapters.ts`: Extend `openbibleinfoLanguagePackAdapter.transform()` with a second pass over `*` (preferred names) lines — extract OSIS id + Short (index 2, fall back to Shorter index 3), convert to USFM via `osisToUsfm`, append to `books[usfmId].aliases` if not already present. No other adapters are changed.
-
-#### Definition of Done
-- With the English language pack active, `Matt 1:3`, `Gen 1:1`, and `Rev 22:20` are detected and underlined
-- The Short abbreviation from preferred names appears in the language pack `aliases` array after transform
-- No alias is duplicated
-- `adapters.ts` has no Obsidian imports
-- `npm run check` and `npm run ci` pass
-
----
-
 ## Next
+
+---
 
 ## Future
 
@@ -97,6 +52,38 @@ Add a copy button to the hover popover and editor tooltip that copies the full f
 
 ---
 ## Done
+
+### Task 35 – Default Parsing Rules Changed to Extended ✓
+
+- `DEFAULT_SETTINGS.parsingRules` changed from `'strict'` to `'extended'`
+- Root cause: with no bundled format pack, `BUILT_IN_FORMAT_RULES` uses English `:` separator; strict mode's negative lookahead `(?![,])` blocked all `,`-notation references out-of-the-box
+- Extended mode accepts both `,` and `:` separator variants regardless of format pack; users can still switch to Strict after installing a format pack
+- No test assertion covered the old default; no test changes required
+- `npm run check` and `npm run ci` pass ✓
+
+---
+
+### Task 34 – Fix openbibleinfo Language Pack Adapter: Include Canonical Abbreviations as Recognition Aliases ✓
+
+- `openbibleinfoLanguagePackAdapter.transform()` extended with a second pass over `*` preferred-names lines
+- Short (index 2, fallback Shorter index 3) added to `books[usfmId].aliases` if not already present
+- Ensures canonical abbreviations (e.g. "Matt", "Gen") used by format packs are also recognised as input aliases
+- No duplicates introduced; deuterocanonical books still skipped
+- Test updated to reflect new intentional behavior
+- `npm run check` and `npm run ci` pass ✓
+
+---
+
+### Task 33 – Remove Preferred Language and Standard Reference Format Dropdowns from General Settings ✓
+
+- `langContainer` block (Preferred language dropdown) removed from `renderGeneral()` in `src/settingsTab.ts`
+- `fmtContainer` block (Standard reference format dropdown) removed from `renderGeneral()` in `src/settingsTab.ts`
+- General section now renders: Verse insertion format · Preferred translation · Parsing rules only
+- "Set as default" buttons in the collapsible sections remain the sole UI path
+- `settings.preferredLanguage` and `settings.standardReferenceFormat` fields unchanged
+- `npm run check` and `npm run ci` pass ✓
+
+---
 
 ### Task 32 – Refresh Editor Views After Scanner Reload ✓
 

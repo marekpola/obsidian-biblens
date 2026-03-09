@@ -17,5 +17,5 @@ export const DEFAULT_SETTINGS: BibLensSettings = {
 	catalogLastUpdated: '',
 	preferredLanguage: '',
 	standardReferenceFormat: '',
-	parsingRules: 'strict',
+	parsingRules: 'extended',
 };

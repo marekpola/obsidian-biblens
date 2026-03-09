@@ -226,6 +226,28 @@ const openbibleinfoLanguagePackAdapter: LanguagePackAdapter = {
 			}
 		}
 
+		// Second pass: add the preferred Short abbreviation (*-lines) as a recognition alias.
+		// The Short form (e.g. "Matt" for Matthew) is the canonical display abbreviation used
+		// by reference format packs. Without this pass, users typing that abbreviation would
+		// get zero matches because alias lines never include the canonical short form.
+		for (const line of lines) {
+			if (!line.startsWith('*')) continue;
+			const parts = line.slice(1).split('\t');
+			const osisId = parts[0]?.trim();
+			if (!osisId) continue;
+			const usfmId = osisToUsfm(osisId);
+			if (!usfmId || !CANONICAL_USFM_SET.has(usfmId)) continue;
+			const short   = parts[2]?.trim();
+			const shorter = parts[3]?.trim();
+			const abbr = (short && short.length > 0) ? short : shorter;
+			if (!abbr) continue;
+			if (books[usfmId]) {
+				if (!books[usfmId].aliases.includes(abbr)) books[usfmId].aliases.push(abbr);
+			} else {
+				books[usfmId] = { aliases: [abbr] };
+			}
+		}
+
 		return {
 			id: '',           // populated by packManager from catalog entry
 			displayName: '',  // populated by packManager from catalog entry

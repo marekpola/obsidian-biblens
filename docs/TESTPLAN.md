@@ -525,13 +525,135 @@ Expected:
 ### 25d – Selecting Czech language pack activates Czech book names (manual)
 
 Steps:
-1. In Settings → BibLens → General, set **Preferred language for reference recognition** to "Czech".
+1. In Settings → BibLens → Recognition languages, expand the section and click **Set as default** on the Czech pack.
 2. Open a note containing `Gn 1,1` (Czech abbreviation).
 3. Hover over the reference in Reading View or Live Preview.
 
 Expected:
 - Reference is detected and a tooltip/popover displays verse content.
 - No console errors.
+
+---
+
+## Task 35 – Default Parsing Rules: Extended
+
+### 35a – Out-of-the-box Czech notation detected (manual)
+
+Setup:
+- Fresh plugin state: no language pack, no format pack installed.
+- Parsing rules setting at default (Extended).
+
+Steps:
+1. Open a note in Live Preview.
+2. Type: `Gn 1,1` and `Mt 1,3`.
+
+Expected:
+- Both references are underlined with `biblens-ref` decoration.
+- Hovering shows verse tooltip.
+- No console errors.
+
+### 35b – English colon notation also detected with default settings (manual)
+
+Steps:
+1. In the same note, type: `Gen 1:1` and `Matt 1:3`.
+
+Expected:
+- Both references are detected and underlined alongside the Czech-style references.
+
+### 35c – Strict mode still enforceable (manual)
+
+Steps:
+1. Open Settings → BibLens → Parsing rules → switch to **Strict**.
+2. Open a note with `Gn 1,1` (comma separator).
+3. Set a format pack that uses `,` as separator, or leave built-in (`:` separator).
+
+Expected:
+- With built-in format (`:` separator) and strict mode, `Gn 1,1` is **not** detected.
+- `Gen 1:1` is still detected.
+
+---
+
+## Task 33 – Remove Preferred Language and Standard Reference Format Dropdowns from General Settings
+
+### 33a – General section contains only the expected controls (manual)
+
+Steps:
+1. Open Settings → BibLens.
+2. Inspect the General (flat, no heading) area at the top of the settings tab.
+
+Expected:
+- Exactly three controls are present: **Verse insertion format**, **Preferred translation**, **Parsing rules**.
+- No dropdown labelled "Preferred language for reference recognition".
+- No dropdown labelled "Standard reference format".
+- No console errors.
+
+### 33b – Active language pack survives reload (manual)
+
+Setup:
+- At least one language pack installed in `recognition-languages/`.
+- That pack was set as default via the collapsible "Recognition languages" section.
+
+Steps:
+1. Note the currently active language pack id in plugin data (or confirm detection works for a reference in that language).
+2. Reload Obsidian (Command palette → "Reload app without saving").
+3. Open Settings → BibLens.
+
+Expected:
+- The previously active language pack is still active after reload.
+- The General section still shows no language dropdown.
+
+### 33c – "Set as default" in collapsible section activates lang pack (manual)
+
+Setup:
+- At least one language pack installed; currently active pack is different or none is active.
+
+Steps:
+1. Open Settings → BibLens → Recognition languages (expand).
+2. Click **Set as default** on an installed pack.
+3. Dismiss settings and open a note with a reference in that language.
+
+Expected:
+- A Notice confirms the activation.
+- References in that language are detected (underlined in editor / popover in Reading View).
+- No "Preferred language" dropdown appears anywhere in General settings.
+
+---
+
+## Task 34 – Fix openbibleinfo Language Pack Adapter: Canonical Abbreviations as Aliases
+
+### 34a – Adapter includes Short form from preferred-names lines (automated)
+
+Covered by updated test in `tests/sources.test.ts`:
+- Input with `*Gen\tPreferred Genesis\tGn` plus alias line `Gen\tGenesis` produces `aliases` containing both `"Genesis"` and `"Gn"`.
+- The Short form from the preferred-names line is not duplicated when it already appears in the alias list.
+- Comment, variable-def, and order lines still contribute nothing.
+
+### 34b – English language pack: canonical abbreviations are recognised (manual, requires network)
+
+Setup:
+- Active network connection.
+- English language pack downloaded from openbibleinfo and set as default via Settings → BibLens → Recognition languages.
+- No reference format pack selected (built-in English colon format used), or English reference format pack selected.
+
+Steps:
+1. Open a note in Live Preview.
+2. Type each of the following lines and observe underline decorations:
+   ```
+   Matt 1:3
+   Gen 1:1
+   Rev 22:20
+   John 3:16
+   ```
+
+Expected:
+- All four references are underlined with `biblens-ref` decoration.
+- Hovering each shows the correct verse tooltip.
+- No console errors.
+
+### 34c – Canonical abbreviation not duplicated when it already appears in alias lines (automated)
+
+Covered by `tests/sources.test.ts`:
+- If a preferred-names Short form is identical to an alias already present in the alias line, it appears only once in `aliases`.
 
 ---
 

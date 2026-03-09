@@ -87,52 +87,6 @@ export class BibLensSettingTab extends PluginSettingTab {
 			})
 			.catch((e: unknown) => console.error('BibLens: failed to list translations', e));
 
-		// Preferred language
-		const langContainer = containerEl.createDiv();
-		listAvailableLanguagePacks(this.app.vault.adapter, this.plugin.manifest.dir!)
-			.then(packs => {
-				const options: Record<string, string> = { '': 'Built-in (English)' };
-				for (const p of packs) options[p.id] = p.displayName;
-
-				new Setting(langContainer)
-					.setName('Preferred language for reference recognition')
-					.setDesc('Language pack used to recognise book names.')
-					.addDropdown(drop => {
-						drop.addOptions(options);
-						drop.setValue(this.plugin.settings.preferredLanguage);
-						drop.onChange(async (value) => {
-							this.plugin.settings.preferredLanguage = value;
-							await this.plugin.saveSettings();
-							await this.plugin.reloadScanner();
-							new Notice('Language pack updated.');
-						});
-					});
-			})
-			.catch((e: unknown) => console.error('BibLens: failed to list language packs', e));
-
-		// Standard reference format
-		const fmtContainer = containerEl.createDiv();
-		listAvailableReferenceFormats(this.app.vault.adapter, this.plugin.manifest.dir!)
-			.then(formats => {
-				const options: Record<string, string> = { '': 'Built-in (English)' };
-				for (const f of formats) options[f.id] = f.displayName;
-
-				new Setting(fmtContainer)
-					.setName('Standard reference format')
-					.setDesc('Format pack used for abbreviations and separators in references.')
-					.addDropdown(drop => {
-						drop.addOptions(options);
-						drop.setValue(this.plugin.settings.standardReferenceFormat);
-						drop.onChange(async (value) => {
-							this.plugin.settings.standardReferenceFormat = value;
-							await this.plugin.saveSettings();
-							await this.plugin.reloadScanner();
-							new Notice('Reference format updated.');
-						});
-					});
-			})
-			.catch((e: unknown) => console.error('BibLens: failed to list reference formats', e));
-
 		// Parsing rules
 		new Setting(containerEl)
 			.setName('Parsing rules')
