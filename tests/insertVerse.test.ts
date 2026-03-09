@@ -74,7 +74,7 @@ describe("replaceLastRefWithQuoteCommand", () => {
 		const doc = "See Gn 1,1 for reference.";
 		const { view, getInsert, getFrom, getTo } = makeView(doc);
 		replaceLastRefWithQuoteCommand(scanner, data)(view);
-		expect(getInsert()).toBe("\n> Gn 1,1 Na počátku stvořil Bůh nebe a zemi.\n");
+		expect(getInsert()).toBe("\n> Gen 1:1 Na počátku stvořil Bůh nebe a zemi.\n");
 		// "See " = 4 chars; "Gn 1,1" starts at 4, ends at 10
 		expect(getFrom()).toBe(4);
 		expect(getTo()).toBe(10);
@@ -84,7 +84,7 @@ describe("replaceLastRefWithQuoteCommand", () => {
 		const doc = "Some intro.\nGn 1,1";
 		const { view, getInsert } = makeView(doc);
 		replaceLastRefWithQuoteCommand(scanner, data)(view);
-		expect(getInsert()).toBe("> Gn 1,1 Na počátku stvořil Bůh nebe a zemi.\n");
+		expect(getInsert()).toBe("> Gen 1:1 Na počátku stvořil Bůh nebe a zemi.\n");
 	});
 
 	it("returns false when no references found", () => {

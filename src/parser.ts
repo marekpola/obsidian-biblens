@@ -1,5 +1,5 @@
 import type { ParseResult, BibleRef, ReferenceFormatRules, ParsingMode } from "./types";
-import { resolveBookId, getDisplayAbbr, normalizeBookKey, BUILT_IN_FORMAT_RULES } from "./books";
+import { resolveBookId, normalizeBookKey, BUILT_IN_FORMAT_RULES } from "./books";
 import type { AbbreviationMap, BookId } from "./books";
 
 export type RefMatch = {
@@ -32,10 +32,11 @@ export function scanRefs(text: string): RefMatch[] {
 }
 
 export function formatRef(ref: BibleRef, refFormat?: ReferenceFormatRules): string {
-  const abbr = refFormat?.books[ref.bookId] ?? getDisplayAbbr(ref.bookId);
-  const bookChapSep = refFormat?.bookChapterSeparator ?? ' ';
-  const cvSep = refFormat?.chapterVerseSeparator ?? ',';
-  const rangeSep = refFormat?.rangeSeparator ?? '-';
+  const fmt = refFormat ?? BUILT_IN_FORMAT_RULES;
+  const abbr = fmt.books[ref.bookId] ?? ref.bookId;
+  const bookChapSep = fmt.bookChapterSeparator;
+  const cvSep = fmt.chapterVerseSeparator;
+  const rangeSep = fmt.rangeSeparator;
   let s = `${abbr}${bookChapSep}${ref.chapterStart}`;
   if (ref.verseStart !== undefined) {
     s += `${cvSep}${ref.verseStart}`;

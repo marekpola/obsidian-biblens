@@ -922,6 +922,29 @@ Cases:
 
 ---
 
+## Task 40 – `formatRef` no-arg fallback: English notation
+
+All cases covered by `tests/parser.test.ts`. No manual steps required (pure parser logic).
+
+### 40a – No-arg fallback uses English notation (automated)
+
+Cases:
+- `formatRef({ bookId: "GEN", chapterStart: 1, verseStart: 1 })` → `"Gen 1:1"`
+- `formatRef({ bookId: "MAT", chapterStart: 1, verseStart: 3 })` → `"Matt 1:3"`
+- `formatRef({ bookId: "GEN", chapterStart: 22, verseStart: 1, verseEnd: 19 })` → `"Gen 22:1-19"`
+
+### 40b – Explicit `BUILT_IN_FORMAT_RULES` arg produces same result as no-arg (automated)
+
+Cases:
+- `formatRef(ref, BUILT_IN_FORMAT_RULES)` === `formatRef(ref)` for any `ref`
+
+### 40c – Existing explicit-refFormat tests unchanged (automated)
+
+Cases:
+- All pre-existing `formatRef` test cases that pass an explicit `refFormat` continue to pass without modification
+
+---
+
 ## Mobile Compatibility (Periodic Check)
 
 Note:

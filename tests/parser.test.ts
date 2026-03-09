@@ -95,8 +95,8 @@ describe("formatRef with BUILT_IN_FORMAT_RULES", () => {
     expect(formatRef({ bookId: "GEN", chapterStart: 22, verseStart: 1, verseEnd: 19 }, BUILT_IN_FORMAT_RULES)).toBe("Gen 22:1-19");
   });
 
-  it("falls back to Czech notation when no refFormat given", () => {
-    expect(formatRef({ bookId: "GEN", chapterStart: 1, verseStart: 1 })).toBe("Gn 1,1");
+  it("falls back to English notation (BUILT_IN_FORMAT_RULES) when no refFormat given", () => {
+    expect(formatRef({ bookId: "GEN", chapterStart: 1, verseStart: 1 })).toBe("Gen 1:1");
   });
 });
 
