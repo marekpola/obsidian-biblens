@@ -58,8 +58,11 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - Registers `biblens-insert-verse` command via `this.addCommand(...)`
 - src/settingsTab.ts
   - `BibLensSettingTab` class: Obsidian settings UI; imported and registered by `main.ts`
-  - Discovers available translations via `listAvailableTranslations` and renders a dropdown
-  - On change: saves settings, calls `plugin.reloadTranslation()`, shows Notice
+  - `display()` issues a single `Promise.all` over `loadCatalog`, `listAvailableTranslations`, `listAvailableReferenceFormats`, and `listAvailableLanguagePacks`; runs auto-default checks on the resolved data; then renders all sections with consistent, settled values
+  - Auto-default: if `settings.preferredTranslation`, `settings.standardReferenceFormat`, or `settings.preferredLanguage` is empty and at least one item of that type is installed, the first item is automatically set as default (save + reload); runs in `display()` before any section renders; covers first install, manual file drop, and active-item deletion
+  - `renderGeneral(status)` accepts resolved display names and renders three read-only status rows (Translation · Reference format · Recognition language) plus the Parsing rules dropdown; no dropdowns for asset selection
+  - `renderInstalledTranslations`, `renderInstalledFormats`, `renderInstalledLanguages` each receive their pre-fetched list data as a parameter; no internal list calls
+  - "Set as default" buttons in the collapsible sections are the sole interactive path for changing the active item of each type
 - src/parser.ts
   - Pure parsing functions (no Obsidian imports)
   - Exports: `parseCzechBibleRef`, `scanRefs`, `formatRef`, `RefMatch`

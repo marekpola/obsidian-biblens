@@ -335,6 +335,34 @@ Consequences:
 - Translation loader silently ignores `canonicalAbbreviations` and `allowedAbbreviations`
 Date: 2026-03-08
 
+## D025 – Settings General section as status panel; auto-default on empty preference
+
+Decision: The General section of the settings tab is redesigned as a read-only status panel. The Preferred Translation dropdown is removed. Three non-interactive status rows replace all asset-selection controls in General:
+
+- **Translation** — active translation display name, or "None — verse text unavailable"
+- **Reference format** — active format pack display name, or "Built-in English"
+- **Recognition language** — active language pack display name, or "Built-in English"
+
+The Parsing rules dropdown remains the only interactive control in General. All asset selection is delegated to the collapsible sections via "Set as default" buttons, which are the sole interactive path for changing the active item of each type.
+
+**Auto-default on empty preference:**
+Whenever `display()` renders and `settings.preferredTranslation`, `settings.standardReferenceFormat`, or `settings.preferredLanguage` is empty while at least one item of that type is installed, the first installed item is automatically set as default (save + appropriate reload). Covers:
+- First download of any asset type
+- Manual file drop detected on next tab open
+- Active item deletion (preference cleared → next available item auto-selected)
+
+The condition is purely `settings.preferredX === ''` — it does not override an existing preference.
+
+**Async structure:**
+`display()` issues a single `Promise.all` over `loadCatalog`, `listAvailableTranslations`, `listAvailableReferenceFormats`, and `listAvailableLanguagePacks`. Auto-default runs first on the resolved data, then `renderGeneral(status)` and each `renderInstalledX(data)` are called with consistent, settled values. This eliminates the race condition that would arise if General status rows and auto-default ran in independent async chains.
+
+Reason: A status panel answers "what is currently active?" without requiring the user to open any collapsible section. Dropdown selectors in General were redundant with the "Set as default" buttons and created two separate paths to the same setting. Auto-default removes a mandatory second step after first install.
+
+Consequences:
+- `src/settingsTab.ts`: `display()` restructured to single `Promise.all`; `renderGeneral(status)` parameterised; `renderInstalledX` accept pre-fetched list data; auto-default logic in `display()`
+- No changes to `src/settings.ts`, `src/main.ts`, or any other module
+Date: 2026-03-09
+
 ## D023 – Two insert commands replace configurable insertion mode
 
 Decision: The `settings.verseInsertionFormat` setting and the "Verse insertion format" dropdown are removed. In their place, two independently named commands are registered:

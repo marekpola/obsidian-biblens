@@ -384,14 +384,17 @@ Default: Strict.
 
 The settings tab is organized into five areas in order:
 
-- **General** (flat, no heading) — Preferred translation · Preferred language for reference recognition · Standard reference format · Parsing rules
-  - **Standard reference format** — dropdown from installed reference format packs
-  - **Preferred language for reference recognition** — dropdown from installed recognition language packs; description: “Biblical references are identified using this language”
+- **General** (flat, no heading) — three read-only status rows + Parsing rules dropdown
+  - **Translation** — read-only; shows display name of active translation, or “None — verse text unavailable” if none set
+  - **Reference format** — read-only; shows display name of active format pack, or “Built-in English” if none set
+  - **Recognition language** — read-only; shows display name of active language pack, or “Built-in English” if none set
   - **Parsing rules** — dropdown: Strict / Extended; description: “Identify biblical references only when they follow a standard format”
-- **Installed translations** (collapsible, collapsed by default) — list of installed translations; active translation shown first; Delete and Set as default buttons; “Install new” row at the bottom with provider + translation dropdowns and Download button (already-installed translations are excluded from the dropdown)
-- **Reference formats** (collapsible, collapsed by default) — list of installed format packs with Delete button; “Install new” row at the bottom with provider + format dropdowns and Download button
-- **Recognition languages** (collapsible, collapsed by default) — list of installed language packs with Delete button; “Install new” row at the bottom with provider + language dropdowns and Download button
+- **Installed translations** (collapsible, collapsed by default) — list of installed translations; active translation marked; Delete and Set as default buttons; “Install new” row at the bottom with provider + translation dropdowns and Download button (already-installed translations are excluded from the dropdown)
+- **Reference formats** (collapsible, collapsed by default) — list of installed format packs with Delete and Set as default buttons; “Install new” row at the bottom with provider + format dropdowns and Download button
+- **Recognition languages** (collapsible, collapsed by default) — list of installed language packs with Delete and Set as default buttons; “Install new” row at the bottom with provider + language dropdowns and Download button
 - **Advanced** — catalog update button and auto-update toggle
+
+**Auto-default behaviour:** when `display()` renders and the preference for any asset type is empty while at least one item of that type is installed, the first installed item is automatically set as default. This fires on first download, manual file drop (detected on next tab open), and active-item deletion (preference cleared → next available item auto-selected).
 
 ---
 
