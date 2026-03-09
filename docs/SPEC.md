@@ -214,7 +214,7 @@ This format is human-readable and consistent with common Bible software conventi
 Both paths produce the same `TranslationData` type for all downstream consumers.
 
 Files with `formatVersion` values other than `1` are rejected with an error; the plugin falls back
-to `"Verš nenalezen"` until a valid translation is loaded.
+to `"Verse not found."` until a valid translation is loaded.
 
 #### Migration
 

@@ -83,7 +83,7 @@ Consequences:
 - `src/translationLoader.ts` handles Obsidian adapter access; `src/provider.ts` remains pure.
 - `main.ts` awaits `loadTranslation()` in `onload()` and stores the result.
 - `cep.json` must be included in plugin release artifacts under `translations/`.
-- Loading is async; UI falls back to "Verš nenalezen" if data is not yet available.
+- Loading is async; UI falls back to "Verse not found." if data is not yet available.
 Revisit: if a translation manager UI (import, select, delete) is added.
 Date: 2026-03-04
 
@@ -104,7 +104,7 @@ Reason: A chapter-only hover should show the full chapter content, not an empty 
 Consequences:
 - `provider.ts` scans `TranslationData` keys with prefix `${bookId}.${chapter}.` to collect available verses.
 - First entry label uses `formatRef` (e.g. `Gn 22`); subsequent labels are verse numbers.
-- An unknown chapter (no matching keys) still returns `[]`, triggering the "Verš nenalezen" fallback.
+- An unknown chapter (no matching keys) still returns `[]`, triggering the "Verse not found." fallback.
 Supersedes: the "chapter-only returns []" clause from Task 6 DoD.
 Date: 2026-03-04
 

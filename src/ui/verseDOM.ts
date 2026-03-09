@@ -5,7 +5,7 @@ export function buildVerseDOM(entries: VerseEntry[]): HTMLElement {
   container.addClass('biblens-verse-content');
   if (entries.length === 0) {
     const em = document.createElement('em');
-    em.appendChild(document.createTextNode('Verš nenalezen'));
+    em.appendChild(document.createTextNode('Verse not found.'));
     container.appendChild(em);
     return container;
   }

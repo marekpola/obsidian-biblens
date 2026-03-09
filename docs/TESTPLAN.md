@@ -76,7 +76,7 @@ Steps:
 
 Expected:
 - A popover appears on hover over each plain-text reference.
-- Popover shows verse content (superscript label + verse text), or `Verš nenalezen` in italics if not found.
+- Popover shows verse content (superscript label + verse text), or `Verse not found.` in italics if not found.
 - Popover is fully visible within the viewport (does not clip at edges).
 - Popover disappears when mouse leaves **both** the reference span and the popover itself.
 - Moving the mouse from the reference span into the popover keeps the popover open.
@@ -123,7 +123,7 @@ Steps:
 
 Expected:
 - A tooltip appears on hover over each reference.
-- Tooltip shows verse content (superscript label + verse text), or `Verš nenalezen` in italics if not found.
+- Tooltip shows verse content (superscript label + verse text), or `Verse not found.` in italics if not found.
 - Tooltip disappears when mouse leaves the reference.
 - Cursor placement and text selection are not disrupted by hovering.
 - No tooltip appears over plain text.
@@ -156,7 +156,7 @@ Steps:
 Expected:
 - Plugin does not crash on missing translation file.
 - Console shows a descriptive error (not an unhandled promise rejection).
-- Hover shows fallback "Verš nenalezen".
+- Hover shows fallback "Verse not found.".
 
 ---
 
@@ -194,7 +194,7 @@ Steps:
 1. Hover over `XYZ 99,99` (if detected) or any ref not in cep.json.
 
 Expected:
-- Popover shows `Verš nenalezen` in italics.
+- Popover shows `Verse not found.` in italics.
 - No console errors.
 
 ### 7d – Single verse, Live Preview editor
@@ -433,7 +433,7 @@ Steps:
 
 Expected:
 - Popover shows verse text from Bible Kralická.
-- No "Verš nenalezen" fallback.
+- No "Verse not found." fallback.
 - No console errors.
 
 ### 18d – Download from Beblia (beblia-xml adapter)
