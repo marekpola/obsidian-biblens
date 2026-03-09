@@ -29,6 +29,38 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 ## Next
 
+---
+
+## Future
+
+### Task 13 – Copy Verse Text to Clipboard
+Issue: #2
+
+#### Goal
+Add a copy button to the hover popover and editor tooltip that copies the full formatted verse text to the clipboard.
+
+#### Scope
+- `src/ui/verseDOM.ts`: implement `buildVerseDOM` `copyButton` option — when `true`, append a `<button>` that calls `navigator.clipboard.writeText(formatVerseText(entries))`
+- `src/ui/verseDOM.ts`: implement `formatVerseText(entries: VerseEntry[]): string` — join entries as `<label> <text>` separated by single space
+- `src/ui/hover.ts` and `src/editor/refTooltip.ts`: pass `{ copyButton: true }` when calling `buildVerseDOM`
+- No Obsidian imports — `navigator.clipboard` is Web API; mobile-compatible
+
+#### Definition of Done
+- Copy button appears in both Reading View popover and editor tooltip
+- Clicking the button copies plain-text verse content to clipboard
+- `src/ui/verseDOM.ts` has no Obsidian imports
+- `npm run check` and `npm run ci` pass
+
+---
+
+- Parallel text support
+- Morphology
+- Configurable abbreviation systems
+
+---
+## Done
+
+
 ### Task 39 – Refactor `buildRefScanner`: alias alternation and per-mode regex
 Decision: D026
 
@@ -78,34 +110,3 @@ exported types and function signatures.
 - All pre-existing `tests/parser.test.ts` cases still pass
 - New unit test cases from TESTPLAN.md Task 39 are implemented and pass
 - `npm run check` and `npm run ci` pass
-
----
-
-## Future
-
-### Task 13 – Copy Verse Text to Clipboard
-Issue: #2
-
-#### Goal
-Add a copy button to the hover popover and editor tooltip that copies the full formatted verse text to the clipboard.
-
-#### Scope
-- `src/ui/verseDOM.ts`: implement `buildVerseDOM` `copyButton` option — when `true`, append a `<button>` that calls `navigator.clipboard.writeText(formatVerseText(entries))`
-- `src/ui/verseDOM.ts`: implement `formatVerseText(entries: VerseEntry[]): string` — join entries as `<label> <text>` separated by single space
-- `src/ui/hover.ts` and `src/editor/refTooltip.ts`: pass `{ copyButton: true }` when calling `buildVerseDOM`
-- No Obsidian imports — `navigator.clipboard` is Web API; mobile-compatible
-
-#### Definition of Done
-- Copy button appears in both Reading View popover and editor tooltip
-- Clicking the button copies plain-text verse content to clipboard
-- `src/ui/verseDOM.ts` has no Obsidian imports
-- `npm run check` and `npm run ci` pass
-
----
-
-- Parallel text support
-- Morphology
-- Configurable abbreviation systems
-
----
-## Done

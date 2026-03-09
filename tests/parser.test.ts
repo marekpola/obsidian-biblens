@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { parseCzechBibleRef, scanRefs, buildRefScanner, formatRef } from "../src/parser";
 import { BOOK_ALIASES, BUILT_IN_FORMAT_RULES } from "../src/books";
+import type { ReferenceFormatRules } from "../src/types";
+import type { AbbreviationMap } from "../src/books";
 
 describe("parseCzechBibleRef", () => {
   it("parses Mt 1,3", () => {
@@ -116,5 +118,138 @@ describe("scanRefs – blockquote exclusion", () => {
     expect(matches).toHaveLength(2);
     expect(matches[0]!.ref.bookId).toBe("EXO");
     expect(matches[1]!.ref.bookId).toBe("MAT");
+  });
+});
+
+// ── Task 39 – D026: alias alternation and per-mode regex ──────────────────────
+
+// Minimal comma-notation format used as a fixture throughout these tests.
+// bookChapterSeparator: " " (single space), chapterVerseSeparator: ","
+const CS_FORMAT: ReferenceFormatRules = {
+  chapterVerseSeparator: ',',
+  rangeSeparator: '-',
+  bookChapterSeparator: ' ',
+  books: { GEN: 'Gn', MAT: 'Mt', ISA: 'Iz' },
+};
+
+describe("buildRefScanner – 39a: multi-word alias in extended mode", () => {
+  // Normalized key matches the pattern produced by normalizeBookKey("1. Mojžíšova")
+  const multiWordMap: AbbreviationMap = { '1. mojžíšova': 'GEN' };
+  const scanner = buildRefScanner(multiWordMap, CS_FORMAT, 'extended');
+
+  it('detects "1. Mojžíšova 1,1"', () => {
+    const m = scanner.scan('1. Mojžíšova 1,1');
+    expect(m).toHaveLength(1);
+    expect(m[0]!.ref).toEqual({ bookId: 'GEN', chapterStart: 1, verseStart: 1 });
+  });
+
+  it('detects "1. MOJŽÍŠOVA 1,1" (uppercase – case-insensitive)', () => {
+    const m = scanner.scan('1. MOJŽÍŠOVA 1,1');
+    expect(m).toHaveLength(1);
+    expect(m[0]!.ref.bookId).toBe('GEN');
+  });
+
+  it('does not match "1. Mojžíšova1,1" (no book-chapter space)', () => {
+    expect(scanner.scan('1. Mojžíšova1,1')).toHaveLength(0);
+  });
+});
+
+describe("buildRefScanner – 39b: case insensitivity in extended mode", () => {
+  // BOOK_ALIASES contains normalizeBookKey("Mt") = "mt" → MAT
+  const scanner = buildRefScanner(BOOK_ALIASES, CS_FORMAT, 'extended');
+
+  it('detects "Mt 1,3" (title case)', () => {
+    expect(scanner.scan('Mt 1,3')).toHaveLength(1);
+  });
+
+  it('detects "mt 1,3" (lowercase)', () => {
+    expect(scanner.scan('mt 1,3')).toHaveLength(1);
+  });
+
+  it('detects "MT 1,3" (uppercase)', () => {
+    expect(scanner.scan('MT 1,3')).toHaveLength(1);
+  });
+
+  it('detects "mT 1,3" (mixed case)', () => {
+    expect(scanner.scan('mT 1,3')).toHaveLength(1);
+  });
+});
+
+describe("buildRefScanner – 39c: case sensitivity in strict mode", () => {
+  // CS_FORMAT.books has MAT: 'Mt' → canonical abbreviation is exactly "Mt"
+  const scanner = buildRefScanner(BOOK_ALIASES, CS_FORMAT, 'strict');
+
+  it('detects "Mt 1,3" (exact canonical case)', () => {
+    expect(scanner.scan('Mt 1,3')).toHaveLength(1);
+  });
+
+  it('does NOT detect "mt 1,3" (lowercase)', () => {
+    expect(scanner.scan('mt 1,3')).toHaveLength(0);
+  });
+
+  it('does NOT detect "MT 1,3" (uppercase)', () => {
+    expect(scanner.scan('MT 1,3')).toHaveLength(0);
+  });
+});
+
+describe("buildRefScanner – 39d: bookChapterSeparator enforced in strict mode", () => {
+  const strict   = buildRefScanner(BOOK_ALIASES, CS_FORMAT, 'strict');
+  const extended = buildRefScanner(BOOK_ALIASES, CS_FORMAT, 'extended');
+
+  it('strict: "Gn 1,1" (single space) → matches', () => {
+    expect(strict.scan('Gn 1,1')).toHaveLength(1);
+  });
+
+  it('strict: "Gn  1,1" (double space) → no match', () => {
+    expect(strict.scan('Gn  1,1')).toHaveLength(0);
+  });
+
+  it('extended: "Gn  1,1" (double space) → matches (\\s+ relaxed)', () => {
+    expect(extended.scan('Gn  1,1')).toHaveLength(1);
+  });
+});
+
+describe("buildRefScanner – 39e: CV separator enforcement", () => {
+  // CS_FORMAT: chapterVerseSeparator ","
+  const strict   = buildRefScanner(BOOK_ALIASES, CS_FORMAT, 'strict');
+  const extended = buildRefScanner(BOOK_ALIASES, CS_FORMAT, 'extended');
+
+  it('strict: "Gn 1,1" (comma) → matches', () => {
+    expect(strict.scan('Gn 1,1')).toHaveLength(1);
+  });
+
+  it('strict: "Gn 1:1" (colon) → no match', () => {
+    expect(strict.scan('Gn 1:1')).toHaveLength(0);
+  });
+
+  it('extended: "Gn 1:1" (colon) → matches', () => {
+    expect(extended.scan('Gn 1:1')).toHaveLength(1);
+  });
+
+  it('extended: "Gn 1.1" (period) → matches', () => {
+    expect(extended.scan('Gn 1.1')).toHaveLength(1);
+  });
+
+  it('extended: "Gn 1,1" (comma) → matches', () => {
+    expect(extended.scan('Gn 1,1')).toHaveLength(1);
+  });
+});
+
+describe("buildRefScanner – 39f: empty alias source returns no-op scanner", () => {
+  const emptyBooksFormat: ReferenceFormatRules = {
+    chapterVerseSeparator: ':',
+    rangeSeparator: '-',
+    bookChapterSeparator: ' ',
+    books: {},
+  };
+
+  it('strict with empty fmt.books → no matches, no crash', () => {
+    const scanner = buildRefScanner(BOOK_ALIASES, emptyBooksFormat, 'strict');
+    expect(scanner.scan('Gen 1:1')).toHaveLength(0);
+  });
+
+  it('extended with empty map → no matches, no crash', () => {
+    const scanner = buildRefScanner({}, BUILT_IN_FORMAT_RULES, 'extended');
+    expect(scanner.scan('Gen 1:1')).toHaveLength(0);
   });
 });
