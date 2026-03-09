@@ -1,5 +1,5 @@
 # BibLens – Architecture
-This document describes the minimal architecture of the BibLens plugin used by AI agents during development.
+This document describes the architecture of the BibLens plugin used by AI agents during development.
 
 ## Goals
 - Keep parsing logic independent from Obsidian API.
@@ -36,7 +36,6 @@ All source files live under `src/`:
 - src/editor/insertVerse.ts
 
 Translation data files live under `translations/` in the plugin directory (not in `src/`):
-- translations/cep.json
 - translations/*.json  (additional translations dropped by user or downloaded)
 
 Recognition language pack files live under `recognition-languages/` in the plugin directory:
@@ -75,9 +74,9 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - `type TranslationMeta = { id: string; displayName: string; lang?: string; source?: string }`
 - src/settings.ts
   - Plugin settings shape and defaults
-  - `preferredTranslation: string` (default: `"cep"`)
-  - `preferredLanguage: string` (default: `""` — use built-in English defaults)
-  - `standardReferenceFormat: string` (default: `""` — use built-in English defaults)
+  - `preferredTranslation: string`
+  - `preferredLanguage: string` 
+  - `standardReferenceFormat: string` 
   - `parsingRules: 'strict' | 'extended'` (default: `'strict'`)
   - `autoUpdateCatalog: boolean` (default: `false`) — fetch catalog from GitHub on plugin load if cache is stale
   - `catalogLastUpdated: string` (default: `""`) — ISO timestamp of last successful catalog fetch; shown in settings UI
@@ -168,7 +167,7 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - DOM builder for verse content (no Obsidian imports)
   - Exports: `buildVerseDOM(entries: VerseEntry[]): HTMLElement`
     - Returns a `<div class="biblens-verse-content">` containing verse entries as `<sup>label</sup> text` nodes
-    - When `entries` is empty, returns a div containing `<em>Verš nenalezen</em>`
+    - When `entries` is empty, returns a div containing `<em>No verse found.</em>`
   - Used by both `hover.ts` (via main.ts) and `refTooltip.ts`
 - src/ui/hover.ts
   - `PopoverManager` class: DOM popover creation, positioning, and teardown

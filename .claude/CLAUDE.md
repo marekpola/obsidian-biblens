@@ -27,19 +27,9 @@ BibLens is an Obsidian plugin that detects Bible references in notes and provide
 
 # Roles and Track Processes
 
-Track 1  
-Designer → Architect → Reviewer
+Track 1: Designer → Architect → Reviewer
 
-Track 2  
-Analyst → Architect → Developer → Tester → Reviewer
-
-# Tasks
-
-`.claude/TASKS.md` structure:
-
-Active → task currently being implemented  
-Next → upcoming tasks  
-Done → completed tasks
+Track 2: Analyst → Architect → Developer → Tester → Reviewer
 
 In Track 2, Claude should work on the Active task unless instructed otherwise.
 
@@ -49,21 +39,6 @@ In Track 2, Claude should work on the Active task unless instructed otherwise.
 
 The Manager coordinates both tracks and maintains `.claude/TASKS.md`.
 Ensures only one Active task exists and that accepted issues flow from Track 1 to Track 2.
-
-### Track 1 process (Product Design)
-
-Designer proposes issues → Architect reviews architecture → Reviewer approves.  
-Approved issues are labelled `accepted` by the user.
-
-### Track 2 process (Product Development)
-
-Analyst converts accepted issues to tasks → Developer implements → Reviewer reviews → Tester validates → task moves to Done.
-
-### Manager role output format
-
-- Track 1 state (design pipeline status)
-- Track 2 state (active task title or "no active task")
-- Next action (which role should act and on what)
 
 ---
 
