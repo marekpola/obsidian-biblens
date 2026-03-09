@@ -19,3 +19,20 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+Third-party notices
+
+This project may include derived language data based on the project:
+
+Bible-Passage-Reference-Parser  
+https://github.com/openbibleinfo/Bible-Passage-Reference-Parser
+
+Copyright (c) Stephen Smith and contributors.
+
+Licensed under the MIT License.
+
+The original project provides language-specific lists of Bible book names and
+aliases. Portions of these data may be adapted, transformed, or redistributed
+within the BibLens project or related data repositories.

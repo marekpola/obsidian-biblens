@@ -369,10 +369,8 @@ The plugin bundles a static OSIS→USFM mapping table used by adapters. This tab
 
 A **Parsing rules** setting controls how aggressively the parser identifies references:
 
-- **Strict** — only detect references that fully conform to the active reference format pack (separators, spacing, structure)
-- **Extended** — detect references using the active language pack's book names, but accept multiple separator variants (comma, colon, period, etc.) regardless of the active format pack; false positives are accepted (recall is favoured over precision)
-
-Both modes operate exclusively within the active language pack — book names from other languages are never matched.
+- **Strict** — detect only references whose book name matches a canonical abbreviation in the active reference format pack, and whose chapter-verse separator and other notation exactly match the format pack rules. Book names from the language pack that are not in the format pack's canonical list are ignored.
+- **Extended** — detect references using all recognized aliases from the active language pack; accept multiple separator variants (comma, colon, period, etc.) regardless of the active format pack; false positives are accepted (recall is favoured over precision). Book names from inactive or unloaded language packs are never matched.
 
 Default: Strict.
 

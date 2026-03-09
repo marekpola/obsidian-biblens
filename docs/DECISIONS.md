@@ -335,6 +335,33 @@ Consequences:
 - Translation loader silently ignores `canonicalAbbreviations` and `allowedAbbreviations`
 Date: 2026-03-08
 
+## D026 – Parser book-name detection: alias alternation replaces generic character class
+
+Decision: The book-name part of the `buildRefScanner` scan regex is changed from a generic character-class pattern (`[A-ZÁČĎ...][a-záčď...]{0,10}`) to a **compiled alternation of alias strings** derived from the active alias source, sorted longest-first.
+
+Alias source per mode:
+- **Strict** — canonical abbreviation values from `fmt.books` (one per book, from the active reference format pack)
+- **Extended** — all keys of `AbbreviationMap` (all aliases from the active language pack)
+
+Case handling: strict mode is case-sensitive (exact canonical forms only); extended mode uses the regex `'i'` flag, allowing normalized lowercase map keys to match any case in text.
+
+`bookChapterSeparator` enforcement: strict mode uses the exact separator from `fmt`; extended mode uses `\s+`.
+
+CV parsing: a precompiled cv-extraction regex replaces the inline `parseChapterVersePart` function; two variants are compiled at scanner construction (strict uses `fmt` separators; extended accepts `,`, `:`, `.`); shared via `parseCVPart(rest, cvRe)` helper.
+
+openbibleinfo attribution: recognition language packs downloaded from openbibleinfo/Bible-Passage-Reference-Parser (MIT license, copyright Stephen Smith 2011–2026) must carry attribution in their `source` field and in `LICENSES.md` at the plugin root.
+
+Reason: The character-class approach silently drops book names outside Czech/ASCII characters and cannot match multi-word aliases (e.g. `1. Mojžíšova`, `First Samuel`). The alternation approach is language-agnostic, supports multi-word names, and makes the alias source explicit and mode-controlled. Case-insensitive matching in extended mode is consistent with the recall-over-precision design of that mode (SPEC.md v0.4 Parsing Modes).
+
+Consequences:
+- `src/parser.ts`: `buildRefScanner` internals replaced; `parseCVPart` helper added; `parseChapterVersePart` function removed (internal only, not an export stub)
+- `src/parser.ts` exported interface unchanged: `buildRefScanner`, `scanRefs`, `parseCzechBibleRef`, `formatRef`, `RefScanner`, `RefMatch` all retain current signatures
+- `candidateRegex()` and `scanRefs` remain unchanged (legacy path, not the `buildRefScanner` path)
+- No changes to `books.ts`, `types.ts`, `main.ts`, or any caller
+
+Supersedes: the character-class regex portion of D019 (which introduced `buildRefScanner` but did not specify the book-name regex strategy).
+Date: 2026-03-09
+
 ## D025 – Settings General section as status panel; auto-default on empty preference
 
 Decision: The General section of the settings tab is redesigned as a read-only status panel. The Preferred Translation dropdown is removed. Three non-interactive status rows replace all asset-selection controls in General:

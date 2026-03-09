@@ -863,6 +863,65 @@ Expected:
 
 ---
 
+## Task 39 – buildRefScanner: alias alternation and per-mode regex
+
+All cases covered by `tests/parser.test.ts`. No manual steps required (pure parser logic).
+
+### 39a – Multi-word alias detected in extended mode (automated)
+
+Cases:
+- `AbbreviationMap` contains normalized key `"1. mojžíšova"` → `GEN`
+- Input text `"1. Mojžíšova 1,1"` → one match, `bookId: "GEN"`, `chapterStart: 1`, `verseStart: 1`
+- Input text `"1. MOJŽÍŠOVA 1,1"` → one match (case-insensitive)
+- Input text `"1. Mojžíšova1,1"` (no space) → no match (book-chapter separator required)
+
+### 39b – Case insensitivity in extended mode (automated)
+
+Cases:
+- Normalized alias `"mt"` → `MAT` in map
+- Extended mode: `"Mt 1,3"`, `"mt 1,3"`, `"MT 1,3"` → all produce one match each
+- Extended mode: `"mT 1,3"` → one match (mixed case)
+
+### 39c – Case sensitivity in strict mode (automated)
+
+Cases:
+- `fmt.books` contains `"MAT": "Mt"` (canonical abbreviation is `"Mt"`)
+- Strict mode: `"Mt 1,3"` → one match
+- Strict mode: `"mt 1,3"` → no match
+- Strict mode: `"MT 1,3"` → no match
+
+### 39d – `bookChapterSeparator` enforced in strict mode (automated)
+
+Cases:
+- Format pack: `bookChapterSeparator: " "` (single space)
+- Strict mode: `"Gn 1,1"` → one match
+- Strict mode: `"Gn  1,1"` (double space) → no match
+- Extended mode: `"Gn  1,1"` (double space) → one match (`\s+` relaxed)
+
+### 39e – CV separator enforcement in strict mode (automated)
+
+Cases:
+- Format pack: `chapterVerseSeparator: ","`, `rangeSeparator: "-"`
+- Strict mode: `"Gn 1,1"` → match, `verseStart: 1`
+- Strict mode: `"Gn 1:1"` → no match (colon rejected)
+- Extended mode: `"Gn 1:1"` → match
+- Extended mode: `"Gn 1.1"` → match
+- Extended mode: `"Gn 1,1"` → match
+
+### 39f – Empty alias source returns no-op scanner (automated)
+
+Cases:
+- `buildRefScanner({}, fmt, 'strict')` where `fmt.books` is `{}` → `scan("Gn 1,1")` returns `[]`
+- `buildRefScanner({}, fmt, 'extended')` where map is `{}` → `scan("Gn 1,1")` returns `[]`
+- No exception thrown in either case
+
+### 39g – Existing scanner behaviour preserved (automated)
+
+Cases:
+- All pre-existing `tests/parser.test.ts` assertions continue to pass without modification
+
+---
+
 ## Mobile Compatibility (Periodic Check)
 
 Note:

@@ -29,7 +29,55 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 ## Next
 
+### Task 39 – Refactor `buildRefScanner`: alias alternation and per-mode regex
+Decision: D026
 
+#### Goal
+Replace the generic character-class book-name regex in `buildRefScanner` with a compiled alias
+alternation derived from the active alias source. Enforce `bookChapterSeparator` exactly in strict
+mode. Add a shared `parseCVPart` helper with a precompiled cv-extraction regex per mode.
+
+#### Scope
+`src/parser.ts` only. No other source files change. `tests/parser.test.ts` is extended with new
+cases. `docs/TESTPLAN.md` section Task 39 is already written.
+
+Changes inside `buildRefScanner`:
+
+1. **Alias alternation** — collect alias strings (strict: `Object.values(fmt.books)`; extended:
+   `Object.keys(map)`); sort longest-first; escape and join with `|` to form the book-name group.
+   Guard: if the alias list is empty return `{ scan: () => [] }`.
+
+2. **Case flag** — strict: no `'i'` flag (case-sensitive). Extended: `'i'` flag (case-insensitive;
+   normalized lowercase map keys match any case in text).
+
+3. **`bookChapterSeparator`** — strict: `escapeRegex(fmt.bookChapterSeparator)` (exact match).
+   Extended: `\s+`.
+
+4. **CV scan pattern** (inside main regex) — strict: exact `fmt` separators. Extended: accepts
+   `,`, `:`, `.`.
+
+5. **Alias reverse-lookup** — strict: invert `fmt.books` through `normalizeBookKey`. Extended: use
+   `map` directly.
+
+6. **`parseCVPart(rest, cvRe)`** — new internal helper; takes a precompiled cv-extraction regex;
+   replaces `parseChapterVersePart`. Two variants compiled once at scanner construction: strict uses
+   exact `fmt` separators; extended accepts `,`, `:`, `.`.
+
+7. **Remove `parseChapterVersePart`** — internal function only; not an export.
+
+Unchanged: `scanRefs`, `parseCzechBibleRef`, `candidateRegex`, `formatRef`, `escapeRegex`, all
+exported types and function signatures.
+
+#### Definition of Done
+- `buildRefScanner` contains no character-class book-name regex
+- Multi-word alias (e.g. `"1. mojžíšova"` in map) is matched in extended mode text
+- Extended mode matches `"Mt"`, `"mt"`, `"MT"` for a normalized alias `"mt"`
+- Strict mode does not match wrong-case input (e.g. `"mt 1,1"` when canonical is `"Mt"`)
+- Strict mode rejects double-space `"Gn  1,1"` when `bookChapterSeparator` is `" "`
+- Empty alias source → scanner returns `[]` with no crash
+- All pre-existing `tests/parser.test.ts` cases still pass
+- New unit test cases from TESTPLAN.md Task 39 are implemented and pass
+- `npm run check` and `npm run ci` pass
 
 ---
 
