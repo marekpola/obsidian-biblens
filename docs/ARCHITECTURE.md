@@ -157,7 +157,7 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - Download pipeline per pack type: `requestUrl` → `getLanguagePackAdapter()/getReferenceFormatAdapter()` → `transform(raw)` → validate → `DataAdapter.write`
 - src/sources/catalogManager.ts
   - Obsidian-aware; may import from 'obsidian' (uses `requestUrl` and `DataAdapter`)
-  - Constant: `CATALOG_REMOTE_URL` — hardcoded GitHub raw URL pointing to `catalog/providers.json` in the BibLens repo; not user-configurable
+  - Constant: `CATALOG_REMOTE_URL` — hardcoded GitHub raw URL pointing to `catalog/catalog.json` in the `biblens-data` repository; not user-configurable
   - Exports: `loadCatalog(adapter: DataAdapter, pluginDir: string): Promise<CatalogData>` — returns cached `catalog.json` if present and parseable, falls back to bundled `KNOWN_PROVIDERS`; `CatalogData` contains all three provider arrays
   - Exports: `fetchCatalogUpdate(adapter: DataAdapter, pluginDir: string): Promise<CatalogUpdateResult>` — fetches remote catalog, validates `SourceProvider[]` schema, filters entries with unknown `adapterType`, writes to `catalog.json`, returns result with `updatedAt` timestamp
   - `type CatalogUpdateResult = { ok: true; updatedAt: string; providerCount: number } | { ok: false; error: string }`
@@ -594,7 +594,7 @@ A user can place a correctly formatted JSON file directly into `recognition-lang
 ### Download from source catalog
 
 - **Language packs** — adapter type `"openbibleinfo"`: fetches raw language data from the openbibleinfo/Bible-Passage-Reference-Parser GitHub repository; the openbibleinfo source uses OSIS book identifiers, so the adapter converts them to USFM via `osisMapping.ts` during transformation; writes the result (with USFM keys) to `recognition-languages/${id}.json`.
-- **Reference format packs** — adapter type `"biblens-catalog"`: fetches a pre-authored pack JSON file from the BibLens GitHub repository at `catalog/reference-formats/${remoteId}.json`, writes to `reference-formats/${id}.json`. No transformation needed — the file is already in BibLens format.
+- **Reference format packs** — adapter type `"biblens-catalog"`: fetches a pre-authored pack JSON file from the `biblens-data` repository at `resources/reference-formats/<language>/<remoteId>/format.json`, writes to `reference-formats/${id}.json`. No transformation needed — the file is already in BibLens format.
 
 Catalog manager types live in `src/sources/catalogManager.ts`:
 
@@ -639,7 +639,7 @@ type ReferenceFormatFile = {
 };
 ```
 
-Remote catalog file shape — `schemaVersion: 2` (stored in repo at `catalog/providers.json`, cached locally as `catalog.json`):
+Remote catalog file shape — `schemaVersion: 2` (stored in `biblens-data` repo at `catalog/catalog.json`, cached locally as `catalog.json`):
 
 ```json
 {

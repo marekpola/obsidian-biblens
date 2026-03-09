@@ -259,7 +259,7 @@ Fallback chain (in priority order):
 
 Constraints:
 
-- The remote catalog URL is a hardcoded constant pointing to the BibLens GitHub repository. It is not user-configurable.
+- The remote catalog URL is a hardcoded constant pointing to the BibLens data repository (`biblens-data`). It is not user-configurable.
 - The remote catalog can only update **data** (providers, translations, URLs). It cannot add new adapter types — those require a plugin release.
 - Providers in the fetched catalog that reference an unknown adapter type are silently ignored (forward-compatibility: a newer catalog entry won't crash an older plugin).
 - Schema validation is performed before accepting any fetched catalog.
@@ -350,8 +350,8 @@ Reference format packs reach the plugin through three paths:
   placed in `reference-formats/` at install time. The English pack (`en`) is always bundled.
   The actual offline fallback when no pack is selected is a hardcoded code-level constant (`BUILT_IN_FORMAT_RULES`)
   using English notation; the bundled file is shipped for discoverability only.
-- **Download** — via the Install sources panel; fetched from the BibLens GitHub repository
-  (`catalog/reference-formats/`) using the `"biblens-catalog"` adapter; no transformation needed
+- **Download** — via the Install sources panel; fetched from the BibLens data repository (`biblens-data`)
+  at `resources/reference-formats/<language>/<resource-id>/` using the `"biblens-catalog"` adapter; no transformation needed
 - **Manual drop** — user places a correctly formatted JSON file into `reference-formats/` directly;
   the pack appears in the installed list on next settings tab open
 
@@ -395,6 +395,9 @@ The settings tab is organized into five areas in order:
 - **Advanced** — catalog update button and auto-update toggle
 
 ---
+
+
+
 
 ### Constraints
 

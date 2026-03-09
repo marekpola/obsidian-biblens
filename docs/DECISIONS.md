@@ -262,8 +262,8 @@ Consequences:
 - `src/sources/catalogManager.ts` — Obsidian-aware; exports `loadCatalog`, `fetchCatalogUpdate`
 - `CATALOG_REMOTE_URL` is a compile-time constant in `catalogManager.ts`; not exposed in settings
 - `src/settings.ts` gains `autoUpdateCatalog: boolean` and `catalogLastUpdated: string`
-- `catalog/providers.json` is added to the BibLens repository as the source-of-truth catalog file
-- `src/sources/catalog.ts` `KNOWN_PROVIDERS` is regenerated from `catalog/providers.json` at each plugin release
+- `catalog/catalog.json` is maintained in the `biblens-data` repository as the source-of-truth catalog file
+- `src/sources/catalog.ts` `KNOWN_PROVIDERS` is regenerated from the `biblens-data` catalog at each plugin release
 - Settings UI gains: last-updated label, "Update Now" button, "Auto-update on startup" toggle
 Revisit: if catalog size grows enough that full replacement is wasteful (consider delta updates).
 Date: 2026-03-05
@@ -334,6 +334,37 @@ Consequences:
 - `src/types.ts` gains `LanguagePackFile`, `ReferenceFormatFile`, `CatalogData` types
 - Translation loader silently ignores `canonicalAbbreviations` and `allowedAbbreviations`
 Date: 2026-03-08
+
+## D022 – Separate `biblens-data` repository for distributable data packages
+
+Decision: Distributable data packages (translations, language packs, reference format packs) are maintained in a dedicated `biblens-data` repository, separate from the main BibLens plugin source.
+
+The repository is data-oriented: no plugin runtime logic is stored there. Its layout is:
+
+```
+biblens-data/
+├─ catalog/
+│  └─ catalog.json          ← main catalog entry point for the plugin
+├─ resources/
+│  ├─ translations/<language>/<id>/
+│  ├─ language-packs/<language>/<id>/
+│  └─ reference-formats/<language>/<id>/
+└─ scripts/
+```
+
+Every resource lives at `resources/<type>/<language>/<resource-id>/` and contains a `manifest.json` plus its data files. Directory paths are stable identifiers (lowercase, kebab-case, no version numbers). Versions are declared inside `manifest.json`.
+
+The plugin's `CATALOG_REMOTE_URL` constant points to `catalog/catalog.json` in this repository.
+The `"biblens-catalog"` adapter fetches reference format pack files from `resources/reference-formats/<language>/<resource-id>/format.json`.
+
+Reason: Separating data from plugin code allows resources to be published without a plugin release, enables independent licensing per resource, and makes community contributions to datasets easier to manage. The adapter boundary ensures the remote repository contains only data — no executable logic can be introduced remotely.
+
+Consequences:
+- `CATALOG_REMOTE_URL` in `src/sources/catalogManager.ts` points to the `biblens-data` repo, not the main BibLens repo
+- The `"biblens-catalog"` adapter constructs URLs under `resources/reference-formats/<language>/<remoteId>/`
+- `catalog/catalog.json` in `biblens-data` is the source-of-truth; `KNOWN_PROVIDERS` in the plugin is regenerated from it at each release
+- Plugin code, plugin data, and data contributions evolve on independent release cycles
+Date: 2026-03-09
 
 ## D021 – v0.4: `refFormat` propagation through call stack; English as international default; `CatalogData` in types.ts
 

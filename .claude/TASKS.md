@@ -21,10 +21,113 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 ---
 
+
+
+### Task 30 – Fix `biblens-data` repository URL and path references
+
+#### Goal
+Correct all code references that still point to the main BibLens plugin repository instead of the
+separate `biblens-data` repository, as required by D022.
+
+#### Findings addressed
+- Finding 1 (Critical): `CATALOG_REMOTE_URL` points to main repo at wrong path
+- Finding 2 (Critical): `biblensCatalogFormatAdapter.buildUrl()` produces incorrect URL structure
+- Finding 4 (Minor): stale comment on `biblensCatalogFormatAdapter`
+
+#### Scope
+
+- `src/sources/catalogManager.ts`
+  - Update `CATALOG_REMOTE_URL` to point to the `biblens-data` repository at `catalog/catalog.json`.
+    The full raw GitHub URL must reflect the new repo (URL to be confirmed once the `biblens-data`
+    repo is live; add a `// TODO: confirm biblens-data repo URL` comment if not yet available).
+
+- `src/sources/adapters.ts`
+  - Fix `biblensCatalogFormatAdapter.buildUrl()`: construct URL as
+    `${provider.baseUrl}/resources/reference-formats/${entry.language}/${entry.remoteId}/format.json`
+    (the `entry` object already carries both `language` and `remoteId`)
+  - Update the comment above `biblensCatalogFormatAdapter` from "BibLens repository" to
+    "`biblens-data` repository"
+
+#### Definition of Done
+- `CATALOG_REMOTE_URL` targets `catalog/catalog.json` in the `biblens-data` repo
+- `biblensCatalogFormatAdapter.buildUrl()` produces a URL matching the
+  `resources/reference-formats/<language>/<remoteId>/format.json` path layout
+- Comment on `biblensCatalogFormatAdapter` references `biblens-data`
+- `src/sources/adapters.ts` and `src/sources/catalogManager.ts` have no Obsidian imports
+  (adapters.ts: unchanged boundary; catalogManager.ts: Obsidian-aware, unchanged)
+- `npm run check` and `npm run ci` pass
+
+---
+
 ## Next
 
+### Task 31 – Replace `buildAbbreviationMap` with `getBuiltInAbbreviationMap`
 
-## Future 
+#### Goal
+Complete D019/D021 compliance: introduce `getBuiltInAbbreviationMap()` returning English aliases
+as the offline fallback, and remove the now-superseded `buildAbbreviationMap(custom)` and
+`CustomAbbreviations` type.
+
+#### Findings addressed
+- Finding 3 (Significant): `getBuiltInAbbreviationMap()` missing; `buildAbbreviationMap` and
+  `CustomAbbreviations` still present
+
+#### Scope
+
+- `src/books.ts`
+  - Add `export function getBuiltInAbbreviationMap(): AbbreviationMap` — derive the map by
+    inverting `BUILT_IN_FORMAT_RULES.books` (canonical abbreviation → BookId), so the built-in
+    English aliases (`"Gen"` → `"GEN"`, `"Exod"` → `"EXO"`, `"Matt"` → `"MAT"`, etc.) match the
+    built-in format rules. This keeps the two in sync automatically.
+  - Remove `export function buildAbbreviationMap(custom: CustomAbbreviations)`
+  - Remove `export type CustomAbbreviations`
+
+- `src/main.ts`
+  - Replace `import { buildAbbreviationMap, … }` with `import { getBuiltInAbbreviationMap, … }`
+  - Replace `buildAbbreviationMap({})` call with `getBuiltInAbbreviationMap()`
+
+- `src/settings.ts`
+  - Remove `import type { CustomAbbreviations } from './books'`
+  - Remove `customAbbreviations: CustomAbbreviations` field from `BibLensSettings`
+  - Remove the corresponding entry from `DEFAULT_SETTINGS`
+
+#### Definition of Done
+- `getBuiltInAbbreviationMap()` exists in `src/books.ts` and returns an `AbbreviationMap` with
+  English aliases covering all 66 canonical books (e.g. `"Gen"` → `"GEN"`, `"Matt"` → `"MAT"`)
+- `buildAbbreviationMap` and `CustomAbbreviations` do not exist anywhere in the codebase
+- `src/main.ts` calls `getBuiltInAbbreviationMap()` for the offline fallback abbreviation map
+- `src/settings.ts` has no `customAbbreviations` field
+- `npm run check` and `npm run ci` pass
+
+---
+
+### Task 32 – Refresh Editor Views After Scanner Reload
+
+#### Goal
+After `reloadScanner()` completes, force all open CodeMirror editor views to recompute their decorations so that reference underlines reflect the new scanner immediately — without waiting for the user to edit or scroll.
+
+#### Problem
+`reloadScanner()` rebuilds `_currentScanner` and mutates `_refFormat` in-place. New tooltip lookups use the updated rules immediately via the proxy scanner. However, `refDecorationsExtension` is a CM6 `ViewPlugin` that only re-runs its `update()` method when a transaction is dispatched to the view. After a settings change (language pack or format pack), existing underline decorations in open notes remain stale until the next content or viewport change.
+
+#### Scope
+
+- `src/main.ts`
+  - Add a private `refreshEditorViews()` method that iterates over all workspace leaves of type `"markdown"`, retrieves the CodeMirror `EditorView` from the leaf, and dispatches a lightweight dummy transaction:
+    ```ts
+    view.dispatch({ effects: StateEffect.appendConfig.of([]) })
+    ```
+  - Call `refreshEditorViews()` at the end of `reloadScanner()`, after `_currentScanner` and `_refFormat` have been updated
+  - Import `StateEffect` from `@codemirror/state`
+
+#### Definition of Done
+- After changing Preferred language or Standard reference format in settings, reference underlines in already-open notes update immediately without requiring an edit or scroll
+- `refreshEditorViews()` is a no-op when no markdown leaves are open (no errors)
+- No new Obsidian imports added to any pure module
+- `npm run check` and `npm run ci` pass
+
+---
+
+## Future
 
 ### Task 13 – Copy Verse Text to Clipboard
 Issue: #2
