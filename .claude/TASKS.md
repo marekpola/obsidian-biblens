@@ -22,30 +22,6 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 ## Next
 
-### Task 32 – Refresh Editor Views After Scanner Reload
-
-#### Goal
-After `reloadScanner()` completes, force all open CodeMirror editor views to recompute their decorations so that reference underlines reflect the new scanner immediately — without waiting for the user to edit or scroll.
-
-#### Problem
-`reloadScanner()` rebuilds `_currentScanner` and mutates `_refFormat` in-place. New tooltip lookups use the updated rules immediately via the proxy scanner. However, `refDecorationsExtension` is a CM6 `ViewPlugin` that only re-runs its `update()` method when a transaction is dispatched to the view. After a settings change (language pack or format pack), existing underline decorations in open notes remain stale until the next content or viewport change.
-
-#### Scope
-
-- `src/main.ts`
-  - Add a private `refreshEditorViews()` method that iterates over all workspace leaves of type `"markdown"`, retrieves the CodeMirror `EditorView` from the leaf, and dispatches a lightweight dummy transaction:
-    ```ts
-    view.dispatch({ effects: StateEffect.appendConfig.of([]) })
-    ```
-  - Call `refreshEditorViews()` at the end of `reloadScanner()`, after `_currentScanner` and `_refFormat` have been updated
-  - Import `StateEffect` from `@codemirror/state`
-
-#### Definition of Done
-- After changing Preferred language or Standard reference format in settings, reference underlines in already-open notes update immediately without requiring an edit or scroll
-- `refreshEditorViews()` is a no-op when no markdown leaves are open (no errors)
-- No new Obsidian imports added to any pure module
-- `npm run check` and `npm run ci` pass
-
 ---
 
 ## Future
@@ -76,6 +52,17 @@ Add a copy button to the hover popover and editor tooltip that copies the full f
 
 ---
 ## Done
+
+### Task 32 – Refresh Editor Views After Scanner Reload ✓
+
+- `StateEffect` imported from `@codemirror/state` in `src/main.ts`
+- `refreshEditorViews()` added: iterates markdown leaves, dispatches dummy transaction to each CM6 `EditorView`
+- Called at end of `reloadScanner()` after `_currentScanner` and `_refFormat` are updated
+- No-op when no markdown leaves are open
+- No new Obsidian imports in pure modules
+- `npm run check` and `npm run ci` pass ✓
+
+---
 
 ### Task 31 – Replace `buildAbbreviationMap` with `getBuiltInAbbreviationMap` ✓
 

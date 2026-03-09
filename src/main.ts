@@ -1,5 +1,6 @@
 import { MarkdownPostProcessorContext, Notice, Plugin } from 'obsidian';
 import { EditorView } from '@codemirror/view';
+import { StateEffect } from '@codemirror/state';
 import { fetchCatalogUpdate } from './sources/catalogManager';
 import { isCatalogStale } from './sources/catalogUtils';
 import { buildRefScanner } from './parser';
@@ -205,6 +206,18 @@ export default class BibLensPlugin extends Plugin {
 		this._refFormat.bookChapterSeparator = formatRules.bookChapterSeparator;
 		for (const k of Object.keys(this._refFormat.books)) delete this._refFormat.books[k];
 		Object.assign(this._refFormat.books, formatRules.books);
+
+		this.refreshEditorViews();
+	}
+
+	private refreshEditorViews() {
+		this.app.workspace.iterateAllLeaves(leaf => {
+			if (leaf.getViewState().type !== 'markdown') return;
+			const view = (leaf.view as unknown as { editor?: { cm?: EditorView } }).editor?.cm;
+			if (view instanceof EditorView) {
+				view.dispatch({ effects: StateEffect.appendConfig.of([]) });
+			}
+		});
 	}
 
 	private processElement(el: HTMLElement) {
