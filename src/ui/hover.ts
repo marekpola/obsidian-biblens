@@ -3,6 +3,7 @@ export class PopoverManager {
 	private _popoverHovered = false;
 
 	show(anchor: HTMLElement, content: HTMLElement): void {
+		this._popoverHovered = false;
 		this.hide();
 		const popover = document.createElement('div');
 		popover.addClass('biblens-popover');
