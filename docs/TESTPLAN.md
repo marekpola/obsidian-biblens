@@ -583,6 +583,10 @@ Steps:
 2. Inspect the General (flat, no heading) area at the top of the settings tab.
 
 Expected:
+- A read-only **Translation** row showing the active translation name (or "None — verse text unavailable").
+- A read-only **Reference format** row showing the active format name (or "Built-in English").
+- A read-only **Recognition language** row showing the active language name (or "Built-in English").
+- A **Parsing rules** dropdown is present and functional.
 - No dropdown labelled "Verse insertion format".
 - No dropdown labelled "Preferred translation".
 - No dropdown labelled "Preferred language for reference recognition".

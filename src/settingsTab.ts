@@ -7,7 +7,7 @@ import { loadCatalog, fetchCatalogUpdate } from './sources/catalogManager';
 import { downloadFromSource, deleteTranslation } from './translationManager';
 import { downloadLanguagePack, deleteLanguagePack, downloadReferenceFormat, deleteReferenceFormat } from './packManager';
 import type { SourceProvider, LanguagePackProvider, ReferenceFormatProvider } from './sources/catalog';
-import type { CatalogData } from './types';
+import type { CatalogData, TranslationMeta, ReferenceFormatMeta, LanguagePackMeta } from './types';
 
 export class BibLensSettingTab extends PluginSettingTab {
 	private plugin: BibLensPlugin;
@@ -26,55 +26,79 @@ export class BibLensSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-		this.renderGeneral(containerEl);
 
+		const generalContainer = containerEl.createDiv();
 		const translContainer = containerEl.createDiv();
 		const formatsContainer = containerEl.createDiv();
 		const langsContainer = containerEl.createDiv();
 
 		this.renderAdvanced(containerEl);
 
-		loadCatalog(this.app.vault.adapter, this.plugin.manifest.dir!)
-			.then(catalog => {
-				this.renderInstalledTranslations(translContainer, catalog);
-				this.renderInstalledFormats(formatsContainer, catalog);
-				this.renderInstalledLanguages(langsContainer, catalog);
-			})
-			.catch((e: unknown) => console.error('BibLens: failed to load catalog', e));
-	}
+		Promise.all([
+			loadCatalog(this.app.vault.adapter, this.plugin.manifest.dir!),
+			listAvailableTranslations(this.app.vault.adapter, this.plugin.manifest.dir!),
+			listAvailableReferenceFormats(this.app.vault.adapter, this.plugin.manifest.dir!),
+			listAvailableLanguagePacks(this.app.vault.adapter, this.plugin.manifest.dir!),
+		])
+			.then(async ([catalog, translations, formats, packs]) => {
+				// Auto-default logic
+				const s = this.plugin.settings;
+				let needsSave = false;
+				let needsReloadTranslation = false;
+				let needsReloadScanner = false;
 
-	private renderGeneral(containerEl: HTMLElement): void {
-		// Preferred translation
-		const translContainer = containerEl.createDiv();
-		listAvailableTranslations(this.app.vault.adapter, this.plugin.manifest.dir!)
-			.then(translations => {
-				if (translations.length === 0) {
-					new Setting(translContainer)
-						.setName('Preferred translation')
-						.setDesc('No translation files found in the translations/ folder.');
-					return;
+				if (s.preferredTranslation === '' && translations.length > 0) {
+					s.preferredTranslation = translations[0]!.id;
+					needsSave = true;
+					needsReloadTranslation = true;
+				}
+				if (s.standardReferenceFormat === '' && formats.length > 0) {
+					s.standardReferenceFormat = formats[0]!.id;
+					needsSave = true;
+					needsReloadScanner = true;
+				}
+				if (s.preferredLanguage === '' && packs.length > 0) {
+					s.preferredLanguage = packs[0]!.id;
+					needsSave = true;
+					needsReloadScanner = true;
 				}
 
-				const options: Record<string, string> = {};
-				for (const t of translations) options[t.id] = t.displayName;
+				if (needsSave) await this.plugin.saveSettings();
+				if (needsReloadTranslation) await this.plugin.reloadTranslation();
+				if (needsReloadScanner) await this.plugin.reloadScanner();
 
-				new Setting(translContainer)
-					.setName('Preferred translation')
-					.setDesc('Translation used for hover previews and verse insertion.')
-					.addDropdown(drop => {
-						drop.addOptions(options);
-						drop.setValue(this.plugin.settings.preferredTranslation);
-						drop.onChange(async (value) => {
-							this.plugin.settings.preferredTranslation = value;
-							await this.plugin.saveSettings();
-							await this.plugin.reloadTranslation();
-							new Notice(`BibLens: switched to ${options[value] ?? value}`);
-						});
-					});
+				// Build status
+				const translName = translations.find(t => t.id === s.preferredTranslation)?.displayName
+					?? 'None — verse text unavailable';
+				const fmtName = formats.find(f => f.id === s.standardReferenceFormat)?.displayName
+					?? 'Built-in English';
+				const langName = packs.find(p => p.id === s.preferredLanguage)?.displayName
+					?? 'Built-in English';
+
+				this.renderGeneral(generalContainer, { translName, fmtName, langName });
+				this.renderInstalledTranslations(translContainer, catalog, translations);
+				this.renderInstalledFormats(formatsContainer, catalog, formats);
+				this.renderInstalledLanguages(langsContainer, catalog, packs);
 			})
-			.catch((e: unknown) => console.error('BibLens: failed to list translations', e));
+			.catch((e: unknown) => console.error('BibLens: failed to load settings data', e));
+	}
 
-		// Parsing rules
+	private renderGeneral(
+		containerEl: HTMLElement,
+		status: { translName: string; fmtName: string; langName: string }
+	): void {
+		new Setting(containerEl)
+			.setName('Translation')
+			.setDesc(status.translName);
+
+		new Setting(containerEl)
+			.setName('Reference format')
+			.setDesc(status.fmtName);
+
+		new Setting(containerEl)
+			.setName('Recognition language')
+			.setDesc(status.langName);
+
 		new Setting(containerEl)
 			.setName('Parsing rules')
 			.setDesc('Strict: enforce format separators. Extended: accept all common separator variants.')
@@ -91,7 +115,11 @@ export class BibLensSettingTab extends PluginSettingTab {
 			});
 	}
 
-	private renderInstalledTranslations(containerEl: HTMLElement, catalog: CatalogData): void {
+	private renderInstalledTranslations(
+		containerEl: HTMLElement,
+		catalog: CatalogData,
+		translations: TranslationMeta[]
+	): void {
 		const detailsEl = containerEl.createEl('details');
 		if (this.translationsExpanded) detailsEl.open = true;
 		detailsEl.addEventListener('toggle', () => {
@@ -104,63 +132,59 @@ export class BibLensSettingTab extends PluginSettingTab {
 		const listEl = detailsEl.createDiv();
 		const installRowEl = detailsEl.createDiv();
 
-		listAvailableTranslations(this.app.vault.adapter, this.plugin.manifest.dir!)
-			.then(translations => {
-				if (translations.length === 0) {
-					listEl.createEl('p', {
-						text: 'No translation files found.',
-						cls: 'setting-item-description',
+		if (translations.length === 0) {
+			listEl.createEl('p', {
+				text: 'No translation files found.',
+				cls: 'setting-item-description',
+			});
+			this.appendTranslInstallRow(installRowEl, catalog.translationProviders, new Set());
+			return;
+		}
+
+		for (const t of translations) {
+			const isActive = t.id === this.plugin.settings.preferredTranslation;
+			const desc = [
+				t.lang ? `Language: ${t.lang}` : '',
+				t.source ? `Source: ${t.source}` : '',
+				isActive ? 'Active' : '',
+			].filter(Boolean).join(' · ');
+
+			const setting = new Setting(listEl)
+				.setName(t.displayName)
+				.setDesc(desc);
+
+			if (!isActive) {
+				setting.addButton(btn => {
+					btn.setButtonText('Set as default');
+					btn.onClick(async () => {
+						btn.setDisabled(true);
+						this.plugin.settings.preferredTranslation = t.id;
+						await this.plugin.saveSettings();
+						await this.plugin.reloadTranslation();
+						new Notice(`BibLens: switched to ${t.displayName}`);
+						this.display();
 					});
-					this.appendTranslInstallRow(installRowEl, catalog.translationProviders, new Set());
-					return;
-				}
+				});
+			}
 
-				for (const t of translations) {
-					const isActive = t.id === this.plugin.settings.preferredTranslation;
-					const desc = [
-						t.lang ? `Language: ${t.lang}` : '',
-						t.source ? `Source: ${t.source}` : '',
-						isActive ? 'Active' : '',
-					].filter(Boolean).join(' · ');
-
-					const setting = new Setting(listEl)
-						.setName(t.displayName)
-						.setDesc(desc);
-
-					if (!isActive) {
-						setting.addButton(btn => {
-							btn.setButtonText('Set as default');
-							btn.onClick(async () => {
-								btn.setDisabled(true);
-								this.plugin.settings.preferredTranslation = t.id;
-								await this.plugin.saveSettings();
-								await this.plugin.reloadTranslation();
-								new Notice(`BibLens: switched to ${t.displayName}`);
-								this.display();
-							});
-						});
+			setting.addButton(btn => {
+				btn.setButtonText('Delete');
+				btn.setWarning();
+				btn.onClick(async () => {
+					btn.setDisabled(true);
+					try {
+						await deleteTranslation(this.app.vault.adapter, this.plugin.manifest.dir!, t.id);
+						new Notice(`BibLens: ${t.displayName} deleted`);
+					} catch (e) {
+						new Notice(`BibLens: delete failed — ${e instanceof Error ? e.message : String(e)}`);
 					}
+					this.display();
+				});
+			});
+		}
 
-					setting.addButton(btn => {
-						btn.setButtonText('Delete');
-						btn.setWarning();
-						btn.onClick(async () => {
-							btn.setDisabled(true);
-							try {
-								await deleteTranslation(this.app.vault.adapter, this.plugin.manifest.dir!, t.id);
-								new Notice(`BibLens: ${t.displayName} deleted`);
-							} catch (e) {
-								new Notice(`BibLens: delete failed — ${e instanceof Error ? e.message : String(e)}`);
-							}
-							this.display();
-						});
-					});
-				}
-
-				const installedIds = new Set(translations.map(t => t.id));
-				this.appendTranslInstallRow(installRowEl, catalog.translationProviders, installedIds);
-			})
-			.catch((e: unknown) => console.error('BibLens: failed to list translations', e));
+		const installedIds = new Set(translations.map(t => t.id));
+		this.appendTranslInstallRow(installRowEl, catalog.translationProviders, installedIds);
 	}
 
 	private appendTranslInstallRow(
@@ -259,7 +283,11 @@ export class BibLensSettingTab extends PluginSettingTab {
 			});
 	}
 
-	private renderInstalledFormats(containerEl: HTMLElement, catalog: CatalogData): void {
+	private renderInstalledFormats(
+		containerEl: HTMLElement,
+		catalog: CatalogData,
+		formats: ReferenceFormatMeta[]
+	): void {
 		const detailsEl = containerEl.createEl('details');
 		if (this.formatsExpanded) detailsEl.open = true;
 		detailsEl.addEventListener('toggle', () => {
@@ -272,62 +300,58 @@ export class BibLensSettingTab extends PluginSettingTab {
 		const listEl = detailsEl.createDiv();
 		const installEl = detailsEl.createDiv();
 
-		listAvailableReferenceFormats(this.app.vault.adapter, this.plugin.manifest.dir!)
-			.then(formats => {
-				if (formats.length === 0) {
-					listEl.createEl('p', {
-						text: 'No reference format files found.',
-						cls: 'setting-item-description',
-					});
-				} else {
-					for (const f of formats) {
-						const isActive = f.id === this.plugin.settings.standardReferenceFormat;
-						const desc = [
-							f.lang ? `Language: ${f.lang}` : '',
-							isActive ? 'Active' : '',
-						].filter(Boolean).join(' · ');
+		if (formats.length === 0) {
+			listEl.createEl('p', {
+				text: 'No reference format files found.',
+				cls: 'setting-item-description',
+			});
+		} else {
+			for (const f of formats) {
+				const isActive = f.id === this.plugin.settings.standardReferenceFormat;
+				const desc = [
+					f.lang ? `Language: ${f.lang}` : '',
+					isActive ? 'Active' : '',
+				].filter(Boolean).join(' · ');
 
-						const setting = new Setting(listEl)
-							.setName(f.displayName)
-							.setDesc(desc);
+				const setting = new Setting(listEl)
+					.setName(f.displayName)
+					.setDesc(desc);
 
-						if (!isActive) {
-							setting.addButton(btn => {
-								btn.setButtonText('Set as default');
-								btn.onClick(async () => {
-									btn.setDisabled(true);
-									this.plugin.settings.standardReferenceFormat = f.id;
-									await this.plugin.saveSettings();
-									await this.plugin.reloadScanner();
-									new Notice(`BibLens: reference format set to ${f.displayName}`);
-									this.display();
-								});
-							});
-						}
-
-						setting.addButton(btn => {
-							btn.setButtonText('Delete');
-							btn.setWarning();
-							btn.onClick(async () => {
-								btn.setDisabled(true);
-								try {
-									await deleteReferenceFormat(this.app.vault.adapter, this.plugin.manifest.dir!, f.id);
-									new Notice(`BibLens: ${f.displayName} deleted`);
-									if (isActive) {
-										this.plugin.settings.standardReferenceFormat = '';
-										await this.plugin.saveSettings();
-										await this.plugin.reloadScanner();
-									}
-								} catch (e) {
-									new Notice(`BibLens: delete failed — ${e instanceof Error ? e.message : String(e)}`);
-								}
-								this.display();
-							});
+				if (!isActive) {
+					setting.addButton(btn => {
+						btn.setButtonText('Set as default');
+						btn.onClick(async () => {
+							btn.setDisabled(true);
+							this.plugin.settings.standardReferenceFormat = f.id;
+							await this.plugin.saveSettings();
+							await this.plugin.reloadScanner();
+							new Notice(`BibLens: reference format set to ${f.displayName}`);
+							this.display();
 						});
-					}
+					});
 				}
-			})
-			.catch((e: unknown) => console.error('BibLens: failed to list reference formats', e));
+
+				setting.addButton(btn => {
+					btn.setButtonText('Delete');
+					btn.setWarning();
+					btn.onClick(async () => {
+						btn.setDisabled(true);
+						try {
+							await deleteReferenceFormat(this.app.vault.adapter, this.plugin.manifest.dir!, f.id);
+							new Notice(`BibLens: ${f.displayName} deleted`);
+							if (isActive) {
+								this.plugin.settings.standardReferenceFormat = '';
+								await this.plugin.saveSettings();
+								await this.plugin.reloadScanner();
+							}
+						} catch (e) {
+							new Notice(`BibLens: delete failed — ${e instanceof Error ? e.message : String(e)}`);
+						}
+						this.display();
+					});
+				});
+			}
+		}
 
 		this.appendFormatInstallRow(installEl, catalog.referenceFormatProviders);
 	}
@@ -414,7 +438,11 @@ export class BibLensSettingTab extends PluginSettingTab {
 			});
 	}
 
-	private renderInstalledLanguages(containerEl: HTMLElement, catalog: CatalogData): void {
+	private renderInstalledLanguages(
+		containerEl: HTMLElement,
+		catalog: CatalogData,
+		packs: LanguagePackMeta[]
+	): void {
 		const detailsEl = containerEl.createEl('details');
 		if (this.languagesExpanded) detailsEl.open = true;
 		detailsEl.addEventListener('toggle', () => {
@@ -427,62 +455,58 @@ export class BibLensSettingTab extends PluginSettingTab {
 		const listEl = detailsEl.createDiv();
 		const installEl = detailsEl.createDiv();
 
-		listAvailableLanguagePacks(this.app.vault.adapter, this.plugin.manifest.dir!)
-			.then(packs => {
-				if (packs.length === 0) {
-					listEl.createEl('p', {
-						text: 'No language pack files found.',
-						cls: 'setting-item-description',
-					});
-				} else {
-					for (const p of packs) {
-						const isActive = p.id === this.plugin.settings.preferredLanguage;
-						const desc = [
-							p.lang ? `Language: ${p.lang}` : '',
-							isActive ? 'Active' : '',
-						].filter(Boolean).join(' · ');
+		if (packs.length === 0) {
+			listEl.createEl('p', {
+				text: 'No language pack files found.',
+				cls: 'setting-item-description',
+			});
+		} else {
+			for (const p of packs) {
+				const isActive = p.id === this.plugin.settings.preferredLanguage;
+				const desc = [
+					p.lang ? `Language: ${p.lang}` : '',
+					isActive ? 'Active' : '',
+				].filter(Boolean).join(' · ');
 
-						const setting = new Setting(listEl)
-							.setName(p.displayName)
-							.setDesc(desc);
+				const setting = new Setting(listEl)
+					.setName(p.displayName)
+					.setDesc(desc);
 
-						if (!isActive) {
-							setting.addButton(btn => {
-								btn.setButtonText('Set as default');
-								btn.onClick(async () => {
-									btn.setDisabled(true);
-									this.plugin.settings.preferredLanguage = p.id;
-									await this.plugin.saveSettings();
-									await this.plugin.reloadScanner();
-									new Notice(`BibLens: language pack set to ${p.displayName}`);
-									this.display();
-								});
-							});
-						}
-
-						setting.addButton(btn => {
-							btn.setButtonText('Delete');
-							btn.setWarning();
-							btn.onClick(async () => {
-								btn.setDisabled(true);
-								try {
-									await deleteLanguagePack(this.app.vault.adapter, this.plugin.manifest.dir!, p.id);
-									new Notice(`BibLens: ${p.displayName} deleted`);
-									if (isActive) {
-										this.plugin.settings.preferredLanguage = '';
-										await this.plugin.saveSettings();
-										await this.plugin.reloadScanner();
-									}
-								} catch (e) {
-									new Notice(`BibLens: delete failed — ${e instanceof Error ? e.message : String(e)}`);
-								}
-								this.display();
-							});
+				if (!isActive) {
+					setting.addButton(btn => {
+						btn.setButtonText('Set as default');
+						btn.onClick(async () => {
+							btn.setDisabled(true);
+							this.plugin.settings.preferredLanguage = p.id;
+							await this.plugin.saveSettings();
+							await this.plugin.reloadScanner();
+							new Notice(`BibLens: language pack set to ${p.displayName}`);
+							this.display();
 						});
-					}
+					});
 				}
-			})
-			.catch((e: unknown) => console.error('BibLens: failed to list language packs', e));
+
+				setting.addButton(btn => {
+					btn.setButtonText('Delete');
+					btn.setWarning();
+					btn.onClick(async () => {
+						btn.setDisabled(true);
+						try {
+							await deleteLanguagePack(this.app.vault.adapter, this.plugin.manifest.dir!, p.id);
+							new Notice(`BibLens: ${p.displayName} deleted`);
+							if (isActive) {
+								this.plugin.settings.preferredLanguage = '';
+								await this.plugin.saveSettings();
+								await this.plugin.reloadScanner();
+							}
+						} catch (e) {
+							new Notice(`BibLens: delete failed — ${e instanceof Error ? e.message : String(e)}`);
+						}
+						this.display();
+					});
+				});
+			}
+		}
 
 		this.appendLangInstallRow(installEl, catalog.languagePackProviders);
 	}
