@@ -6,8 +6,9 @@ import { getAdapter, getLanguagePackAdapter, getReferenceFormatAdapter } from '.
 import type { CatalogData } from '../types';
 export { isCatalogStale } from './catalogUtils';
 
+// TODO: confirm biblens-data repo URL once the repository is live
 export const CATALOG_REMOTE_URL =
-	'https://raw.githubusercontent.com/marekpola/obsidian-biblens/master/catalog/providers.json';
+	'https://raw.githubusercontent.com/marekpola/biblens-data/master/catalog/catalog.json';
 
 export type CatalogUpdateResult =
 	| { ok: true; updatedAt: string; providerCount: number }

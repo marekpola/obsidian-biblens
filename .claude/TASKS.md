@@ -18,45 +18,6 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 ## Active
 
-
----
-
-
-
-### Task 30 – Fix `biblens-data` repository URL and path references
-
-#### Goal
-Correct all code references that still point to the main BibLens plugin repository instead of the
-separate `biblens-data` repository, as required by D022.
-
-#### Findings addressed
-- Finding 1 (Critical): `CATALOG_REMOTE_URL` points to main repo at wrong path
-- Finding 2 (Critical): `biblensCatalogFormatAdapter.buildUrl()` produces incorrect URL structure
-- Finding 4 (Minor): stale comment on `biblensCatalogFormatAdapter`
-
-#### Scope
-
-- `src/sources/catalogManager.ts`
-  - Update `CATALOG_REMOTE_URL` to point to the `biblens-data` repository at `catalog/catalog.json`.
-    The full raw GitHub URL must reflect the new repo (URL to be confirmed once the `biblens-data`
-    repo is live; add a `// TODO: confirm biblens-data repo URL` comment if not yet available).
-
-- `src/sources/adapters.ts`
-  - Fix `biblensCatalogFormatAdapter.buildUrl()`: construct URL as
-    `${provider.baseUrl}/resources/reference-formats/${entry.language}/${entry.remoteId}/format.json`
-    (the `entry` object already carries both `language` and `remoteId`)
-  - Update the comment above `biblensCatalogFormatAdapter` from "BibLens repository" to
-    "`biblens-data` repository"
-
-#### Definition of Done
-- `CATALOG_REMOTE_URL` targets `catalog/catalog.json` in the `biblens-data` repo
-- `biblensCatalogFormatAdapter.buildUrl()` produces a URL matching the
-  `resources/reference-formats/<language>/<remoteId>/format.json` path layout
-- Comment on `biblensCatalogFormatAdapter` references `biblens-data`
-- `src/sources/adapters.ts` and `src/sources/catalogManager.ts` have no Obsidian imports
-  (adapters.ts: unchanged boundary; catalogManager.ts: Obsidian-aware, unchanged)
-- `npm run check` and `npm run ci` pass
-
 ---
 
 ## Next
@@ -156,6 +117,15 @@ Add a copy button to the hover popover and editor tooltip that copies the full f
 ---
 ## Done
 
+
+### Task 30 – Fix `biblens-data` repository URL and path references ✓
+
+- `CATALOG_REMOTE_URL` updated to `biblens-data` repo at `catalog/catalog.json` (TODO comment added pending repo going live)
+- `biblensCatalogFormatAdapter.buildUrl()` fixed to `resources/reference-formats/<language>/<remoteId>/format.json`
+- Comment updated from "BibLens repository" to "`biblens-data` repository"
+- `npm run check` and `npm run ci` pass ✓
+
+---
 
 ### Task 29 – Settings UI Reorganisation
 

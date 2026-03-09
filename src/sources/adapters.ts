@@ -239,12 +239,12 @@ const openbibleinfoLanguagePackAdapter: LanguagePackAdapter = {
 
 // ---------------------------------------------------------------------------
 // biblens-catalog reference format adapter
-// Fetches a pre-authored ReferenceFormatFile JSON from the BibLens repository.
+// Fetches a pre-authored ReferenceFormatFile JSON from the biblens-data repository.
 // ---------------------------------------------------------------------------
 
 const biblensCatalogFormatAdapter: ReferenceFormatAdapter = {
 	buildUrl(provider, entry) {
-		return `${provider.baseUrl}/${entry.remoteId}.json`;
+		return `${provider.baseUrl}/resources/reference-formats/${entry.language}/${entry.remoteId}/format.json`;
 	},
 	transform(raw, _entry) {
 		return JSON.parse(raw as string) as ReferenceFormatFile;
