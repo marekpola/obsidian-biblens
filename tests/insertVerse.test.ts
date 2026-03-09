@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { insertAfterLastRefCommand } from "../src/editor/insertVerse";
+import { insertAfterLastRefCommand, replaceLastRefWithQuoteCommand } from "../src/editor/insertVerse";
 import { scanRefs } from "../src/parser";
 import type { TranslationData } from "../src/provider";
 import type { RefScanner } from "../src/parser";
@@ -36,37 +36,20 @@ const scanner: RefScanner = { scan: scanRefs };
 describe("insertAfterLastRefCommand", () => {
 	it("returns false when no references found", () => {
 		const { view, wasDispatched } = makeView("No references here.");
-		expect(insertAfterLastRefCommand(scanner, data, "inline")(view)).toBe(false);
+		expect(insertAfterLastRefCommand(scanner, data)(view)).toBe(false);
 		expect(wasDispatched()).toBe(false);
 	});
 
 	it("returns false when verse data missing", () => {
 		const { view, wasDispatched } = makeView("Rev 99,1");
-		expect(insertAfterLastRefCommand(scanner, data, "inline")(view)).toBe(false);
+		expect(insertAfterLastRefCommand(scanner, data)(view)).toBe(false);
 		expect(wasDispatched()).toBe(false);
 	});
 
 	it("inserts inline verse after last reference before cursor", () => {
 		const { view, getInsert } = makeView("See Gn 1,1 for reference.");
-		expect(insertAfterLastRefCommand(scanner, data, "inline")(view)).toBe(true);
+		expect(insertAfterLastRefCommand(scanner, data)(view)).toBe(true);
 		expect(getInsert()).toBe(" — Na počátku stvořil Bůh nebe a zemi.");
-	});
-
-	it("inserts blockquote verse replacing the reference (mid-line adds leading newline)", () => {
-		const doc = "See Gn 1,1 for reference.";
-		const { view, getInsert, getFrom, getTo } = makeView(doc);
-		insertAfterLastRefCommand(scanner, data, "blockquote")(view);
-		expect(getInsert()).toBe("\n> Gn 1,1 Na počátku stvořil Bůh nebe a zemi.\n");
-		// "See " = 4 chars; "Gn 1,1" starts at 4, ends at 10
-		expect(getFrom()).toBe(4);
-		expect(getTo()).toBe(10);
-	});
-
-	it("inserts blockquote without leading newline when reference is at line start", () => {
-		const doc = "Some intro.\nGn 1,1";
-		const { view, getInsert } = makeView(doc);
-		insertAfterLastRefCommand(scanner, data, "blockquote")(view);
-		expect(getInsert()).toBe("> Gn 1,1 Na počátku stvořil Bůh nebe a zemi.\n");
 	});
 
 	it("uses last reference before cursor, not last in document", () => {
@@ -74,14 +57,39 @@ describe("insertAfterLastRefCommand", () => {
 		const doc = "Mt 5,3 and then more text. Gn 1,1 appears later.";
 		const cursorAfterMt = "Mt 5,3".length + 1; // just after Mt 5,3
 		const { view, getInsert } = makeView(doc, cursorAfterMt);
-		insertAfterLastRefCommand(scanner, data, "inline")(view);
+		insertAfterLastRefCommand(scanner, data)(view);
 		expect(getInsert()).toBe(" — Blahoslavení chudí duchem.");
 	});
 
 	it("returns false when cursor is before all references", () => {
 		const doc = "Start. Gn 1,1 appears later.";
 		const { view, wasDispatched } = makeView(doc, 3); // cursor at "Sta|rt"
-		expect(insertAfterLastRefCommand(scanner, data, "inline")(view)).toBe(false);
+		expect(insertAfterLastRefCommand(scanner, data)(view)).toBe(false);
+		expect(wasDispatched()).toBe(false);
+	});
+});
+
+describe("replaceLastRefWithQuoteCommand", () => {
+	it("replaces reference with blockquote (mid-line adds leading newline)", () => {
+		const doc = "See Gn 1,1 for reference.";
+		const { view, getInsert, getFrom, getTo } = makeView(doc);
+		replaceLastRefWithQuoteCommand(scanner, data)(view);
+		expect(getInsert()).toBe("\n> Gn 1,1 Na počátku stvořil Bůh nebe a zemi.\n");
+		// "See " = 4 chars; "Gn 1,1" starts at 4, ends at 10
+		expect(getFrom()).toBe(4);
+		expect(getTo()).toBe(10);
+	});
+
+	it("replaces reference without leading newline when reference is at line start", () => {
+		const doc = "Some intro.\nGn 1,1";
+		const { view, getInsert } = makeView(doc);
+		replaceLastRefWithQuoteCommand(scanner, data)(view);
+		expect(getInsert()).toBe("> Gn 1,1 Na počátku stvořil Bůh nebe a zemi.\n");
+	});
+
+	it("returns false when no references found", () => {
+		const { view, wasDispatched } = makeView("No references here.");
+		expect(replaceLastRefWithQuoteCommand(scanner, data)(view)).toBe(false);
 		expect(wasDispatched()).toBe(false);
 	});
 });

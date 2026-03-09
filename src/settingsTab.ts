@@ -44,19 +44,6 @@ export class BibLensSettingTab extends PluginSettingTab {
 	}
 
 	private renderGeneral(containerEl: HTMLElement): void {
-		new Setting(containerEl)
-			.setName('Verse insertion format')
-			.setDesc('Format used when inserting a verse into the editor.')
-			.addDropdown(drop => {
-				drop.addOption('inline', 'Inline');
-				drop.addOption('blockquote', 'Blockquote');
-				drop.setValue(this.plugin.settings.verseInsertionFormat);
-				drop.onChange(async (value) => {
-					this.plugin.settings.verseInsertionFormat = value as 'inline' | 'blockquote';
-					await this.plugin.saveSettings();
-				});
-			});
-
 		// Preferred translation
 		const translContainer = containerEl.createDiv();
 		listAvailableTranslations(this.app.vault.adapter, this.plugin.manifest.dir!)

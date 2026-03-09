@@ -6,10 +6,6 @@ describe("DEFAULT_SETTINGS", () => {
   it("has preferredTranslation 'cep'", () => {
     expect(DEFAULT_SETTINGS.preferredTranslation).toBe("cep");
   });
-
-  it("has verseInsertionFormat 'blockquote'", () => {
-    expect(DEFAULT_SETTINGS.verseInsertionFormat).toBe("blockquote");
-  });
 });
 
 describe("getBuiltInAbbreviationMap", () => {

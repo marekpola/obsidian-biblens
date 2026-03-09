@@ -8,7 +8,7 @@ import type { RefScanner } from './parser';
 import { PopoverManager } from './ui/hover';
 import { refDecorationsExtension } from './editor/refDecorations';
 import { refTooltipExtension } from './editor/refTooltip';
-import { insertAfterLastRefCommand } from './editor/insertVerse';
+import { insertAfterLastRefCommand, replaceLastRefWithQuoteCommand } from './editor/insertVerse';
 import type { TranslationData } from './provider';
 import { getVerses } from './provider';
 import { buildVerseDOM } from './ui/verseDOM';
@@ -101,13 +101,25 @@ export default class BibLensPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'insert-verse-after-last',
-			name: 'Insert verse text after previous reference',
+			name: 'Insert verse after previous reference',
 			editorCallback: (editor) => {
 				const view = (editor as unknown as { cm: EditorView }).cm;
 				if (view) insertAfterLastRefCommand(
 					this.scanner,
 					this.translationData,
-					this.settings.verseInsertionFormat,
+					this._refFormat
+				)(view);
+			}
+		});
+
+		this.addCommand({
+			id: 'replace-ref-with-quote',
+			name: 'Replace previous reference with quote',
+			editorCallback: (editor) => {
+				const view = (editor as unknown as { cm: EditorView }).cm;
+				if (view) replaceLastRefWithQuoteCommand(
+					this.scanner,
+					this.translationData,
 					this._refFormat
 				)(view);
 			}
