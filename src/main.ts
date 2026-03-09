@@ -258,7 +258,7 @@ export default class BibLensPlugin extends Plugin {
 			const ref = match.ref;
 			this.registerDomEvent(span, 'mouseenter', (e) =>
 				this.popover.show(e.target as HTMLElement, buildVerseDOM(getVerses(this.translationData, ref, this._refFormat))));
-			this.registerDomEvent(span, 'mouseleave', () => this.popover.hide());
+			this.registerDomEvent(span, 'mouseleave', () => this.popover.requestHide());
 
 			fragment.appendChild(span);
 			lastIndex = match.end;

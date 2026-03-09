@@ -1,5 +1,6 @@
 export class PopoverManager {
 	private el: HTMLElement | null = null;
+	private _popoverHovered = false;
 
 	show(anchor: HTMLElement, content: HTMLElement): void {
 		this.hide();
@@ -9,6 +10,14 @@ export class PopoverManager {
 
 		document.body.appendChild(popover);
 		this.el = popover;
+
+		popover.addEventListener('mouseenter', () => {
+			this._popoverHovered = true;
+		});
+		popover.addEventListener('mouseleave', () => {
+			this._popoverHovered = false;
+			this.hide();
+		});
 
 		const rect = anchor.getBoundingClientRect();
 		const vw = window.innerWidth;
@@ -33,6 +42,12 @@ export class PopoverManager {
 		if (this.el) {
 			this.el.remove();
 			this.el = null;
+		}
+	}
+
+	requestHide(): void {
+		if (!this._popoverHovered) {
+			this.hide();
 		}
 	}
 }

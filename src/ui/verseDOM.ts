@@ -1,7 +1,8 @@
 import type { VerseEntry } from "../provider";
 
 export function buildVerseDOM(entries: VerseEntry[]): HTMLElement {
-  const container = document.createElement('span');
+  const container = document.createElement('div');
+  container.addClass('biblens-verse-content');
   if (entries.length === 0) {
     const em = document.createElement('em');
     em.appendChild(document.createTextNode('Verš nenalezen'));
