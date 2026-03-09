@@ -84,21 +84,29 @@ export class BibLensSettingTab extends PluginSettingTab {
 	}
 
 	private renderGeneral(
-		containerEl: HTMLElement,
-		status: { translName: string; fmtName: string; langName: string }
+	containerEl: HTMLElement,
+	status: { translName: string; fmtName: string; langName: string }
 	): void {
-		new Setting(containerEl)
-			.setName('Translation')
-			.setDesc(status.translName);
 
-		new Setting(containerEl)
-			.setName('Reference format')
-			.setDesc(status.fmtName);
+		containerEl.createEl('h3', { text: 'Current settings' });
 
-		new Setting(containerEl)
-			.setName('Recognition language')
-			.setDesc(status.langName);
+		const info = containerEl.createDiv('biblens-current-settings');
 
+		info.createEl('div', {
+			text: `Translation: ${status.translName}`
+		});
+
+		info.createEl('div', {
+			text: `Reference format: ${status.fmtName}`
+		});
+
+		info.createEl('div', {
+			text: `Recognition language: ${status.langName}`
+		});
+
+		// spacing before interactive setting
+		containerEl.createDiv({ attr: { style: 'height: 12px;' } });
+		
 		new Setting(containerEl)
 			.setName('Parsing rules')
 			.setDesc('Strict: enforce format separators. Extended: accept all common separator variants.')
@@ -594,6 +602,9 @@ export class BibLensSettingTab extends PluginSettingTab {
 	}
 
 	private renderAdvanced(containerEl: HTMLElement): void {
+		
+		containerEl.createDiv({ attr: { style: 'height: 12px;' } });
+
 		new Setting(containerEl).setName('Advanced').setHeading();
 
 		const lastUpdated = this.plugin.settings.catalogLastUpdated;
