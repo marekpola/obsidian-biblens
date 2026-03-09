@@ -229,7 +229,7 @@ See **docs/ARCHITECTURE.md → Boundaries** for the full list. Summary of hard r
 | `parser.ts`, `provider.ts`, `books.ts` | No | No |
 | `ui/hover.ts`, `ui/verseDOM.ts` | No | No |
 | `editor/*.ts` | No | Yes |
-| `translationLoader.ts`, `translationRegistry.ts`, `translationDownloader.ts` | Yes | No |
+| `translationLoader.ts`, `translationRegistry.ts`, `translationManager.ts`, `packManager.ts` | Yes | No |
 | `main.ts` | Yes | Yes (via register) |
 
 Violating these boundaries breaks mobile compatibility and testability.

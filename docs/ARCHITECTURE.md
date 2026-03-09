@@ -18,12 +18,12 @@ All source files live under `src/`:
 - src/provider.ts
 - src/translationLoader.ts
 - src/translationRegistry.ts
-- src/translationDownloader.ts
 - src/translationManager.ts
 - src/packManager.ts
 - src/sources/catalog.ts
 - src/sources/adapters.ts
 - src/sources/catalogManager.ts
+- src/sources/catalogUtils.ts
 - src/osisMapping.ts
 - src/languagePackLoader.ts
 - src/languagePackRegistry.ts
@@ -100,10 +100,6 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - Obsidian-aware; may import from 'obsidian'
   - Exports: `listAvailableTranslations(adapter: DataAdapter, pluginDir: string): Promise<TranslationMeta[]>`
   - Scans `${pluginDir}/translations/` via `adapter.list()` and returns metadata for each `.json` file found
-- src/translationDownloader.ts
-  - Obsidian-aware; may import from 'obsidian' (uses `requestUrl`)
-  - Exports: `downloadTranslation(adapter: DataAdapter, pluginDir: string, url: string, name: string): Promise<void>`
-  - Fetches JSON from `url`, validates format, writes to `${pluginDir}/translations/${name}.json`
 - src/sources/catalog.ts
   - Pure module (no Obsidian imports)
   - Exports: `type SourceProvider = { id: string; displayName: string; baseUrl: string; adapterType: string; translations: RemoteTranslationEntry[] }`
@@ -147,7 +143,7 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - Orchestrates the full download pipeline: `requestUrl` → `getAdapter().transform()` → validate → `adapter.write()`
   - Exports: `downloadFromSource(vaultAdapter: DataAdapter, pluginDir: string, provider: SourceProvider, entry: RemoteTranslationEntry): Promise<void>`
   - Exports: `deleteTranslation(vaultAdapter: DataAdapter, pluginDir: string, id: string): Promise<void>`
-  - Wraps and supersedes `translationDownloader.ts` for source-catalog flows; raw-URL download remains in `translationDownloader.ts`
+  - Sole download orchestrator for translations; `translationDownloader.ts` was not implemented
 - src/packManager.ts
   - Obsidian-aware; may import from 'obsidian' (uses `requestUrl` and `DataAdapter`)
   - Orchestrates language pack and reference format pack download and delete; mirrors `translationManager.ts` for pack types
@@ -163,6 +159,11 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - Exports: `fetchCatalogUpdate(adapter: DataAdapter, pluginDir: string): Promise<CatalogUpdateResult>` — fetches remote catalog, validates `SourceProvider[]` schema, filters entries with unknown `adapterType`, writes to `catalog.json`, returns result with `updatedAt` timestamp
   - `type CatalogUpdateResult = { ok: true; updatedAt: string; providerCount: number } | { ok: false; error: string }`
   - Providers with unknown `adapterType` are silently filtered (forward-compatibility: newer catalog entries don't crash older plugin versions)
+- src/sources/catalogUtils.ts
+  - Pure module (no Obsidian imports)
+  - Exports: `CATALOG_STALE_DAYS: number` — number of days before the cached catalog is considered stale
+  - Exports: `isCatalogStale(catalogLastUpdated: string): boolean` — returns `true` if the cache timestamp is missing, unparseable, or older than `CATALOG_STALE_DAYS`
+  - Used by `main.ts` (auto-update check on startup) and `catalogManager.ts`
 - src/ui/verseDOM.ts
   - DOM builder for verse content (no Obsidian imports)
   - Exports: `buildVerseDOM(entries: VerseEntry[]): HTMLElement`
@@ -203,9 +204,9 @@ Reference format pack files live under `reference-formats/` in the plugin direct
 - editor/*.ts must not import from 'obsidian'; may import from `@codemirror/*` (provided by Obsidian host)
 - translationLoader.ts may import from 'obsidian'
 - translationRegistry.ts may import from 'obsidian'
-- translationDownloader.ts may import from 'obsidian'
 - translationManager.ts may import from 'obsidian'
 - sources/catalog.ts must not import from 'obsidian'
+- sources/catalogUtils.ts must not import from 'obsidian'
 - sources/adapters.ts must not import from 'obsidian' or use DOM APIs
 - sources/catalogManager.ts may import from 'obsidian'
 - src/osisMapping.ts must not import from 'obsidian'
@@ -280,7 +281,7 @@ main.ts / settings UI
 Translation download from URL (explicit user action, legacy):
 
 settings UI
-→ translationDownloader.ts (requestUrl)
+→ translationManager.ts (requestUrl)
 → translations/${name}.json (written to disk)
 
 Catalog load (on plugin startup and settings tab open):
@@ -658,7 +659,7 @@ Remote catalog file shape — `schemaVersion: 2` (stored in `biblens-data` repo 
 
 - `src/parser.ts` exports: `parseCzechBibleRef(input: string): ParseResult`
 - `src/parser.ts` exports: `scanRefs(text: string): RefMatch[]`
-- `src/parser.ts` exports: `formatRef(ref: BibleRef, refFormat?: ReferenceFormatRules): string` — when `refFormat` is provided, uses `refFormat.books[ref.bookId]` for the abbreviation and `refFormat.rules.*` for separators; falls back to built-in English defaults when omitted
+- `src/parser.ts` exports: `formatRef(ref: BibleRef, refFormat?: ReferenceFormatRules): string` — when `refFormat` is provided, uses `refFormat.books[ref.bookId]` for the abbreviation and `refFormat.chapterVerseSeparator`, `refFormat.rangeSeparator`, `refFormat.bookChapterSeparator` for separators; falls back to built-in English defaults when omitted
 - `src/parser.ts` exports: `buildRefScanner(map: AbbreviationMap, format?: ReferenceFormatRules, mode?: ParsingMode): RefScanner`
 - `src/provider.ts` exports: `getVerses(data: TranslationData, ref: BibleRef, refFormat?: ReferenceFormatRules): VerseEntry[]`
 - `src/ui/hover.ts` exports: `PopoverManager` (methods: `show`, `requestHide`, `hide`)
@@ -668,7 +669,6 @@ Remote catalog file shape — `schemaVersion: 2` (stored in `biblens-data` repo 
 - `src/editor/insertVerse.ts` exports: `insertAfterLastRefCommand(scanner: RefScanner, data: TranslationData, refFormat?: ReferenceFormatRules): Command`
 - `src/editor/insertVerse.ts` exports: `replaceLastRefWithQuoteCommand(scanner: RefScanner, data: TranslationData, refFormat?: ReferenceFormatRules): Command`
 - `src/translationRegistry.ts` exports: `listAvailableTranslations(adapter: DataAdapter, pluginDir: string): Promise<TranslationMeta[]>`
-- `src/translationDownloader.ts` exports: `downloadTranslation(adapter: DataAdapter, pluginDir: string, url: string, name: string): Promise<void>`
 
 ## Build
 - esbuild bundles to main.js

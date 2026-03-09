@@ -45,6 +45,7 @@ Date: 2026-03-04
 
 ## D006 – bookId as canonical internal book identifier in OSIS format
 Decision: The `BibleRef.book` field is renamed to `bookId`. Input abbreviations (e.g., "Mt", "Gn", "Iz") are mapped to a canonical `bookId` string in OSIS format (e.g., "MAT", "GEN", "ISA") before being stored in `BibleRef`.
+*Note: D019 clarifies that the identifier standard in use is USFM 3.0, not OSIS. The identifiers are identical in practice (uppercase 2–3 char, e.g. `GEN`, `MAT`), but the correct formal reference is USFM 3.0.*
 Reason: separates user-facing notation from the internal representation; OSIS is a well-established standard for Bible book identifiers, enabling interoperability with future data providers; enables future support for multiple abbreviation systems without changing downstream consumers.
 Consequences:
 - `src/types.ts` defines `bookId: string` in BibleRef (not `book`); values are OSIS IDs.
@@ -111,13 +112,12 @@ Date: 2026-03-04
 ## D012 – Translation registry and selection via settings
 Decision: Available translations are discovered at runtime by listing the `translations/` directory.
 The active translation is selected via `settings.preferredTranslation` (default: `"cep"`).
-A new `src/translationRegistry.ts` module handles discovery; a new `src/translationDownloader.ts` handles
-fetching translation files from external URLs using Obsidian's `requestUrl` (mobile-compatible, no Node).
+A new `src/translationRegistry.ts` module handles discovery. A `src/translationDownloader.ts` module was planned here for direct-URL fetching but was not implemented; `src/translationManager.ts` (D015) covers this responsibility instead.
 Reason: D009 established the `translations/` directory pattern. This decision completes it by adding
 selection and optional download without requiring plugin rebuilds.
 Consequences:
 - `src/translationRegistry.ts` (Obsidian-aware): exports `listAvailableTranslations(adapter, pluginDir): Promise<TranslationMeta[]>`
-- `src/translationDownloader.ts` (Obsidian-aware): exports `downloadTranslation(adapter, pluginDir, url, name): Promise<void>`
+- `src/translationDownloader.ts` — planned but not implemented; superseded by `translationManager.ts`
 - `src/types.ts` adds `type TranslationMeta = { id: string; displayName: string }`
 - `src/settings.ts` gains `preferredTranslation: string`
 - `main.ts` reads `settings.preferredTranslation` on load and reloads on settings change
@@ -184,7 +184,7 @@ Consequences:
 - `src/sources/catalog.ts` — pure; no Obsidian imports; exports `KNOWN_PROVIDERS` and types
 - `src/sources/adapters.ts` — pure; exports `SourceAdapter` interface and `getAdapter(type)`
 - `src/translationManager.ts` — Obsidian-aware; exports `downloadFromSource`, `deleteTranslation`
-- `src/translationDownloader.ts` remains for direct-URL download (Task 10); not removed
+- `src/translationDownloader.ts` was planned for direct-URL download but was never created; `translationManager.ts` serves both purposes
 - `src/translationRegistry.ts` and `src/translationLoader.ts` are unchanged (local-only concern)
 - Settings UI gains a Translation Sources panel and an Installed Translations panel
 - New providers require: a new `SourceProvider` entry in catalog + a new adapter in adapters.ts
@@ -275,7 +275,7 @@ Decision: Reference recognition is generalized through two independently downloa
 1. **Recognition language packs** — JSON files in `recognition-languages/`; one pack per language (id = BCP 47 language tag); provide recognized input aliases per book keyed by **USFM 3.0 identifiers**; loader builds `AbbreviationMap` directly without any conversion step.
 2. **Reference format packs** — JSON files in `reference-formats/`; define notation rules (`ReferenceFormatRules`: separators, range notation) **and canonical display abbreviations per book** for a reference style; multiple formats can exist per language (e.g. Protestant, Catholic, Jewish). Canonical abbreviations live here, not in the language pack.
 
-`buildRefScanner(map, format?, mode?)` is extended with optional `ReferenceFormatRules` and `ParsingMode` (`'strict' | 'extended'`). All parameters default to built-in Czech Protestant behaviour, preserving offline operation without any downloaded packs.
+`buildRefScanner(map, format?, mode?)` is extended with optional `ReferenceFormatRules` and `ParsingMode` (`'strict' | 'extended'`). All parameters default to built-in English behaviour (`BUILT_IN_FORMAT_RULES`: colon separator, English abbreviations), preserving offline operation without any downloaded packs.
 
 `customAbbreviations` is removed from `settings.ts` and `books.ts`; language packs subsume its role. `buildAbbreviationMap(custom)` is removed; replaced by `getBuiltInAbbreviationMap()` (offline fallback).
 
@@ -316,10 +316,10 @@ Language pack and format pack lifecycle (download, delete) is handled by a new `
 `CatalogData = { translationProviders, languagePackProviders, referenceFormatProviders }`. This aligns the return type with the v2 catalog schema and makes all three provider arrays accessible to callers. The bundled `KNOWN_PROVIDERS` fallback is restructured to the same shape.
 
 **4. `formatRef` extended with optional `format` parameter.**
-Signature: `formatRef(ref: BibleRef, format?: ReferenceFormatRules): string`. When provided, uses `format.books[ref.bookId]` for canonical abbreviation and `format.rules.*` for separators. Falls back to built-in Czech Protestant defaults when omitted. All call sites in `refTooltip.ts`, `hover.ts`, and `insertVerse.ts` pass the active `ReferenceFormatRules` from `main.ts`. Change is backwards-compatible.
+Signature: `formatRef(ref: BibleRef, format?: ReferenceFormatRules): string`. When provided, uses `format.books[ref.bookId]` for canonical abbreviation and `format.chapterVerseSeparator`, `format.rangeSeparator`, `format.bookChapterSeparator` for separators. Falls back to built-in English defaults when omitted. All call sites in `refTooltip.ts`, `hover.ts`, and `insertVerse.ts` pass the active `ReferenceFormatRules` from `main.ts`. Change is backwards-compatible.
 
 **5. `BUILT_IN_FORMAT_RULES` exported from `books.ts`.**
-A hardcoded `BUILT_IN_FORMAT_RULES: ReferenceFormatRules` constant in `books.ts` provides Czech Protestant separators and canonical abbreviations for all 66 books as a code-level fallback when no format pack is selected. Does not depend on the bundled `cs-protestant.json` file being present. The bundled file is still shipped for discoverability (appears in installed list), but the plugin's offline operation never reads it as a fallback.
+A hardcoded `BUILT_IN_FORMAT_RULES: ReferenceFormatRules` constant in `books.ts` provides English separators (colon chapter-verse, hyphen range, space book-chapter) and canonical English abbreviations for all 66 books as a code-level fallback when no format pack is selected. Does not depend on the bundled `en.json` file being present. The bundled file is still shipped for discoverability (appears in installed list), but the plugin's offline operation never reads it as a fallback.
 
 **6. `canonicalAbbreviations` and `allowedAbbreviations` in translation files deprecated.**
 Both optional v0.3 fields in translation files are silently ignored in v0.4 when a format pack or language pack is active. The format pack `books` map and language pack `aliases` are the sole authoritative sources. Existing translation files with these fields continue to load without error. No migration required.
@@ -354,7 +354,7 @@ openbibleinfo attribution: recognition language packs downloaded from openbiblei
 Reason: The character-class approach silently drops book names outside Czech/ASCII characters and cannot match multi-word aliases (e.g. `1. Mojžíšova`, `First Samuel`). The alternation approach is language-agnostic, supports multi-word names, and makes the alias source explicit and mode-controlled. Case-insensitive matching in extended mode is consistent with the recall-over-precision design of that mode (SPEC.md v0.4 Parsing Modes).
 
 Consequences:
-- `src/parser.ts`: `buildRefScanner` internals replaced; `parseCVPart` helper added; `parseChapterVersePart` function removed (internal only, not an export stub)
+- `src/parser.ts`: `buildRefScanner` internals replaced; `parseCVPart` helper added; `parseChapterVersePart` collapsed to a one-liner wrapper over `parseCVPart` (not removed: `parseCzechBibleRef` depends on it; internal only, not an export stub)
 - `src/parser.ts` exported interface unchanged: `buildRefScanner`, `scanRefs`, `parseCzechBibleRef`, `formatRef`, `RefScanner`, `RefMatch` all retain current signatures
 - `candidateRegex()` and `scanRefs` remain unchanged (legacy path, not the `buildRefScanner` path)
 - No changes to `books.ts`, `types.ts`, `main.ts`, or any caller

@@ -95,7 +95,7 @@ Changes inside `buildRefScanner`:
    replaces `parseChapterVersePart`. Two variants compiled once at scanner construction: strict uses
    exact `fmt` separators; extended accepts `,`, `:`, `.`.
 
-7. **Remove `parseChapterVersePart`** — internal function only; not an export.
+7. **`parseChapterVersePart` collapsed to thin wrapper** — kept as a one-liner delegating to `parseCVPart` because `parseCzechBibleRef` depends on it; not removed (internal only, not an export stub).
 
 Unchanged: `scanRefs`, `parseCzechBibleRef`, `candidateRegex`, `formatRef`, `escapeRegex`, all
 exported types and function signatures.
