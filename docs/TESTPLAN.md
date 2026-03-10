@@ -1001,6 +1001,79 @@ Expected:
 
 ---
 
+## Task 42 – Bundle English language pack and reference format pack on first install
+
+### 42a – Packs written on first install (manual)
+
+Setup:
+- Remove `recognition-languages/en.json` and `reference-formats/en-sbl.json` from the plugin
+  directory if they exist.
+- Ensure `settings.preferredLanguage` and `settings.standardReferenceFormat` are empty
+  (clear plugin data or use a fresh vault).
+
+Steps:
+1. Build the plugin: `npm run build`.
+2. Enable BibLens in Obsidian (or reload it).
+3. Check the plugin directory.
+
+Expected:
+- `recognition-languages/en.json` exists and is valid JSON with `"id": "en"`,
+  `"formatVersion": 1`, and a `books` object with `aliases` arrays.
+- `reference-formats/en-sbl.json` exists and is valid JSON with `"id": "en-sbl"`,
+  `"formatVersion": 1`, a `books` map, and a `rules` object.
+- No console errors on plugin load.
+
+### 42b – Packs appear in installed lists (manual)
+
+Steps:
+1. Open Settings → BibLens → Recognition languages (expand).
+2. Open Settings → BibLens → Reference formats (expand).
+
+Expected:
+- "English" appears in the installed recognition languages list.
+- "English (SBL style)" appears in the installed reference formats list.
+- Both have a Delete button and a Set as default button.
+
+### 42c – Auto-default activates packs on first install (manual)
+
+Setup:
+- Same as 42a (neither pack was present; preferences are empty).
+
+Steps:
+1. After first load (42a), open Settings → BibLens.
+2. Observe the General section.
+
+Expected:
+- Recognition language row shows "English" (auto-selected).
+- Reference format row shows "English (SBL style)" (auto-selected).
+- Parsing rules dropdown still present and functional.
+
+### 42d – Files not overwritten on subsequent loads (manual)
+
+Setup:
+- Both files present from 42a.
+- Manually edit `recognition-languages/en.json` to add a sentinel comment or change a value.
+
+Steps:
+1. Reload BibLens (Command palette → "Reload app" or disable/enable plugin).
+2. Re-read the file.
+
+Expected:
+- The sentinel change is still present; the file was not overwritten.
+
+### 42e – Deletion not undone on reload (manual)
+
+Steps:
+1. Delete `recognition-languages/en.json` from the plugin directory.
+2. Reload BibLens.
+3. Check the plugin directory.
+
+Expected:
+- `recognition-languages/en.json` is NOT recreated (deletion is intentional).
+- No console errors.
+
+---
+
 ## Mobile Compatibility (Periodic Check)
 
 Note:

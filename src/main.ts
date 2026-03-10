@@ -1,4 +1,7 @@
 import { MarkdownPostProcessorContext, Notice, Plugin } from 'obsidian';
+import enLanguagePack from './data/en.json';
+import enSblFormatPack from './data/en-sbl.json';
+import webTranslation from './data/web.json';
 import { EditorView } from '@codemirror/view';
 import { StateEffect } from '@codemirror/state';
 import { fetchCatalogUpdate } from './sources/catalogManager';
@@ -13,8 +16,11 @@ import type { TranslationData } from './provider';
 import { getVerses } from './provider';
 import { buildVerseDOM } from './ui/verseDOM';
 import { loadTranslation } from './translationLoader';
+import { listAvailableTranslations } from './translationRegistry';
 import { loadLanguagePack } from './languagePackLoader';
+import { listAvailableLanguagePacks } from './languagePackRegistry';
 import { loadReferenceFormat } from './referenceFormatLoader';
+import { listAvailableReferenceFormats } from './referenceFormatRegistry';
 import { getBuiltInAbbreviationMap, BUILT_IN_FORMAT_RULES} from './books';
 import type { BibLensSettings } from './settings';
 import { DEFAULT_SETTINGS } from './settings';
@@ -67,6 +73,11 @@ export default class BibLensPlugin extends Plugin {
 	async onload() {
 		const saved = await this.loadData() as Partial<BibLensSettings> | null;
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved ?? {});
+
+		await this.writeStarterPackIfAbsent('recognition-languages/en.json', enLanguagePack);
+		await this.writeStarterPackIfAbsent('reference-formats/en-sbl.json', enSblFormatPack);
+		await this.writeStarterPackIfAbsent('translations/web.json', webTranslation);
+		await this.applyStarterPackDefaults();
 
 		try {
 			this.translationData = await loadTranslation(
@@ -230,6 +241,42 @@ export default class BibLensPlugin extends Plugin {
 				view.dispatch({ effects: StateEffect.appendConfig.of([]) });
 			}
 		});
+	}
+
+	private async applyStarterPackDefaults(): Promise<void> {
+		if (this.settings.preferredTranslation && this.settings.standardReferenceFormat && this.settings.preferredLanguage) return;
+		const [translations, formats, packs] = await Promise.all([
+			listAvailableTranslations(this.app.vault.adapter, this.manifest.dir!),
+			listAvailableReferenceFormats(this.app.vault.adapter, this.manifest.dir!),
+			listAvailableLanguagePacks(this.app.vault.adapter, this.manifest.dir!),
+		]);
+		let needsSave = false;
+		if (!this.settings.preferredTranslation && translations.length > 0) {
+			this.settings.preferredTranslation = translations[0]!.id;
+			needsSave = true;
+		}
+		if (!this.settings.standardReferenceFormat && formats.length > 0) {
+			this.settings.standardReferenceFormat = formats[0]!.id;
+			needsSave = true;
+		}
+		if (!this.settings.preferredLanguage && packs.length > 0) {
+			this.settings.preferredLanguage = packs[0]!.id;
+			needsSave = true;
+		}
+		if (needsSave) await this.saveSettings();
+	}
+
+	private async writeStarterPackIfAbsent(relativePath: string, data: unknown): Promise<void> {
+		const fullPath = `${this.manifest.dir!}/${relativePath}`;
+		try {
+			if (!await this.app.vault.adapter.exists(fullPath)) {
+				const dir = fullPath.substring(0, fullPath.lastIndexOf('/'));
+				await this.app.vault.adapter.mkdir(dir);
+				await this.app.vault.adapter.write(fullPath, JSON.stringify(data, null, 2));
+			}
+		} catch (e) {
+			console.error(`BibLens: failed to write bundled starter pack ${relativePath}`, e);
+		}
 	}
 
 	private processElement(el: HTMLElement) {

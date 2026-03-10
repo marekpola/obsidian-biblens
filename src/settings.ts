@@ -8,7 +8,7 @@ export interface BibLensSettings {
 }
 
 export const DEFAULT_SETTINGS: BibLensSettings = {
-	preferredTranslation: 'cep',
+	preferredTranslation: '',
 	autoUpdateCatalog: false,
 	catalogLastUpdated: '',
 	preferredLanguage: '',

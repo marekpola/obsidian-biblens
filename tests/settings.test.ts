@@ -3,8 +3,8 @@ import { DEFAULT_SETTINGS } from "../src/settings";
 import { getBuiltInAbbreviationMap } from "../src/books";
 
 describe("DEFAULT_SETTINGS", () => {
-  it("has preferredTranslation 'cep'", () => {
-    expect(DEFAULT_SETTINGS.preferredTranslation).toBe("cep");
+  it("has preferredTranslation ''", () => {
+    expect(DEFAULT_SETTINGS.preferredTranslation).toBe("");
   });
 });
 
