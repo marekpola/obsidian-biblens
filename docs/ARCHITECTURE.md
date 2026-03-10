@@ -79,7 +79,7 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - `preferredTranslation: string`
   - `preferredLanguage: string` 
   - `standardReferenceFormat: string` 
-  - `parsingRules: 'strict' | 'extended'` (default: `'strict'`)
+  - `parsingRules: 'strict' | 'extended'` (default: `'extended'`)
   - `autoUpdateCatalog: boolean` (default: `false`) — fetch catalog from GitHub on plugin load if cache is stale
   - `catalogLastUpdated: string` (default: `""`) — ISO timestamp of last successful catalog fetch; shown in settings UI
 - src/books.ts

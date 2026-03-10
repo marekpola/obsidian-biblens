@@ -5,7 +5,6 @@ Decision: MVP will only detect references and show placeholder content (no real 
 Reason: keep initial release small, avoid data licensing/storage questions, and validate UX first.
 Consequences:
 - Task 3 hover preview shows "Detected reference: …" only.
-- Data provider work is deferred to Future section in TASKS.md.
 Superseded by: D009 (Tasks 6–7 promote real verse text to MVP scope).
 Date: 2026-03-04
 

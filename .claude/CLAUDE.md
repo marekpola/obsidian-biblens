@@ -5,7 +5,7 @@ Persistent project context and workflow rules for Claude when working in the Bib
 Claude must read the relevant documents from the list below before performing work and follow them:
 
 - `docs/SPEC.md` — project specification and MVP boundaries
-- `.claude/TASKS.md` — active task tracking and task-specific Definition of Done
+- `.claude/TASKS.md` — task index (number, name, status); individual tasks in `.claude/Tasks/Txxx.md`
 - `docs/TESTPLAN.md` — manual test steps and test cases
 - `.claude/AGENTS.md` — coding conventions and Obsidian plugin rules
 - `docs/ARCHITECTURE.md` — module structure, types, and boundaries
@@ -37,7 +37,7 @@ In Track 2, Claude should work on the Active task unless instructed otherwise.
 
 ## Manager
 
-The Manager coordinates both tracks and maintains `.claude/TASKS.md`.
+The Manager coordinates both tracks and maintains `.claude/TASKS.md` (index) and individual task files in `.claude/Tasks/`.
 Ensures only one Active task exists and that accepted issues flow from Track 1 to Track 2.
 
 ---

@@ -1,7 +1,7 @@
 # Obsidian community plugin
 
 > **BibLens agents:** Jump to [BibLens Project Layer](#biblens-project-layer) for project-specific rules.
-> Primary control docs: **docs/SPEC.md** (scope) · **docs/ARCHITECTURE.md** (modules & boundaries) · **docs/DECISIONS.md** (rationale) · **.claude/TASKS.md** (active work)
+> Primary control docs: **docs/SPEC.md** (scope) · **docs/ARCHITECTURE.md** (modules & boundaries) · **docs/DECISIONS.md** (rationale) · **.claude/TASKS.md** (task index) · **.claude/Tasks/Txxx.md** (active task detail)
 
 ## Project overview
 

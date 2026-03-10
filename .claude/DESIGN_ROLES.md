@@ -21,7 +21,7 @@ Process:
 Rules:
 - Focus on product value, not implementation details.
 - Do not write code.
-- Do not create `.claude/TASKS.md` items.
+- Do not create task files in `.claude/Tasks/` — that is the Analyst's responsibility.
 - Prefer ideas consistent with `docs/SPEC.md`, but new ideas may extend the product beyond it.
 - Elaborate items `TBD` from `docs/SPEC.md`, suggest changes in this document.
 - When a proposal would significantly expand scope or affect architecture, flag it for Architect review.

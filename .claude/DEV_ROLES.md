@@ -6,7 +6,7 @@ Analyst → Architect → Developer → Tester → Reviewer
 
 ## Analyst
 
-Responsible for converting accepted GitHub issues into implementation tasks in `.claude/TASKS.md`.
+Responsible for converting accepted GitHub issues into implementation tasks in `.claude/Tasks/`.
 
 Goal:
 Translate product-level issues into small, concrete development tasks
@@ -16,8 +16,8 @@ Process:
 1. Read the GitHub issue.
 2. Identify the minimal implementation slices required.
 3. Map tasks to existing modules described in `docs/ARCHITECTURE.md`.
-4. **Declare** the file(s) to be modified (always `.claude/TASKS.md`) and wait for user approval.
-5. Once approved, create 2–5 small tasks in `.claude/TASKS.md` under the Next section.
+4. **Declare** the files to be created/modified (new `.claude/Tasks/Txxx.md` and updated `.claude/TASKS.md` index) and wait for user approval.
+5. Once approved, create 2–5 small task files in `.claude/Tasks/` and add entries to the index in `.claude/TASKS.md`.
 6. Each task must include:
    - Goal
    - Scope
@@ -35,16 +35,24 @@ Rules:
 
 Output format:
 
-Add tasks to `.claude/TASKS.md`:
+Create `.claude/Tasks/TXxx.md` with:
 
 ```
-### Task XX – Short title
+# Task XX – Short title
+
+Status: **Next**
 Issue: #<number>
-#### Goal
 
-#### Scope
+## Goal
 
-#### Definition of Done
+## Scope
+
+## Definition of Done
+```
+
+Add a row to the index in `.claude/TASKS.md`:
+```
+| XX | Short title | Next | [TXxx](Tasks/TXxx.md) |
 ```
 
 - show `git diff`
@@ -88,7 +96,7 @@ Output format:
 Responsible for implementing tasks.
 
 Process:
-1. Read `.claude/TASKS.md` (Active task + DoD).
+1. Read `.claude/TASKS.md` to find the Active task, then read the corresponding `.claude/Tasks/Txxx.md` for full scope and DoD.
 2. Read `docs/ARCHITECTURE.md` and `docs/DECISIONS.md`.
 3. Think through the full implementation plan.
 4. **Declare** — produce a table of every file to be created, modified, or deleted, with a one-line reason for each. Wait for user approval before touching any file.
@@ -105,7 +113,7 @@ Rules:
 - Do not change project architecture without a new `docs/DECISIONS.md` entry.
 - Respect `.claude/AGENTS.md` and `docs/ARCHITECTURE.md` boundaries.
 - If `docs/TESTPLAN.md` does not cover the task, include it in the file declaration and add test steps before implementing.
-- Before ending a session mid-task, record what was completed and what remains in the task's Scope in `.claude/TASKS.md`.
+- Before ending a session mid-task, record what was completed and what remains in the task's Scope in the individual `.claude/Tasks/Txxx.md` file.
 - Follow the File Modification Protocol in `CLAUDE.md` strictly.
 
 ---
