@@ -945,6 +945,62 @@ Cases:
 
 ---
 
+## Task 41 – Verse label refinement and chapter-boundary markers
+
+### 41a – Same-chapter range: first label is first-verse ref (automated)
+
+Covered by `tests/provider.test.ts`:
+- `GEN 1:1-3` → labels `"Gen 1:1"`, `"2"`, `"3"` (no range suffix on first label)
+- No `chapterBreak` set on any entry
+
+### 41b – Single verse: label unchanged (automated)
+
+Covered by `tests/provider.test.ts`:
+- `MAT 5:3` → single entry, label `"Matt 5:3"`
+
+### 41c – Chapter-only ref: first label is first-verse ref (automated)
+
+Covered by `tests/provider.test.ts`:
+- `GEN 1` → labels `"Gen 1:1"`, `"2"`, `"3"` (first label references first verse, not chapter)
+
+### 41d – Cross-chapter range: chapter-boundary label and `chapterBreak` flag (automated)
+
+Covered by `tests/provider.test.ts`:
+- `GEN 1:3–2:1` → `"Gen 1:3"` (no flag), `"2:1"` (`chapterBreak: true`)
+- `GEN 1:3–2:2` → `"Gen 1:3"`, `"2:1"` (break), `"2"` (no flag)
+
+### 41e – Cross-chapter popover shows line break at chapter boundary (manual)
+
+Setup:
+- Create a note in Reading View containing a cross-chapter reference, e.g. `Gn 1,31-2,3`.
+- Ensure `translations/cep.json` is loaded.
+
+Steps:
+1. Open note in Reading View.
+2. Hover over `Gn 1,31-2,3`.
+
+Expected:
+- Popover appears.
+- First label: `Gn 1,31` (superscript), followed by verse text for 1:31, then `32`, etc.
+- At the start of chapter 2: a line break separates it from the preceding verses.
+- First verse of chapter 2 is labelled `2,1` (using the active format's separator), not just `1`.
+- Subsequent verses in chapter 2 use bare verse numbers (`2`, `3`).
+- No console errors.
+
+### 41f – Same-chapter range popover shows first-verse label (manual)
+
+Setup:
+- Note in Reading View with `Gn 22,1-3`.
+
+Steps:
+1. Hover over `Gn 22,1-3`.
+
+Expected:
+- First label: `Gn 22,1` (not `Gn 22,1-3`).
+- Subsequent labels: `2`, `3`.
+
+---
+
 ## Mobile Compatibility (Periodic Check)
 
 Note:

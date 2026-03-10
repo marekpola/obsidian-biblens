@@ -43,7 +43,10 @@ For MVP:
 
 - The popover displays the actual verse text from a locally bundled translation (Czech CEP).
 - Formatting: verse location (e.g. `Gn 1,1`) as superscript, verse text in normal font.
-  For ranges, subsequent verses begin with their verse number in superscript.
+  For ranges, the first label shows only the first verse reference (e.g. `Gn 22,1`, not `Gn 22,1-3`);
+  subsequent verses begin with their bare verse number in superscript.
+  When a passage spans more than one chapter, the first verse of each new chapter begins on a new line
+  and carries a chapter-qualified label (e.g. `2,1` using the active format's chapter-verse separator).
 - Translation data is loaded from `translations/cep.json` in the plugin directory at startup.
 - No external services are allowed.
 - No external backend is allowed.

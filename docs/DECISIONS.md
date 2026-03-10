@@ -547,7 +547,7 @@ Consequences:
 - `CatalogData` type defined in `src/types.ts`
 Date: 2026-03-08
 
-## D028 – Cross-chapter verse labels use bare verse numbers; chapter boundary is unlabelled
+## D028 – Cross-chapter verse labels use bare verse numbers; chapter boundary is unlabelled *(superseded by D030)*
 
 Decision: In `getVerses`, all verse entries after the first carry a bare verse number as their label, regardless of whether the result spans multiple chapters. No chapter indicator is added when the chapter boundary is crossed.
 
@@ -560,7 +560,38 @@ Consequences:
 - `buildVerseDOM` and callers are unchanged.
 - Reviewers and testers should be aware that label `1` in a cross-chapter result may belong to a chapter other than `chapterStart`.
 
-Revisit: if users report confusion navigating cross-chapter verse blocks; add chapter-qualified labels (e.g. `2:1`) for the first verse of each new chapter.
+Superseded by: D030.
+Date: 2026-03-10
+
+## D030 – Verse label scheme: first-verse label and chapter-boundary markers *(supersedes D028)*
+
+Decision: `getVerses` uses a refined label scheme for multi-verse results:
+
+1. **First entry label** — always `formatRef` of the *first verse only* (stripping `verseEnd` and `chapterEnd` from the ref before calling `formatRef`). This gives `Gn 22,1` instead of `Gn 22,1-3` for a range, making the label consistent with the subsequent per-verse labels.
+
+2. **Subsequent entry labels** — bare verse number (`String(v)`), unchanged from D011/D028.
+
+3. **Chapter boundary** — the first verse of each new chapter in a cross-chapter result receives:
+   - A chapter-qualified label (chapter and verse, e.g. `2,1` using the active format's `chapterVerseSeparator`, omitting the book abbreviation).
+   - `chapterBreak: true` on its `VerseEntry`, which causes `buildVerseDOM` to insert a `<br>` before that entry.
+
+`VerseEntry` gains an optional field: `chapterBreak?: boolean`.
+
+Example — `Gn 1,31-2,2` produces:
+- `{ label: "Gn 1,31", text: "...", chapterBreak: undefined }`
+- `{ label: "32", text: "...", chapterBreak: undefined }`
+- `{ label: "2,1", text: "...", chapterBreak: true }`
+- `{ label: "2", text: "...", chapterBreak: undefined }`
+
+Reason: Resolves the D028 revisit case. The first label as a full range ref was redundant — the range is already implied by the sequence of verse labels. Chapter boundaries in cross-chapter passages are invisible with bare verse numbers, causing `1` to be ambiguous (chapter 1 verse 1 vs chapter 2 verse 1). The `chapterBreak` flag keeps the data/render separation clean: `provider.ts` signals structure, `buildVerseDOM` renders it.
+
+Consequences:
+- `src/types.ts` (or `src/provider.ts`): `VerseEntry` gains `chapterBreak?: boolean`.
+- `provider.ts` `addChapterVerses` takes a `chapter` parameter; tracks whether this is the first entry and whether a chapter boundary has been crossed; sets label and `chapterBreak` accordingly.
+- `verseDOM.ts` `buildVerseDOM`: before appending an entry with `chapterBreak: true`, inserts a `<br>` element instead of a space.
+- Insert commands (`insertVerse.ts`) use only `label` and `text` — unaffected by `chapterBreak`.
+- Chapter-only and chapter-range refs (D011) also benefit: first label becomes the first-verse ref (e.g. `Gn 22,1`) rather than the chapter ref (e.g. `Gn 22`). This is a minor change in behaviour; the chapter ref is still conveyed by the user's hover trigger.
+
 Date: 2026-03-10
 
 ## D029 – Single-chapter book semantic: plain numbers parsed as verses, not chapters

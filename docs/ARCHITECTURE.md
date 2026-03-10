@@ -89,7 +89,7 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - Exports: `SINGLE_CHAPTER_BOOKS: Set<BookId>` — the set of USFM book identifiers that have only one chapter (`OBA`, `PHM`, `2JN`, `3JN`, `JUD`); used by `parseCVPart` and `formatRef` to apply single-chapter interpretation rules (see D029)
 - src/provider.ts
   - Pure data-access module (no Obsidian imports, no DOM)
-  - `type VerseEntry = { label: string; text: string }`
+  - `type VerseEntry = { label: string; text: string; chapterBreak?: boolean }`
   - `type TranslationData = Record<string, string>`
   - Exports: `getVerses(data: TranslationData, ref: BibleRef, refFormat?: ReferenceFormatRules): VerseEntry[]`
   - `refFormat` is passed to `formatRef` for the first-entry label; falls back to built-in English defaults when omitted
@@ -99,7 +99,8 @@ Reference format pack files live under `reference-formats/` in the plugin direct
     - Chapter range (`verseStart` absent, `chapterEnd` set): all verses in each chapter `chapterStart..chapterEnd` (see D011)
     - Same-chapter verse range (`chapterEnd` absent or equals `chapterStart`): verses `verseStart..verseEnd` in `chapterStart`
     - Cross-chapter verse range (`chapterEnd` > `chapterStart`): `verseStart..end` of `chapterStart`, all verses in intermediate chapters, `1..verseEnd` of `chapterEnd`
-  - First entry label: `formatRef(ref, refFormat)`; subsequent entry labels: bare verse number (see D028 for cross-chapter label limitation)
+  - First entry label: `formatRef` of the first verse only (ref with `verseEnd`/`chapterEnd` stripped); subsequent entry labels: bare verse number (see D030)
+  - First verse of each new chapter in a cross-chapter result: chapter-qualified label (e.g. `2,1` using `chapterVerseSeparator`, no book abbreviation) and `chapterBreak: true`
 - src/translationLoader.ts
   - Obsidian-aware loader; may import from 'obsidian'
   - Exports: `loadTranslation(adapter: DataAdapter, pluginDir: string, name: string): Promise<TranslationData>`
@@ -178,6 +179,7 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - DOM builder for verse content (no Obsidian imports)
   - Exports: `buildVerseDOM(entries: VerseEntry[]): HTMLElement`
     - Returns a `<div class="biblens-verse-content">` containing verse entries as `<sup>label</sup> text` nodes
+    - Entries with `chapterBreak: true` are preceded by a `<br>` element instead of a space, marking the chapter boundary
     - When `entries` is empty, returns a div containing `<em>No verse found.</em>`
   - Used by both `hover.ts` (via main.ts) and `refTooltip.ts`
 - src/ui/hover.ts

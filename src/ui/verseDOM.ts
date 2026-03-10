@@ -10,7 +10,13 @@ export function buildVerseDOM(entries: VerseEntry[]): HTMLElement {
     return container;
   }
   for (const entry of entries) {
-    if (container.hasChildNodes()) container.appendChild(document.createTextNode(' '));
+    if (container.hasChildNodes()) {
+      if (entry.chapterBreak) {
+        container.appendChild(document.createElement('br'));
+      } else {
+        container.appendChild(document.createTextNode(' '));
+      }
+    }
     const sup = document.createElement('sup');
     sup.appendChild(document.createTextNode(entry.label));
     container.appendChild(sup);

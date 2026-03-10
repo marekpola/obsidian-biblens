@@ -1,11 +1,13 @@
 import type { BibleRef, ReferenceFormatRules } from "./types";
 import { formatRef } from "./parser";
+import { BUILT_IN_FORMAT_RULES } from "./books";
 
-export type VerseEntry = { label: string; text: string };
+export type VerseEntry = { label: string; text: string; chapterBreak?: boolean };
 export type TranslationData = Record<string, string>;
 
 export function getVerses(data: TranslationData, ref: BibleRef, refFormat?: ReferenceFormatRules): VerseEntry[] {
   const entries: VerseEntry[] = [];
+  const cvSep = refFormat?.chapterVerseSeparator ?? BUILT_IN_FORMAT_RULES.chapterVerseSeparator;
 
   const addChapterVerses = (chapter: number, fromVerse?: number, toVerse?: number) => {
     const prefix = `${ref.bookId}.${chapter}.`;
@@ -14,11 +16,22 @@ export function getVerses(data: TranslationData, ref: BibleRef, refFormat?: Refe
       .map(k => parseInt(k.slice(prefix.length), 10))
       .filter(n => !isNaN(n) && (fromVerse === undefined || n >= fromVerse) && (toVerse === undefined || n <= toVerse))
       .sort((a, b) => a - b);
+    let isFirstInChapter = true;
     for (const v of verseNums) {
       const text = data[`${prefix}${v}`];
       if (text === undefined) continue;
-      const label = entries.length === 0 ? formatRef(ref, refFormat) : String(v);
-      entries.push({ label, text });
+      let label: string;
+      let chapterBreak: boolean | undefined;
+      if (entries.length === 0) {
+        label = formatRef({ bookId: ref.bookId, chapterStart: chapter, verseStart: v }, refFormat);
+      } else if (isFirstInChapter && chapter > ref.chapterStart) {
+        label = `${chapter}${cvSep}${v}`;
+        chapterBreak = true;
+      } else {
+        label = String(v);
+      }
+      entries.push({ label, text, chapterBreak });
+      isFirstInChapter = false;
     }
   };
 

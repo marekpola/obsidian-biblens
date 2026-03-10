@@ -17,6 +17,7 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 | #  | Title | Status | File |
 |----|-------|--------|------|
+| 41 | Verse label refinement and chapter-boundary markers in hover display | Next | [T041](Tasks/T041.md) |
 | 40 | Fix `formatRef` no-arg fallback; remove `BOOK_DISPLAY` and `getDisplayAbbr` | Active | [T040](Tasks/T040.md) |
 | 39 | Refactor `buildRefScanner`: alias alternation and per-mode regex | Done | [T039](Tasks/T039.md) |
 | 38 | Settings General Section Redesign | Done | [T038](Tasks/T038.md) |
