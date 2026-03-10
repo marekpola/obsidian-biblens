@@ -49,6 +49,15 @@ export type ReferenceFormatProvider = {
 export const KNOWN_PROVIDERS = {
 	translationProviders: [
 		{
+			id: 'biblens-data',
+			displayName: 'BibLens Data (GitHub)',
+			baseUrl: 'https://raw.githubusercontent.com/marekpola/biblens-data/main',
+			adapterType: 'biblens-data',
+			translations: [
+				{ id: 'cep', displayName: 'Český ekumenický překlad', language: 'cs', remoteId: 'cep' },
+			],
+		},
+		{
 			id: 'getbible-net',
 			displayName: 'GetBible (api.getbible.net)',
 			baseUrl: 'https://api.getbible.net/v2',
@@ -77,15 +86,6 @@ export const KNOWN_PROVIDERS = {
 				{ id: 'nkjv',    displayName: 'New King James Version',          language: 'en', remoteId: 'EnglishNKJBible.xml'         },
 			],
 		},
-		{
-			id: 'biblens-data',
-			displayName: 'BibLens Data (GitHub)',
-			baseUrl: 'https://raw.githubusercontent.com/marekpola/biblens-data/main',
-			adapterType: 'biblens-data',
-			translations: [
-				{ id: 'cep', displayName: 'Český ekumenický překlad', language: 'cs', remoteId: 'cep' },
-			],
-		},
 	] as SourceProvider[],
 	languagePackProviders: [
 		{
@@ -105,7 +105,7 @@ export const KNOWN_PROVIDERS = {
 			baseUrl: 'https://raw.githubusercontent.com/marekpola/biblens-data/main',
 			adapterType: 'biblens-data',
 			formats: [
-				{ id: 'cs', displayName: 'Czech', language: 'cs', remoteId: 'cs' },
+				{ id: 'cs-cek', displayName: 'Czech', language: 'cs', remoteId: 'cs-cek' },
 			],
 		},
 	] as ReferenceFormatProvider[],

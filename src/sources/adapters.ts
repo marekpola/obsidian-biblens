@@ -139,186 +139,18 @@ export function getAdapter(adapterType: string): SourceAdapter {
 }
 
 // ---------------------------------------------------------------------------
-// openbibleinfo language pack adapter
-// URL: ${baseUrl}/src/${lang}/data.txt
-// Format: tab-separated plain text with $VAR variable definitions and book alias lines.
-// ---------------------------------------------------------------------------
-
-function parseOpenbibleinfoVars(lines: string[]): Map<string, string[]> {
-	const vars = new Map<string, string[]>();
-	for (const line of lines) {
-		if (!line.startsWith('$')) continue;
-		const parts = line.split('\t');
-		const name = parts[0]!.trim();
-		const values = parts.slice(1).map(v => v.trim()).filter(v => v.length > 0);
-		if (values.length > 0) vars.set(name, values);
-	}
-	return vars;
-}
-
-// Expand variable references ($FIRST, $SECOND, …) in a single alias template.
-// Returns [] for regex patterns (containing ?, [, ]) or empty input.
-function expandOpenbibleinfoAlias(template: string, vars: Map<string, string[]>): string[] {
-	const t = template.trim();
-	if (!t) return [];
-	// Regex patterns used by the openbibleinfo parser internals — not literal aliases
-	if (t.includes('?') || t.includes('[') || t.includes(']')) return [];
-	const m = t.match(/\$[A-Z_]+/);
-	if (!m) return [t];
-	const varName = m[0];
-	const values = vars.get(varName);
-	if (!values || values.length === 0) return [t];
-	const results: string[] = [];
-	for (const val of values) {
-		const expanded = t.replace(varName, val).replace(/\s{2,}/g, ' ').trim();
-		results.push(...expandOpenbibleinfoAlias(expanded, vars));
-	}
-	return results;
-}
-
-const CANONICAL_USFM_SET = new Set<string>(USFM_BOOK_IDS);
-
-const openbibleinfoLanguagePackAdapter: LanguagePackAdapter = {
-	buildUrl(provider, entry) {
-		return `${provider.baseUrl}/src/${entry.remoteId}/data.txt`;
-	},
-	transform(raw) {
-		const lines = (raw as string).split('\n').map(l => l.trimEnd());
-		const vars = parseOpenbibleinfoVars(lines);
-		const books: Record<string, { aliases: string[] }> = {};
-
-		for (const line of lines) {
-			if (!line) continue;
-			const c = line[0];
-			// Skip comments (#), variable defs ($), preferred names (*), order entries (=)
-			if (c === '#' || c === '$' || c === '*' || c === '=') continue;
-
-			const parts = line.split('\t');
-			const osisId = parts[0]!.trim();
-			if (!osisId) continue;
-
-			const usfmId = osisToUsfm(osisId);
-			// Skip deuterocanonical books and any OSIS id not in the 66-book Protestant canon
-			if (!usfmId || !CANONICAL_USFM_SET.has(usfmId)) continue;
-
-			const seen = new Set<string>();
-			const aliases: string[] = [];
-			for (const tpl of parts.slice(1)) {
-				for (const alias of expandOpenbibleinfoAlias(tpl, vars)) {
-					if (!seen.has(alias)) {
-						seen.add(alias);
-						aliases.push(alias);
-					}
-				}
-			}
-			if (aliases.length === 0) continue;
-
-			if (books[usfmId]) {
-				for (const a of aliases) {
-					if (!books[usfmId].aliases.includes(a)) books[usfmId].aliases.push(a);
-				}
-			} else {
-				books[usfmId] = { aliases };
-			}
-		}
-
-		// Second pass: add the preferred Short abbreviation (*-lines) as a recognition alias.
-		// The Short form (e.g. "Matt" for Matthew) is the canonical display abbreviation used
-		// by reference format packs. Without this pass, users typing that abbreviation would
-		// get zero matches because alias lines never include the canonical short form.
-		for (const line of lines) {
-			if (!line.startsWith('*')) continue;
-			const parts = line.slice(1).split('\t');
-			const osisId = parts[0]?.trim();
-			if (!osisId) continue;
-			const usfmId = osisToUsfm(osisId);
-			if (!usfmId || !CANONICAL_USFM_SET.has(usfmId)) continue;
-			const short   = parts[2]?.trim();
-			const shorter = parts[3]?.trim();
-			const abbr = (short && short.length > 0) ? short : shorter;
-			if (!abbr) continue;
-			if (books[usfmId]) {
-				if (!books[usfmId].aliases.includes(abbr)) books[usfmId].aliases.push(abbr);
-			} else {
-				books[usfmId] = { aliases: [abbr] };
-			}
-		}
-
-		return {
-			id: '',           // populated by packManager from catalog entry
-			displayName: '',  // populated by packManager from catalog entry
-			lang: '',         // populated by packManager from catalog entry
-			formatVersion: 1,
-			source: 'openbibleinfo/Bible-Passage-Reference-Parser',
-			books,
-		};
-	},
-};
-
-// ---------------------------------------------------------------------------
 // biblens-catalog reference format adapter
 // Fetches a pre-authored ReferenceFormatFile JSON from the biblens-data repository.
 // ---------------------------------------------------------------------------
 
 const biblensCatalogFormatAdapter: ReferenceFormatAdapter = {
 	buildUrl(provider, entry) {
-		return `${provider.baseUrl}/resources/reference-formats/${entry.language}/${entry.remoteId}/format.json`;
+		return `${provider.baseUrl}/resources/reference-formats/${entry.remoteId}.json`;
 	},
 	transform(raw, _entry) {
 		return JSON.parse(raw as string) as ReferenceFormatFile;
 	},
 };
-
-// ---------------------------------------------------------------------------
-// openbibleinfo reference format adapter
-// URL: ${baseUrl}/src/${lang}/data.txt
-// Reads the "Preferred names" section (lines starting with *):
-//   *OsisId  Long  Short  Shorter  Single
-// Uses Short (index 2) as the canonical abbreviation; falls back to Shorter (index 3).
-// Separator rules are taken from entry.rules (not present in data.txt).
-// ---------------------------------------------------------------------------
-
-const openbibleinfoReferenceFormatAdapter: ReferenceFormatAdapter = {
-	buildUrl(provider, entry) {
-		return `${provider.baseUrl}/src/${entry.remoteId}/data.txt`;
-	},
-	transform(raw, entry) {
-		if (!entry.rules) {
-			throw new Error('BibLens: openbibleinfo reference format adapter requires entry.rules to be defined in the catalog entry');
-		}
-		const lines = (raw as string).split('\n').map(l => l.trimEnd());
-		const books: Record<string, string> = {};
-
-		for (const line of lines) {
-			if (!line.startsWith('*')) continue;
-			const parts = line.slice(1).split('\t');
-			const osisId = parts[0]?.trim();
-			if (!osisId) continue;
-
-			const usfmId = osisToUsfm(osisId);
-			if (!usfmId || !CANONICAL_USFM_SET.has(usfmId)) continue;
-
-			// Short is at index 2, Shorter at index 3
-			const short   = parts[2]?.trim();
-			const shorter = parts[3]?.trim();
-			const abbr = (short && short.length > 0) ? short : shorter;
-			if (!abbr) continue;
-
-			books[usfmId] = abbr;
-		}
-
-		return {
-			id: '',          // populated by packManager from catalog entry
-			displayName: '', // populated by packManager from catalog entry
-			lang: '',        // populated by packManager from catalog entry
-			formatVersion: 1,
-			source: 'openbibleinfo/Bible-Passage-Reference-Parser',
-			books,
-			rules: entry.rules,
-		};
-	},
-};
-
 
 const biblensDataTranslationAdapter: SourceAdapter = {
 	buildUrl(provider, entry) {
