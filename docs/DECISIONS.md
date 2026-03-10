@@ -563,3 +563,17 @@ Consequences:
 
 Revisit: if users report confusion navigating cross-chapter verse blocks; add chapter-qualified labels (e.g. `2:1`) for the first verse of each new chapter.
 Date: 2026-03-10
+
+## D029 – Single-chapter book semantic: plain numbers parsed as verses, not chapters
+
+Decision: For the five USFM single-chapter books (`OBA`, `PHM`, `2JN`, `3JN`, `JUD`), when the user writes a reference with no chapter-verse separator (e.g. `Abd 2` or `Abd 2-3`), the parser interprets the numbers as verses of chapter 1, producing `chapterStart: 1, verseStart: 2` (or with `verseEnd: 3`). Explicit notation (`Abd 1,2`) remains valid but is treated as redundant. `formatRef` omits the chapter number when formatting such refs — a single-chapter book ref with a `verseStart` is rendered as `abbr bookChapSep verseStart[-verseEnd]`.
+
+Reason: these books have only one chapter; a bare number is unambiguous as a verse reference, and requiring explicit `1,N` notation would be needlessly verbose and inconsistent with how readers normally cite them.
+
+Consequences:
+- `books.ts` exports `SINGLE_CHAPTER_BOOKS: Set<BookId>` checked in both `parseCVPart` and `formatRef`.
+- `parseCVPart` accepts a `bookId` parameter specifically to support this branch.
+- Applies in both `buildRefScanner` (scanner path) and `parseCzechBibleRef` (legacy path via `parseChapterVersePart`).
+
+Revisit: if more complex multi-chapter-with-no-verse patterns are needed for single-chapter books.
+Date: 2026-03-10
