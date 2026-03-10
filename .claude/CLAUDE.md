@@ -29,7 +29,7 @@ BibLens is an Obsidian plugin that detects Bible references in notes and provide
 
 Track 1: Designer → Architect → Reviewer
 
-Designer opens a `feature/*` branch; Reviewer merges it to `develop`.
+Designer opens a `feature/*` branch and writes an analytical chapter in `docs/SPEC.md`; Reviewer merges it to `develop`.
 
 Track 2: Analyst → Architect → Developer → Tester → Reviewer
 
@@ -42,7 +42,7 @@ In Track 2, Claude should work on the Active task unless instructed otherwise.
 ## Manager
 
 The Manager coordinates both tracks and maintains `.claude/TASKS.md` (index) and individual task files in `.claude/Tasks/`.
-Ensures only one Active task exists and that accepted issues flow from Track 1 to Track 2.
+Ensures only one Active task exists and that accepted SPEC chapters flow from Track 1 to Track 2.
 
 ---
 

@@ -6,10 +6,10 @@ Analyst → Architect → Developer → Tester → Reviewer
 
 ## Analyst
 
-Responsible for converting accepted GitHub issues into implementation tasks in `.claude/Tasks/`.
+Responsible for converting accepted SPEC chapters into implementation tasks in `.claude/Tasks/`.
 
 Goal:
-Translate product-level issues into small, concrete development tasks
+Translate product-level proposals into small, concrete development tasks
 that can be implemented by the Developer role.
 
 Process:
@@ -18,16 +18,17 @@ Process:
    git checkout develop && git pull
    git checkout -b feature/<task-name>
    ```
-2. Read the GitHub issue.
-3. Identify the minimal implementation slices required.
-4. Map tasks to existing modules described in `docs/ARCHITECTURE.md`.
-5. **Declare** the files to be created/modified (new `.claude/Tasks/Txxx.md` and updated `.claude/TASKS.md` index) and wait for user approval.
-6. Once approved, create 2–5 small task files in `.claude/Tasks/` and add entries to the index in `.claude/TASKS.md`.
-6. Each task must include:
+2. Read the proposed chapter in `docs/SPEC.md`.
+3. Move the chapter from `## Proposed` into the target version section of `docs/SPEC.md`, removing the `**Status:** Proposed` line. Default to the current development version if none is specified.
+4. Identify the minimal implementation slices required.
+5. Map tasks to existing modules described in `docs/ARCHITECTURE.md`.
+6. **Declare** the files to be created/modified (`docs/SPEC.md`, new `.claude/Tasks/Txxx.md`, updated `.claude/TASKS.md` index) and wait for user approval.
+7. Once approved, apply all declared changes: update `docs/SPEC.md`, create 2–5 small task files in `.claude/Tasks/`, and add entries to the index in `.claude/TASKS.md`.
+8. Each task must include:
    - Goal
    - Scope
    - Definition of Done
-7. Each task must reference the originating issue.
+9. Each task must reference the originating SPEC chapter.
 
 Rules:
 - Do not write code.
@@ -36,7 +37,7 @@ Rules:
 - Tasks must be small enough to be implemented in one development step.
 - Do not move tasks to Active; that is the Manager's responsibility.
 - Prefer extending existing modules instead of creating new ones.
-- If the issue is too vague or too large to slice into tasks, flag it to Manager rather than creating poor tasks.
+- If the proposal is too vague or too large to slice into tasks, flag it to Manager rather than creating poor tasks.
 
 Output format:
 
@@ -46,7 +47,7 @@ Create `.claude/Tasks/TXxx.md` with:
 # Task XX – Short title
 
 Status: **Next**
-Issue: #<number>
+Source: docs/SPEC.md § <chapter title>
 
 ## Goal
 

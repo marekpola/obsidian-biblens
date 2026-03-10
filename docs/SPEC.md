@@ -96,8 +96,6 @@ This separation allows multiple abbreviation systems to map to the same internal
 
 ### Insert Commands
 
-Issue: #3
-
 #### Goal
 
 Allow the user to insert verse text from the Bible reference last detected before cursor position, using two distinct commands.
@@ -287,8 +285,6 @@ Constraints:
 
 ## Version 0.4
 
-Issue: #10
-
 ### Goal
 
 Allow BibLens to recognize Bible references written in any language by supporting independently
@@ -423,3 +419,13 @@ The settings tab is organized into five areas in order:
 - Separate data provider from UI layer.
 - Keep parsing logic deterministic and unit-testable.
 - All new features must update TESTPLAN.md.
+
+---
+
+## Proposed
+
+Chapters in this section are design proposals awaiting Architect review and Reviewer approval.
+Once accepted, the Analyst moves each chapter into the appropriate version section and removes the `**Status:** Proposed` line.
+
+<!-- New proposed chapters go here -->
+
