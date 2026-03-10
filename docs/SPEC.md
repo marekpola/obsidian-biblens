@@ -374,6 +374,8 @@ A **Parsing rules** setting controls how aggressively the parser identifies refe
 
 Default: Strict.
 
+Parser chapter–verse interpretation must account for both multi-chapter and single-chapter biblical books. The syntactic patterns recognized by the scanner are: `C`, `C-C`, `C:V`, `C:V-V`, and `C:V-C:V` (where `C` is chapter and `V` is verse). After identifying the book and extracting the numeric pattern, the parser interprets the numbers according to book metadata. For multi-chapter books, `C` denotes a chapter, `C-C` a chapter range, `C:V` a single verse, `C:V-V` a verse range within the same chapter, and `C:V-C:V` a cross-chapter range. For single-chapter books (e.g., Obadiah, Philemon, 2 John, 3 John, Jude), numbers without a verse separator are interpreted as verses: `N` → verse `N` of chapter 1 and `N-N` → verse range `N–N` of chapter 1. Thus `Abd 2-3` is interpreted as `Abd 1,2-3`. Explicit forms such as `Abd 1,2` and `Abd 1,2-3` remain valid but redundant. The resulting `BibleRef` structure always uses `chapterStart`, `verseStart`, `chapterEnd`, and `verseEnd` fields as appropriate, with `chapterStart` fixed to `1` for single-chapter books when only verse numbers are supplied.
+
 ---
 
 ### Settings Changes

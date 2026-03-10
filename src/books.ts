@@ -35,6 +35,10 @@ export const ALL_BOOK_IDS = [
   "LAO",
 ] as const;
 
+
+
+export const SINGLE_CHAPTER_BOOKS = new Set<BookId>(['OBA', 'PHM', '2JN', '3JN', 'JUD']);
+
 export type BookId = (typeof ALL_BOOK_IDS)[number];
 
 export type AbbreviationMap = Record<string, BookId>;
