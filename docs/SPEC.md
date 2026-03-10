@@ -411,26 +411,7 @@ The settings tab is organized into five areas in order:
 
 
 
----
-
-## Architecture Principles
-
-- Separate reference parsing from UI logic.
-- Separate data provider from UI layer.
-- Keep parsing logic deterministic and unit-testable.
-- All new features must update TESTPLAN.md.
-
----
-
-## Proposed
-
-Chapters in this section are design proposals awaiting Architect review and Reviewer approval.
-Once accepted, the Analyst moves each chapter into the appropriate version section and removes the `**Status:** Proposed` line.
-
-<!-- New proposed chapters go here -->
-
 ### Bundled English Starter Pack
-**Status:** Proposed
 
 **User need:** A new user should be able to install BibLens and immediately
 recognise English Bible references and read verse text with zero downloads or
@@ -492,7 +473,6 @@ The two concerns must not be bundled into one implementation task.
 ---
 
 ### Live Provider Item Discovery
-**Status:** Proposed
 
 **User need:** Users should be able to see a current, up-to-date list of
 downloadable items from each provider without waiting for a plugin release or
@@ -530,14 +510,12 @@ from the provider."*
   repository.
 - `getbible-v2`: uses their translation list endpoint.
 - `beblia-xml`: no list endpoint anticipated; button hidden.
-- The Architect should assess the adapter interface extension.
 
 **Open questions:** none.
 
 ---
 
 ### Settings Reactivity and Panel Conventions
-**Status:** Proposed
 
 **User need:** Changing settings should take effect immediately in the open
 editor; the settings panel should follow Obsidian UI conventions consistently.
@@ -578,4 +556,22 @@ editor; the settings panel should follow Obsidian UI conventions consistently.
   reactivity fix in a single task.
 
 **Open questions:** none.
+
+---
+
+## Architecture Principles
+
+- Separate reference parsing from UI logic.
+- Separate data provider from UI layer.
+- Keep parsing logic deterministic and unit-testable.
+- All new features must update TESTPLAN.md.
+
+---
+
+## Proposed
+
+Chapters in this section are design proposals awaiting Architect review and Reviewer approval.
+Once accepted, the Analyst moves each chapter into the appropriate version section and removes the `**Status:** Proposed` line.
+
+<!-- New proposed chapters go here -->
 

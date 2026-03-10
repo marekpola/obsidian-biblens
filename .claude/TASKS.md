@@ -17,6 +17,13 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 | #  | Title | Status | File |
 |----|-------|--------|------|
+| 48 | Settings panel heading and spacing conventions | Next | [T048](Tasks/T048.md) |
+| 47 | CM6 StateField/StateEffect live scanner propagation | Next | [T047](Tasks/T047.md) |
+| 46 | Settings UI: "Load" button for live provider item discovery | Next | [T046](Tasks/T046.md) |
+| 45 | Adapter listAvailable interface extension and biblens-data implementation | Next | [T045](Tasks/T045.md) |
+| 44 | Remove built-in fallback constants BUILT_IN_FORMAT_RULES and getBuiltInAbbreviationMap | Next | [T044](Tasks/T044.md) |
+| 43 | Bundle WEB English translation on first install | Next | [T043](Tasks/T043.md) |
+| 42 | Bundle English language pack and reference format pack on first install | Next | [T042](Tasks/T042.md) |
 | 41 | Verse label refinement and chapter-boundary markers in hover display | Next | [T041](Tasks/T041.md) |
 | 40 | Fix `formatRef` no-arg fallback; remove `BOOK_DISPLAY` and `getDisplayAbbr` | Active | [T040](Tasks/T040.md) |
 | 39 | Refactor `buildRefScanner`: alias alternation and per-mode regex | Done | [T039](Tasks/T039.md) |
