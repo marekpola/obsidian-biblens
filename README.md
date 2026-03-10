@@ -6,7 +6,7 @@ Works fully offline. No external services required.
 
 ---
 
-*(gif placeholder)*
+<video src="docs/demo_1.mp4" width="900" controls></video>
 
 ---
 
