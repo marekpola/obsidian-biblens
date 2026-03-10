@@ -71,9 +71,9 @@ export class BibLensSettingTab extends PluginSettingTab {
 				const translName = translations.find(t => t.id === s.preferredTranslation)?.displayName
 					?? 'None — verse text unavailable';
 				const fmtName = formats.find(f => f.id === s.standardReferenceFormat)?.displayName
-					?? 'Built-in English';
+					?? 'None — reference format unavailable';
 				const langName = packs.find(p => p.id === s.preferredLanguage)?.displayName
-					?? 'Built-in English';
+					?? 'None — recognition language unavailable';
 
 				this.renderGeneral(generalContainer, { translName, fmtName, langName });
 				this.renderInstalledTranslations(translContainer, catalog, translations);
@@ -134,7 +134,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 			this.translationsExpanded = detailsEl.open;
 		});
 
-		const summaryEl = detailsEl.createEl('summary', { text: 'Installed translations' });
+		const summaryEl = detailsEl.createEl('summary', { text: 'Translations' });
 		summaryEl.addClass('biblens-settings-summary');
 
 		const listEl = detailsEl.createDiv();
