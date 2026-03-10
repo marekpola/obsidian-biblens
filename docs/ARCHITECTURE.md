@@ -64,7 +64,7 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - "Set as default" buttons in the collapsible sections are the sole interactive path for changing the active item of each type
 - src/parser.ts
   - Pure parsing functions (no Obsidian imports)
-  - Exports: `parseCzechBibleRef`, `scanRefs`, `formatRef`, `RefMatch`
+  - Exports: `scanRefs`, `formatRef`, `RefMatch`
   - Exports: `type RefScanner = { scan(text: string): RefMatch[] }`
   - Exports: `type ParsingMode = 'strict' | 'extended'`
   - Exports: `buildRefScanner(map: AbbreviationMap, format?: ReferenceFormatRules, mode?: ParsingMode): RefScanner` — compiles all regexes once at construction time; format and mode default to built-in English behaviour (`BUILT_IN_FORMAT_RULES`). The book-name part of the scan regex is a compiled **alternation over alias strings sorted longest-first** (supports multi-word names such as `1. Mojžíšova` and any writing script). Strict mode: alias source is `fmt.books` canonical abbreviation values only; regex is case-sensitive; `bookChapterSeparator` from `fmt` is enforced exactly; `chapterVerseSeparator` and `rangeSeparator` enforced in the cv pattern. Extended mode: alias source is all keys of `map` (full language pack); regex uses `'i'` flag (case-insensitive; normalized lowercase map keys match any case in text); `bookChapterSeparator` relaxed to `\s+`; cv pattern accepts `,`, `:`, or `.` as separator. If the alias set is empty, returns a no-op stub `{ scan: () => [] }`. Internal helper `parseCVPart(rest, cvRe)` extracts chapter/verse numbers using the mode-appropriate precompiled cv regex.
@@ -112,7 +112,7 @@ Reference format pack files live under `reference-formats/` in the plugin direct
 - src/osisMapping.ts
   - Pure module (no Obsidian imports)
   - Exports: `osisToUsfm(osisId: string): BookId | undefined` — converts an OSIS book identifier (e.g. `Gen`, `Matt`) to USFM 3.0 `BookId` (e.g. `GEN`, `MAT`)
-  - Used by adapters during download transformation (e.g. openbibleinfo data uses OSIS keys; adapter converts to USFM before writing the pack file); not used by the loader (pack files store USFM keys)
+  - Retained for use by future adapters that source data with OSIS identifiers; not currently imported by `adapters.ts` (all active adapters use USFM keys natively); not used by the loader (pack files store USFM keys)
 - src/languagePackLoader.ts
   - Obsidian-aware; may import from 'obsidian'
   - Exports: `loadLanguagePack(adapter: DataAdapter, pluginDir: string, id: string): Promise<{ map: AbbreviationMap; meta: LanguagePackMeta }>`
@@ -137,7 +137,9 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - Exports: `getAdapter(adapterType: string): SourceAdapter` — translation adapter registry; throws on unknown type
   - Exports: `getLanguagePackAdapter(adapterType: string): LanguagePackAdapter` — language pack adapter registry; throws on unknown type
   - Exports: `getReferenceFormatAdapter(adapterType: string): ReferenceFormatAdapter` — format pack adapter registry; throws on unknown type
-  - Each adapter is responsible for: URL construction, raw data transformation, OSIS→USFM book ID conversion (via `osisMapping.ts`) when the source uses OSIS identifiers
+  - Registered translation adapters: `"getbible-v2"`, `"beblia-xml"`, `"biblens-data"` (transforms v1 JSON → flat TranslationData; key normalization duplicated from `translationLoader.ts` — sharing via import would violate the module boundary)
+  - Registered language pack adapter: `"biblens-data"` (pass-through; files are already LanguagePackFile format with USFM keys)
+  - Registered reference format adapter: `"biblens-data"` (pass-through; files are already ReferenceFormatFile format)
 - src/translationManager.ts
   - Obsidian-aware; may import from 'obsidian' (uses `requestUrl` and `DataAdapter`)
   - Orchestrates the full download pipeline: `requestUrl` → `getAdapter().transform()` → validate → `adapter.write()`
@@ -595,8 +597,13 @@ A user can place a correctly formatted JSON file directly into `recognition-lang
 
 ### Download from source catalog
 
-- **Language packs** — adapter type `"openbibleinfo"`: fetches raw language data from the openbibleinfo/Bible-Passage-Reference-Parser GitHub repository; the openbibleinfo source uses OSIS book identifiers, so the adapter converts them to USFM via `osisMapping.ts` during transformation; writes the result (with USFM keys) to `recognition-languages/${id}.json`.
-- **Reference format packs** — adapter type `"biblens-catalog"`: fetches a pre-authored pack JSON file from the `biblens-data` repository at `resources/reference-formats/<language>/<remoteId>/format.json`, writes to `reference-formats/${id}.json`. No transformation needed — the file is already in BibLens format.
+All three resource types are served from the `biblens-data` repository using a flat file layout:
+`resources/<category>/<id>.json`. A machine-readable `index.json` in each category directory lists
+available files (`items[].path` is relative to the repo root).
+
+- **Translations** — adapter type `"biblens-data"` (biblens-data provider): fetches `resources/translations/${remoteId}.json`; transforms v1 JSON → flat TranslationData; writes to `translations/${id}.json`. Other translation providers (`"getbible-v2"`, `"beblia-xml"`) continue to serve from their own URLs using their own adapters.
+- **Language packs** — adapter type `"biblens-data"` (sole provider): fetches `resources/language-packs/${remoteId}.json`; pass-through — file is already `LanguagePackFile` format with USFM keys; writes to `recognition-languages/${id}.json`.
+- **Reference format packs** — adapter type `"biblens-data"` (sole provider): fetches `resources/reference-formats/${remoteId}.json`; pass-through — file is already `ReferenceFormatFile` format; writes to `reference-formats/${id}.json`.
 
 Catalog manager types live in `src/sources/catalogManager.ts`:
 

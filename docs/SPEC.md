@@ -229,7 +229,7 @@ Allow the user to discover and download Bible translations from a curated catalo
 
 #### Features
 
-- Plugin contains a built-in **source catalog**: a static list of known HTTP providers, each with a display name, base URL, adapter type, and list of available translations (language, name, remote identifier).
+- Plugin contains a built-in **source catalog**: a static list of known HTTP providers, each with a display name, base URL, adapter type, and list of available translations (language, name, remote identifier). Bundled providers include `getbible-net`, `beblia-xml`, and `biblens-data`; the `biblens-data` provider serves pre-authored translations in BibLens v1 JSON format.
 - The settings UI exposes a **Translation Sources** panel:
   - User selects a provider from the catalog.
   - User sees the list of translations available from that provider, with download status (downloaded / not downloaded).
@@ -292,8 +292,8 @@ Allow BibLens to recognize Bible references written in any language by supportin
 downloadable **recognition language packs** (book names per language) and **reference format packs**
 (notation rules per style). Multiple formats can exist for one language (e.g. Protestant, Catholic, Jewish).
 
-Data source: [openbibleinfo/Bible-Passage-Reference-Parser](https://github.com/openbibleinfo/Bible-Passage-Reference-Parser)
-provides book name data for many languages and serves as the catalog source for recognition language packs.
+Data source: the `biblens-data` repository (`https://github.com/marekpola/biblens-data`) provides
+pre-authored recognition language packs and reference format packs in BibLens JSON format.
 Minimize plugin bundle size: do not bundle the full dataset; download only selected packs on demand.
 
 ---
@@ -315,8 +315,8 @@ The active pack is selected via **Preferred language for reference recognition**
 
 Language packs reach the plugin through two paths:
 
-- **Download** — via the Install sources panel; fetched from the openbibleinfo/Bible-Passage-Reference-Parser
-  repository using the `"openbibleinfo"` adapter
+- **Download** — via the Install sources panel; fetched from the `biblens-data` repository using the
+  `"biblens-data"` adapter; packs are pre-authored in BibLens format with USFM keys (no OSIS conversion needed)
 - **Manual drop** — user places a correctly formatted JSON file into `recognition-languages/` directly;
   the pack appears in the installed list on next settings tab open
 
@@ -349,8 +349,8 @@ Reference format packs reach the plugin through three paths:
   placed in `reference-formats/` at install time. The English pack (`en`) is always bundled.
   The actual offline fallback when no pack is selected is a hardcoded code-level constant (`BUILT_IN_FORMAT_RULES`)
   using English notation; the bundled file is shipped for discoverability only.
-- **Download** — via the Install sources panel; fetched from the BibLens data repository (`biblens-data`)
-  at `resources/reference-formats/<language>/<resource-id>/` using the `"biblens-catalog"` adapter; no transformation needed
+- **Download** — via the Install sources panel; fetched from the `biblens-data` repository at
+  `resources/reference-formats/<remoteId>.json` using the `"biblens-data"` adapter; no transformation needed
 - **Manual drop** — user places a correctly formatted JSON file into `reference-formats/` directly;
   the pack appears in the installed list on next settings tab open
 
@@ -358,10 +358,10 @@ Reference format packs reach the plugin through three paths:
 
 ### OSIS→USFM Mapping
 
-The openbibleinfo project uses OSIS book identifiers (e.g. `Gen`, `Matt`).
-BibLens uses USFM 3.0 identifiers internally (e.g. `GEN`, `MAT`).
-Recognition language pack files store USFM keys. The OSIS→USFM conversion happens inside the `"openbibleinfo"` adapter during download, before the pack file is written to disk.
-The plugin bundles a static OSIS→USFM mapping table used by adapters. This table is not user-configurable and requires no download.
+BibLens uses USFM 3.0 identifiers internally (e.g. `GEN`, `MAT`). All pack files in `biblens-data`
+store USFM keys natively — no conversion is needed during download.
+The plugin retains a static OSIS→USFM mapping table in `src/osisMapping.ts` for use by future adapters
+that source data with OSIS identifiers. This table is not user-configurable and requires no download.
 
 ---
 

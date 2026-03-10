@@ -446,31 +446,77 @@ Date: 2026-03-09
 
 Decision: Distributable data packages (translations, language packs, reference format packs) are maintained in a dedicated `biblens-data` repository, separate from the main BibLens plugin source.
 
-The repository is data-oriented: no plugin runtime logic is stored there. Its layout is:
-
-```
-biblens-data/
-├─ catalog/
-│  └─ catalog.json          ← main catalog entry point for the plugin
-├─ resources/
-│  ├─ translations/<language>/<id>/
-│  ├─ language-packs/<language>/<id>/
-│  └─ reference-formats/<language>/<id>/
-└─ scripts/
-```
-
-Every resource lives at `resources/<type>/<language>/<resource-id>/` and contains a `manifest.json` plus its data files. Directory paths are stable identifiers (lowercase, kebab-case, no version numbers). Versions are declared inside `manifest.json`.
+The repository is data-oriented: no plugin runtime logic is stored there.
 
 The plugin's `CATALOG_REMOTE_URL` constant points to `catalog/catalog.json` in this repository.
-The `"biblens-catalog"` adapter fetches reference format pack files from `resources/reference-formats/<language>/<resource-id>/format.json`.
 
 Reason: Separating data from plugin code allows resources to be published without a plugin release, enables independent licensing per resource, and makes community contributions to datasets easier to manage. The adapter boundary ensures the remote repository contains only data — no executable logic can be introduced remotely.
 
 Consequences:
 - `CATALOG_REMOTE_URL` in `src/sources/catalogManager.ts` points to the `biblens-data` repo, not the main BibLens repo
-- The `"biblens-catalog"` adapter constructs URLs under `resources/reference-formats/<language>/<remoteId>/`
 - `catalog/catalog.json` in `biblens-data` is the source-of-truth; `KNOWN_PROVIDERS` in the plugin is regenerated from it at each release
 - Plugin code, plugin data, and data contributions evolve on independent release cycles
+
+Superseded by (repository layout): D027.
+Date: 2026-03-09
+
+## D027 – Migrate sourcing to biblens-data: flat resource layout, unified adapter type, openbibleinfo removed
+
+Decision: All downloadable resource types (translations, language packs, reference format packs) served from the `biblens-data` repository use a single flat file layout and a new `"biblens-data"` adapter type. The `"openbibleinfo"` provider is removed from language pack and reference format downloads. The `"biblens-catalog"` adapter type is removed and replaced by `"biblens-data"`.
+
+**Correction to D022 repository layout.** D022 described nested paths (`resources/<type>/<language>/<resource-id>/`). The actual biblens-data layout is flat:
+
+```
+biblens-data/
+└─ resources/
+   ├─ translations/
+   │  ├─ index.json      ← { formatVersion, type, items: [{ id, displayName, lang, path }] }
+   │  └─ <id>.json
+   ├─ language-packs/
+   │  ├─ index.json
+   │  └─ <id>.json
+   └─ reference-formats/
+      ├─ index.json
+      └─ <id>.json
+```
+
+Each category directory contains an `index.json` listing available files (`items[].path` is relative to the repo root), plus one JSON file per resource. All files are pre-authored in BibLens format with USFM book keys — no OSIS conversion or proprietary-format parsing is needed at download time.
+
+**New `"biblens-data"` adapter type** in all three registries:
+- Translation adapter: URL `${baseUrl}/resources/translations/${remoteId}.json`; transforms v1 JSON → flat `TranslationData`
+- Language pack adapter: URL `${baseUrl}/resources/language-packs/${remoteId}.json`; pass-through JSON (already `LanguagePackFile` format)
+- Reference format adapter: URL `${baseUrl}/resources/reference-formats/${remoteId}.json`; pass-through JSON (already `ReferenceFormatFile` format)
+
+**`KNOWN_PROVIDERS` changes:**
+- `translationProviders`: add biblens-data entry alongside existing `getbible-net` and `beblia-xml`
+- `languagePackProviders`: replace `openbibleinfo` with biblens-data (sole provider)
+- `referenceFormatProviders`: replace both `openbibleinfo` and `biblens-catalog` entries with single biblens-data entry
+
+**Removed from `adapters.ts`:**
+- `openbibleinfoLanguagePackAdapter` — complex `data.txt` parser with OSIS→USFM conversion
+- `openbibleinfoReferenceFormatAdapter` — `data.txt` parser that required separator rules embedded in the catalog entry
+- `biblensCatalogFormatAdapter` — replaced by the new biblens-data format adapter
+- `"openbibleinfo"` removed from `LANG_REGISTRY` and `FORMAT_REGISTRY`
+- `"biblens-catalog"` removed from `FORMAT_REGISTRY`
+- `RemoteReferenceFormatEntry.rules` optional field removed (was only used by the openbibleinfo format adapter)
+- `ReferenceFormatAdapter.transform` signature simplified from `(raw, entry)` to `(raw)` — `entry` is no longer needed since the biblens-data adapter is a pass-through
+
+`osisMapping.ts` is retained (future adapters may need OSIS→USFM conversion) but is no longer imported by `adapters.ts`.
+
+Reason: The openbibleinfo `data.txt` format required complex variable expansion and OSIS→USFM conversion in the plugin. Moving to pre-authored BibLens-format packs in `biblens-data` eliminates that complexity, ensures consistent pack quality, and makes all three resource types follow the same download pattern. The flat layout simplifies URL construction.
+
+**`normaliseV1Keys` duplication.** The function that converts `"GEN 1:1"` verse keys to `"GEN.1.1"` lives in `translationLoader.ts` as a private helper. `adapters.ts` is a pure module and must not import from Obsidian-aware `translationLoader.ts`. The function is 4 lines and stable; it is duplicated inline inside the biblens-data translation adapter. No shared utility module is introduced.
+
+Consequences:
+- `src/sources/adapters.ts`: three adapters removed; three new pass-through/transform adapters added; registries updated; `osisToUsfm` import removed
+- `src/sources/catalog.ts`: `KNOWN_PROVIDERS` updated; `RemoteReferenceFormatEntry.rules` field removed
+- `src/packManager.ts`: `adapter.transform(response.text, entry)` call on the reference format path changed to `adapter.transform(response.text)` — `entry` continues to be used for metadata population after `transform()`, which is unaffected
+- `src/sources/catalogManager.ts`: no logic change; `CATALOG_REMOTE_URL` unchanged
+- `src/translationManager.ts`: no change
+- `src/osisMapping.ts`: retained but no longer imported by `adapters.ts`
+- Previously downloaded openbibleinfo language packs on disk continue to work — the loader is unchanged
+
+Supersedes: D022 repository layout (flat replaces nested paths).
 Date: 2026-03-09
 
 ## D021 – v0.4: `refFormat` propagation through call stack; English as international default; `CatalogData` in types.ts
