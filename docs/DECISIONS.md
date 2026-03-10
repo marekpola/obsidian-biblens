@@ -99,15 +99,18 @@ Consequences:
 Revisit: if a sanitizing markdown renderer is introduced for verse formatting.
 Date: 2026-03-04
 
-## D011 – Chapter-only refs return all verses in the chapter
-Decision: When a `BibleRef` has no `verseStart` (e.g. `Gn 22`), `getVerses` returns all verses found in `TranslationData` for that chapter, sorted by verse number.
-Reason: A chapter-only hover should show the full chapter content, not an empty result. This is the most useful behavior for readers navigating by chapter.
+## D011 – Chapter-only and chapter-range refs return all verses across the spanned chapters
+Decision: When a `BibleRef` has no `verseStart`, `getVerses` returns all verses found in `TranslationData` for every chapter in `chapterStart..chapterEnd` (where `chapterEnd` defaults to `chapterStart` when absent), sorted by verse number within each chapter.
+- `Gn 22` (`chapterEnd` absent) → all verses of chapter 22.
+- `Gn 1-3` (`chapterEnd` = 3) → all verses of chapters 1, 2, and 3 in order.
+Reason: A chapter ref should show the full content of the spanned range, not an empty result. This is the most useful behavior for readers navigating by chapter or pericope.
 Consequences:
-- `provider.ts` scans `TranslationData` keys with prefix `${bookId}.${chapter}.` to collect available verses.
-- First entry label uses `formatRef` (e.g. `Gn 22`); subsequent labels are verse numbers.
-- An unknown chapter (no matching keys) still returns `[]`, triggering the "Verse not found." fallback.
+- `provider.ts` iterates `chapterStart..chapterEnd`; for each chapter scans `TranslationData` keys with prefix `${bookId}.${chapter}.`.
+- First entry label uses `formatRef` (e.g. `Gn 22`, `Gn 1-3`); subsequent labels are bare verse numbers.
+- An unknown chapter range (no matching keys) still returns `[]`, triggering the "Verse not found." fallback.
+- Lookup complexity: O(n × chapters spanned).
 Supersedes: the "chapter-only returns []" clause from Task 6 DoD.
-Date: 2026-03-04
+Date: 2026-03-04 (extended 2026-03-10)
 
 ## D012 – Translation registry and selection via settings
 Decision: Available translations are discovered at runtime by listing the `translations/` directory.
@@ -544,3 +547,19 @@ Consequences:
 - Bundled format pack changes from `cs-protestant` to `en`
 - `CatalogData` type defined in `src/types.ts`
 Date: 2026-03-08
+
+## D028 – Cross-chapter verse labels use bare verse numbers; chapter boundary is unlabelled
+
+Decision: In `getVerses`, all verse entries after the first carry a bare verse number as their label, regardless of whether the result spans multiple chapters. No chapter indicator is added when the chapter boundary is crossed.
+
+Example: `Gn 1:30-2:3` produces labels `Gn 1:30-2:3`, `31`, `1`, `2`, `3` — verse `1` belongs to chapter 2 but its label is indistinguishable from verse 1 of chapter 1.
+
+Reason: The label scheme (first = `formatRef`, rest = verse number) was established in D011 for chapter-only refs where all verses share the same chapter. Introducing chapter-qualified labels (e.g. `2:1`) for cross-chapter results would require changing the label scheme and updating all callers and the DOM builder. The existing scheme is sufficient for the current use cases (hover preview, insert command); readers who need precise verse identification can consult the first label.
+
+Consequences:
+- `provider.ts` `addChapterVerses` helper always uses `entries.length === 0` to pick the label, with no chapter context.
+- `buildVerseDOM` and callers are unchanged.
+- Reviewers and testers should be aware that label `1` in a cross-chapter result may belong to a chapter other than `chapterStart`.
+
+Revisit: if users report confusion navigating cross-chapter verse blocks; add chapter-qualified labels (e.g. `2:1`) for the first verse of each new chapter.
+Date: 2026-03-10

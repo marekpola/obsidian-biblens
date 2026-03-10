@@ -90,8 +90,13 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - `type TranslationData = Record<string, string>`
   - Exports: `getVerses(data: TranslationData, ref: BibleRef, refFormat?: ReferenceFormatRules): VerseEntry[]`
   - `refFormat` is passed to `formatRef` for the first-entry label; falls back to built-in English defaults when omitted
-  - Key format: `${bookId}.${chapterStart}.${verse}` matching cep.json keys
-  - Chapter-only refs (no `verseStart`) return all verses found in the chapter (see D011)
+  - Key format: `${bookId}.${chapter}.${verse}` matching cep.json keys
+  - Four ref types handled:
+    - Chapter-only (`verseStart` absent, `chapterEnd` absent): all verses in `chapterStart` (see D011)
+    - Chapter range (`verseStart` absent, `chapterEnd` set): all verses in each chapter `chapterStart..chapterEnd` (see D011)
+    - Same-chapter verse range (`chapterEnd` absent or equals `chapterStart`): verses `verseStart..verseEnd` in `chapterStart`
+    - Cross-chapter verse range (`chapterEnd` > `chapterStart`): `verseStart..end` of `chapterStart`, all verses in intermediate chapters, `1..verseEnd` of `chapterEnd`
+  - First entry label: `formatRef(ref, refFormat)`; subsequent entry labels: bare verse number (see D028 for cross-chapter label limitation)
 - src/translationLoader.ts
   - Obsidian-aware loader; may import from 'obsidian'
   - Exports: `loadTranslation(adapter: DataAdapter, pluginDir: string, name: string): Promise<TranslationData>`
@@ -263,7 +268,8 @@ Rules:
 Expected complexity:
 
 - Verse lookup: O(1)
-- Chapter lookup: O(n) within the chapter only.
+- Chapter lookup: O(n) within the chapter.
+- Chapter-range and cross-chapter verse-range lookup: O(n × number of chapters spanned).
 
 ### Data Flow
 
