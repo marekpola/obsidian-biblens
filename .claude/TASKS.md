@@ -22,10 +22,10 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 | 46 | Settings UI: "Load" button for live provider item discovery | Next | [T046](Tasks/T046.md) |
 | 45 | Adapter listAvailable interface extension and biblens-data implementation | Next | [T045](Tasks/T045.md) |
 | 44 | Remove built-in fallback constants BUILT_IN_FORMAT_RULES and getBuiltInAbbreviationMap | Next | [T044](Tasks/T044.md) |
-| 43 | Bundle WEB English translation on first install | Next | [T043](Tasks/T043.md) |
-| 42 | Bundle English language pack and reference format pack on first install | Next | [T042](Tasks/T042.md) |
+| 43 | Bundle WEB English translation on first install | Done | [T043](Tasks/T043.md) |
+| 42 | Bundle English language pack and reference format pack on first install | Done | [T042](Tasks/T042.md) |
 | 41 | Verse label refinement and chapter-boundary markers in hover display | Next | [T041](Tasks/T041.md) |
-| 40 | Fix `formatRef` no-arg fallback; remove `BOOK_DISPLAY` and `getDisplayAbbr` | Active | [T040](Tasks/T040.md) |
+| 40 | Fix `formatRef` no-arg fallback; remove `BOOK_DISPLAY` and `getDisplayAbbr` | Done | [T040](Tasks/T040.md) |
 | 39 | Refactor `buildRefScanner`: alias alternation and per-mode regex | Done | [T039](Tasks/T039.md) |
 | 38 | Settings General Section Redesign | Done | [T038](Tasks/T038.md) |
 | 37 | Hover: Scrollable Content and Text Selection | Done | [T037](Tasks/T037.md) |
