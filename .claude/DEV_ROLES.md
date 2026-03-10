@@ -13,11 +13,16 @@ Translate product-level issues into small, concrete development tasks
 that can be implemented by the Developer role.
 
 Process:
-1. Read the GitHub issue.
-2. Identify the minimal implementation slices required.
-3. Map tasks to existing modules described in `docs/ARCHITECTURE.md`.
-4. **Declare** the files to be created/modified (new `.claude/Tasks/Txxx.md` and updated `.claude/TASKS.md` index) and wait for user approval.
-5. Once approved, create 2–5 small task files in `.claude/Tasks/` and add entries to the index in `.claude/TASKS.md`.
+1. Create and switch to a feature branch from `develop`:
+   ```bash
+   git checkout develop && git pull
+   git checkout -b feature/<task-name>
+   ```
+2. Read the GitHub issue.
+3. Identify the minimal implementation slices required.
+4. Map tasks to existing modules described in `docs/ARCHITECTURE.md`.
+5. **Declare** the files to be created/modified (new `.claude/Tasks/Txxx.md` and updated `.claude/TASKS.md` index) and wait for user approval.
+6. Once approved, create 2–5 small task files in `.claude/Tasks/` and add entries to the index in `.claude/TASKS.md`.
 6. Each task must include:
    - Goal
    - Scope
@@ -155,3 +160,10 @@ Output format:
 2. Major issues
 3. Minor issues
 4. Approval decision
+
+If approved, merge the feature branch to `develop`:
+```bash
+git checkout develop
+git merge --no-ff feature/<task-name>
+git branch -d feature/<task-name>
+```

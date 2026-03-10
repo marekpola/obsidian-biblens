@@ -12,11 +12,16 @@ Goal:
 Translate user intentions and project needs into concise GitHub issues describing new capabilities or improvements for BibLens.
 
 Process:
-1. Read relevant project documents.
-2. Check existing GitHub issues to avoid duplicates.
-3. Identify useful product improvements, missing capabilities, or UX enhancements.
-4. Draft concise GitHub issues describing the desired behavior.
-5. Ensure the issue focuses on user-visible functionality rather than implementation.
+1. Create and switch to a feature branch from `develop`:
+   ```bash
+   git checkout develop && git pull
+   git checkout -b feature/<short-name>
+   ```
+2. Read relevant project documents.
+3. Check existing GitHub issues to avoid duplicates.
+4. Identify useful product improvements, missing capabilities, or UX enhancements.
+5. Draft concise GitHub issues describing the desired behavior.
+6. Ensure the issue focuses on user-visible functionality rather than implementation.
 
 Rules:
 - Focus on product value, not implementation details.
@@ -91,3 +96,10 @@ Output format:
 1. Blockers (issue should not proceed)
 2. Concerns (proceed with adjustments)
 3. Approval decision
+
+If approved, merge the feature branch to `develop`:
+```bash
+git checkout develop
+git merge --no-ff feature/<short-name>
+git branch -d feature/<short-name>
+```
