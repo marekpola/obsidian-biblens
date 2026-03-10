@@ -1074,6 +1074,69 @@ Expected:
 
 ---
 
+## T046 – Settings UI "Load" button for live provider item discovery
+
+### 46a – Load button present for biblens-data provider
+
+Steps:
+1. Open Settings → BibLens.
+2. Open any of the three sections (Translations, Reference formats, Recognition languages).
+3. Verify the "Install new" row shows: provider dropdown | **Load** button | items dropdown | Download button.
+
+Expected:
+- The Load button is visible when the selected provider is "BibLens Data" (or any provider whose adapter implements `listUrl`).
+
+### 46b – Load button hidden for providers without listAvailable
+
+Steps:
+1. Open Settings → BibLens → Translations section.
+2. Switch the provider dropdown to a provider that does NOT implement `listUrl` (e.g. "GetBible.net").
+
+Expected:
+- The Load button is not visible for that provider.
+
+### 46c – Load repopulates dropdown with live list
+
+Steps:
+1. Open Settings → BibLens → Translations section.
+2. Ensure the "BibLens Data" provider is selected.
+3. Click Load.
+
+Expected:
+- The items dropdown repopulates with entries fetched from the live index.
+- Already-installed items are excluded.
+- A "Loading…" label appears briefly on the button during the fetch.
+
+### 46d – Load on network failure retains catalog list and shows Notice
+
+Steps:
+1. Disconnect from the network (or modify hosts to block the provider URL).
+2. Open Settings → BibLens → Translations section.
+3. Click Load.
+
+Expected:
+- A Notice appears: "BibLens: load failed — …".
+- The items dropdown retains the catalog-based list.
+
+### 46e – Reopening settings resets to catalog-based list
+
+Steps:
+1. Click Load in Translations; the dropdown shows the live list.
+2. Close and reopen Settings.
+
+Expected:
+- The items dropdown shows the catalog-based list (not the live list).
+
+### 46f – Description text visible
+
+Steps:
+1. Open any of the three collapsible sections.
+
+Expected:
+- A description reads: "Items shown are from the catalog. Click load to fetch the current list from the provider."
+
+---
+
 ## Mobile Compatibility (Periodic Check)
 
 Note:

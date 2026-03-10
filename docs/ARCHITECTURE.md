@@ -140,9 +140,9 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - Scans `${pluginDir}/reference-formats/` and returns metadata for each `.json` file found
 - src/sources/adapters.ts
   - Pure module (no Obsidian imports, no DOM)
-  - Exports: `interface SourceAdapter { buildUrl(provider: SourceProvider, entry: RemoteTranslationEntry): string; transform(raw: unknown): TranslationData }` — translation adapter
-  - Exports: `interface LanguagePackAdapter { buildUrl(provider: LanguagePackProvider, entry: RemoteLanguagePackEntry): string; transform(raw: unknown): LanguagePackFile }` — language pack adapter
-  - Exports: `interface ReferenceFormatAdapter { buildUrl(provider: ReferenceFormatProvider, entry: RemoteReferenceFormatEntry): string; transform(raw: unknown): ReferenceFormatFile }` — format pack adapter
+  - Exports: `interface SourceAdapter { buildUrl(provider: SourceProvider, entry: RemoteTranslationEntry): string; transform(raw: unknown): TranslationData; listUrl?(provider: SourceProvider): string; listAvailable?(raw: unknown): RemoteTranslationEntry[] }` — translation adapter; `listUrl`/`listAvailable` are optional — omit for providers with no discovery API
+  - Exports: `interface LanguagePackAdapter { buildUrl(provider: LanguagePackProvider, entry: RemoteLanguagePackEntry): string; transform(raw: unknown): LanguagePackFile; listUrl?(provider: LanguagePackProvider): string; listAvailable?(raw: unknown): RemoteLanguagePackEntry[] }` — language pack adapter
+  - Exports: `interface ReferenceFormatAdapter { buildUrl(provider: ReferenceFormatProvider, entry: RemoteReferenceFormatEntry): string; transform(raw: unknown): ReferenceFormatFile; listUrl?(provider: ReferenceFormatProvider): string; listAvailable?(raw: unknown): RemoteReferenceFormatEntry[] }` — format pack adapter
   - Exports: `getAdapter(adapterType: string): SourceAdapter` — translation adapter registry; throws on unknown type
   - Exports: `getLanguagePackAdapter(adapterType: string): LanguagePackAdapter` — language pack adapter registry; throws on unknown type
   - Exports: `getReferenceFormatAdapter(adapterType: string): ReferenceFormatAdapter` — format pack adapter registry; throws on unknown type

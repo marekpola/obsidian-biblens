@@ -13,16 +13,28 @@ export interface SourceAdapter {
 	buildUrl(provider: SourceProvider, entry: RemoteTranslationEntry): string;
 	/** raw: string — either JSON text or XML text depending on the provider */
 	transform(raw: unknown): TranslationData;
+	/** Returns the URL for the provider's translation index (optional — omit if not supported). */
+	listUrl?(provider: SourceProvider): string;
+	/** Parses a raw index response into available translation entries. */
+	listAvailable?(raw: unknown): RemoteTranslationEntry[];
 }
 
 export interface LanguagePackAdapter {
 	buildUrl(provider: LanguagePackProvider, entry: RemoteLanguagePackEntry): string;
 	transform(raw: unknown): LanguagePackFile;
+	/** Returns the URL for the provider's language pack index (optional — omit if not supported). */
+	listUrl?(provider: LanguagePackProvider): string;
+	/** Parses a raw index response into available language pack entries. */
+	listAvailable?(raw: unknown): RemoteLanguagePackEntry[];
 }
 
 export interface ReferenceFormatAdapter {
 	buildUrl(provider: ReferenceFormatProvider, entry: RemoteReferenceFormatEntry): string;
 	transform(raw: unknown, entry: RemoteReferenceFormatEntry): ReferenceFormatFile;
+	/** Returns the URL for the provider's reference format index (optional — omit if not supported). */
+	listUrl?(provider: ReferenceFormatProvider): string;
+	/** Parses a raw index response into available reference format entries. */
+	listAvailable?(raw: unknown): RemoteReferenceFormatEntry[];
 }
 
 // Canonical USFM 3.0 book IDs in Protestant canonical order (position = book number - 1)
@@ -152,6 +164,9 @@ const biblensCatalogFormatAdapter: ReferenceFormatAdapter = {
 	},
 };
 
+type BiblensIndexItem = { id: string; displayName: string; language: string };
+type BiblensIndex    = { items: BiblensIndexItem[] };
+
 const biblensDataTranslationAdapter: SourceAdapter = {
 	buildUrl(provider, entry) {
 		return `${provider.baseUrl}/resources/translations/${entry.remoteId}.json`;
@@ -172,6 +187,18 @@ const biblensDataTranslationAdapter: SourceAdapter = {
 		}
 		return result;
 	},
+	listUrl(provider) {
+		return `${provider.baseUrl}/resources/translations/index.json`;
+	},
+	listAvailable(raw) {
+		const parsed = JSON.parse(raw as string) as BiblensIndex;
+		return (parsed.items ?? []).map(item => ({
+			id: item.id,
+			displayName: item.displayName,
+			language: item.language,
+			remoteId: item.id,
+		}));
+	},
 };
 
 const biblensDataLanguagePackAdapter: LanguagePackAdapter = {
@@ -181,6 +208,18 @@ const biblensDataLanguagePackAdapter: LanguagePackAdapter = {
 	transform(raw) {
 		return JSON.parse(raw as string) as LanguagePackFile;
 	},
+	listUrl(provider) {
+		return `${provider.baseUrl}/resources/language-packs/index.json`;
+	},
+	listAvailable(raw) {
+		const parsed = JSON.parse(raw as string) as BiblensIndex;
+		return (parsed.items ?? []).map(item => ({
+			id: item.id,
+			displayName: item.displayName,
+			language: item.language,
+			remoteId: item.id,
+		}));
+	},
 };
 
 const biblensDataReferenceFormatAdapter: ReferenceFormatAdapter = {
@@ -189,6 +228,18 @@ const biblensDataReferenceFormatAdapter: ReferenceFormatAdapter = {
 	},
 	transform(raw, _entry) {
 		return JSON.parse(raw as string) as ReferenceFormatFile;
+	},
+	listUrl(provider) {
+		return `${provider.baseUrl}/resources/reference-formats/index.json`;
+	},
+	listAvailable(raw) {
+		const parsed = JSON.parse(raw as string) as BiblensIndex;
+		return (parsed.items ?? []).map(item => ({
+			id: item.id,
+			displayName: item.displayName,
+			language: item.language,
+			remoteId: item.id,
+		}));
 	},
 };
 

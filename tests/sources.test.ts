@@ -129,3 +129,89 @@ describe("getLanguagePackAdapter", () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// biblens-data listUrl / listAvailable
+// ---------------------------------------------------------------------------
+
+const MOCK_INDEX = JSON.stringify({
+  items: [
+    { id: "en",  displayName: "English", language: "en" },
+    { id: "cs",  displayName: "Czech",   language: "cs" },
+  ],
+});
+
+describe("biblens-data translation adapter — listUrl / listAvailable", () => {
+  const adapter = getAdapter("biblens-data");
+  const provider = KNOWN_PROVIDERS.translationProviders.find(p => p.adapterType === "biblens-data")!;
+
+  it("listUrl returns correct index URL", () => {
+    expect(adapter.listUrl!(provider)).toBe(
+      `${provider.baseUrl}/resources/translations/index.json`
+    );
+  });
+
+  it("listAvailable parses index into RemoteTranslationEntry[]", () => {
+    const entries = adapter.listAvailable!(MOCK_INDEX);
+    expect(entries).toHaveLength(2);
+    expect(entries[0]).toEqual({ id: "en", displayName: "English", language: "en", remoteId: "en" });
+    expect(entries[1]).toEqual({ id: "cs", displayName: "Czech",   language: "cs", remoteId: "cs" });
+  });
+
+  it("listAvailable returns empty array for empty items list", () => {
+    expect(adapter.listAvailable!(JSON.stringify({ items: [] }))).toEqual([]);
+  });
+});
+
+describe("biblens-data language pack adapter — listUrl / listAvailable", () => {
+  const adapter = getLanguagePackAdapter("biblens-data");
+  const provider = KNOWN_PROVIDERS.languagePackProviders.find(p => p.adapterType === "biblens-data")!;
+
+  it("listUrl returns correct index URL", () => {
+    expect(adapter.listUrl!(provider)).toBe(
+      `${provider.baseUrl}/resources/language-packs/index.json`
+    );
+  });
+
+  it("listAvailable parses index into RemoteLanguagePackEntry[]", () => {
+    const entries = adapter.listAvailable!(MOCK_INDEX);
+    expect(entries).toHaveLength(2);
+    expect(entries[0]).toEqual({ id: "en", displayName: "English", language: "en", remoteId: "en" });
+    expect(entries[1]).toEqual({ id: "cs", displayName: "Czech",   language: "cs", remoteId: "cs" });
+  });
+
+  it("listAvailable returns empty array for empty items list", () => {
+    expect(adapter.listAvailable!(JSON.stringify({ items: [] }))).toEqual([]);
+  });
+});
+
+describe("biblens-data reference format adapter — listUrl / listAvailable", () => {
+  const adapter = getReferenceFormatAdapter("biblens-data");
+  const provider = KNOWN_PROVIDERS.referenceFormatProviders.find(p => p.adapterType === "biblens-data")!;
+
+  it("listUrl returns correct index URL", () => {
+    expect(adapter.listUrl!(provider)).toBe(
+      `${provider.baseUrl}/resources/reference-formats/index.json`
+    );
+  });
+
+  it("listAvailable parses index into RemoteReferenceFormatEntry[]", () => {
+    const entries = adapter.listAvailable!(MOCK_INDEX);
+    expect(entries).toHaveLength(2);
+    expect(entries[0]).toEqual({ id: "en", displayName: "English", language: "en", remoteId: "en" });
+  });
+
+  it("listAvailable returns empty array for empty items list", () => {
+    expect(adapter.listAvailable!(JSON.stringify({ items: [] }))).toEqual([]);
+  });
+});
+
+describe("getbible-v2 and beblia-xml — no listAvailable", () => {
+  it("getbible-v2 does not implement listAvailable", () => {
+    expect("listAvailable" in getAdapter("getbible-v2")).toBe(false);
+  });
+
+  it("beblia-xml does not implement listAvailable", () => {
+    expect("listAvailable" in getAdapter("beblia-xml")).toBe(false);
+  });
+});
