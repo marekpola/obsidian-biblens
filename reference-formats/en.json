@@ -3,78 +3,452 @@
   "displayName": "English",
   "lang": "en",
   "formatVersion": 1,
-  "source": "openbibleinfo/Bible-Passage-Reference-Parser",
+  "source": "cleaned",
   "books": {
-    "GEN": "Gen",
-    "EXO": "Exod",
-    "LEV": "Lev",
-    "NUM": "Num",
-    "DEU": "Deut",
-    "JOS": "Josh",
-    "JDG": "Judg",
-    "RUT": "Ruth",
-    "1SA": "1 Sam",
-    "2SA": "2 Sam",
-    "1KI": "1 Kgs",
-    "2KI": "2 Kgs",
-    "1CH": "1 Chr",
-    "2CH": "2 Chr",
-    "EZR": "Ezra",
-    "NEH": "Neh",
-    "EST": "Esth",
-    "JOB": "Job",
-    "PSA": "Ps",
-    "PRO": "Prov",
-    "ECC": "Eccl",
-    "SNG": "Song",
-    "ISA": "Isa",
-    "JER": "Jer",
-    "LAM": "Lam",
-    "EZK": "Ezek",
-    "DAN": "Dan",
-    "HOS": "Hos",
-    "JOL": "Joel",
-    "AMO": "Amos",
-    "OBA": "Obad",
-    "JON": "Jonah",
-    "MIC": "Mic",
-    "NAM": "Nah",
-    "HAB": "Hab",
-    "ZEP": "Zeph",
-    "HAG": "Hag",
-    "ZEC": "Zech",
-    "MAL": "Mal",
-    "MAT": "Matt",
-    "MRK": "Mark",
-    "LUK": "Luke",
-    "JHN": "John",
-    "ACT": "Acts",
-    "ROM": "Rom",
-    "1CO": "1 Cor",
-    "2CO": "2 Cor",
-    "GAL": "Gal",
-    "EPH": "Eph",
-    "PHP": "Phil",
-    "COL": "Col",
-    "1TH": "1 Thess",
-    "2TH": "2 Thess",
-    "1TI": "1 Tim",
-    "2TI": "2 Tim",
-    "TIT": "Titus",
-    "PHM": "Phlm",
-    "HEB": "Heb",
-    "JAS": "Jas",
-    "1PE": "1 Pet",
-    "2PE": "2 Pet",
-    "1JN": "1 John",
-    "2JN": "2 John",
-    "3JN": "3 John",
-    "JUD": "Jude",
-    "REV": "Rev"
-  },
-  "rules": {
-    "chapterVerseSeparator": ":",
-    "rangeSeparator": "-",
-    "bookChapterSeparator": " "
+    "GEN": {
+      "aliases": [
+        "Genesis",
+        "Gen",
+        "Ge",
+        "GEN"
+      ]
+    },
+    "EXO": {
+      "aliases": [
+        "Exodus",
+        "Exod",
+        "Exo",
+        "Ex",
+        "EXO"
+      ]
+    },
+    "LEV": {
+      "aliases": [
+        "Leviticus",
+        "Lev",
+        "Lv",
+        "LEV"
+      ]
+    },
+    "NUM": {
+      "aliases": [
+        "Numbers",
+        "Num",
+        "Nm",
+        "NUM"
+      ]
+    },
+    "DEU": {
+      "aliases": [
+        "Deuteronomy",
+        "Deut",
+        "Dt",
+        "DEU"
+      ]
+    },
+    "JOS": {
+      "aliases": [
+        "Joshua",
+        "Josh",
+        "JOS"
+      ]
+    },
+    "JDG": {
+      "aliases": [
+        "Judges",
+        "Judg",
+        "Jdg",
+        "JDG"
+      ]
+    },
+    "RUT": {
+      "aliases": [
+        "Ruth",
+        "RUT"
+      ]
+    },
+    "1SA": {
+      "aliases": [
+        "1 Samuel",
+        "1 Sam",
+        "1SA"
+      ]
+    },
+    "2SA": {
+      "aliases": [
+        "2 Samuel",
+        "2 Sam",
+        "2SA"
+      ]
+    },
+    "1KI": {
+      "aliases": [
+        "1 Kings",
+        "1 Kgs",
+        "1KI"
+      ]
+    },
+    "2KI": {
+      "aliases": [
+        "2 Kings",
+        "2 Kgs",
+        "2KI"
+      ]
+    },
+    "1CH": {
+      "aliases": [
+        "1 Chronicles",
+        "1 Chr",
+        "1CH"
+      ]
+    },
+    "2CH": {
+      "aliases": [
+        "2 Chronicles",
+        "2 Chr",
+        "2CH"
+      ]
+    },
+    "EZR": {
+      "aliases": [
+        "Ezra",
+        "Ezr",
+        "EZR"
+      ]
+    },
+    "NEH": {
+      "aliases": [
+        "Nehemiah",
+        "Neh",
+        "NEH"
+      ]
+    },
+    "EST": {
+      "aliases": [
+        "Esther",
+        "Est",
+        "EST"
+      ]
+    },
+    "JOB": {
+      "aliases": [
+        "Job",
+        "JOB"
+      ]
+    },
+    "PSA": {
+      "aliases": [
+        "Psalms",
+        "Psalm",
+        "Ps",
+        "PSA"
+      ]
+    },
+    "PRO": {
+      "aliases": [
+        "Proverbs",
+        "Prov",
+        "PRO"
+      ]
+    },
+    "ECC": {
+      "aliases": [
+        "Ecclesiastes",
+        "Eccl",
+        "Ecc",
+        "ECC"
+      ]
+    },
+    "SNG": {
+      "aliases": [
+        "Song of Songs",
+        "Song of Solomon",
+        "Song",
+        "SNG"
+      ]
+    },
+    "ISA": {
+      "aliases": [
+        "Isaiah",
+        "Isa",
+        "ISA"
+      ]
+    },
+    "JER": {
+      "aliases": [
+        "Jeremiah",
+        "Jer",
+        "JER"
+      ]
+    },
+    "LAM": {
+      "aliases": [
+        "Lamentations",
+        "Lam",
+        "LAM"
+      ]
+    },
+    "EZK": {
+      "aliases": [
+        "Ezekiel",
+        "Ezek",
+        "Ezk",
+        "EZK"
+      ]
+    },
+    "DAN": {
+      "aliases": [
+        "Daniel",
+        "Dan",
+        "DAN"
+      ]
+    },
+    "HOS": {
+      "aliases": [
+        "Hosea",
+        "Hos",
+        "HOS"
+      ]
+    },
+    "JOL": {
+      "aliases": [
+        "Joel",
+        "JOL"
+      ]
+    },
+    "AMO": {
+      "aliases": [
+        "Amos",
+        "AMO"
+      ]
+    },
+    "OBA": {
+      "aliases": [
+        "Obadiah",
+        "Obad",
+        "OBA"
+      ]
+    },
+    "JON": {
+      "aliases": [
+        "Jonah",
+        "Jon",
+        "JON"
+      ]
+    },
+    "NAM": {
+      "aliases": [
+        "Nahum",
+        "Nah",
+        "NAM"
+      ]
+    },
+    "ZEP": {
+      "aliases": [
+        "Zephaniah",
+        "Zeph",
+        "ZEP"
+      ]
+    },
+    "HAG": {
+      "aliases": [
+        "Haggai",
+        "Hag",
+        "HAG"
+      ]
+    },
+    "ZEC": {
+      "aliases": [
+        "Zechariah",
+        "Zech",
+        "ZEC"
+      ]
+    },
+    "MAL": {
+      "aliases": [
+        "Malachi",
+        "Mal",
+        "MAL"
+      ]
+    },
+    "MAT": {
+      "aliases": [
+        "Matthew",
+        "Matt",
+        "Mt",
+        "MAT"
+      ]
+    },
+    "MRK": {
+      "aliases": [
+        "Mark",
+        "Mk",
+        "MRK"
+      ]
+    },
+    "JHN": {
+      "aliases": [
+        "John",
+        "Jn",
+        "JHN"
+      ]
+    },
+    "ACT": {
+      "aliases": [
+        "Acts",
+        "Acts of the Apostles",
+        "ACT"
+      ]
+    },
+    "ROM": {
+      "aliases": [
+        "Romans",
+        "Rom",
+        "ROM"
+      ]
+    },
+    "1CO": {
+      "aliases": [
+        "1 Corinthians",
+        "1 Cor",
+        "1CO"
+      ]
+    },
+    "2CO": {
+      "aliases": [
+        "2 Corinthians",
+        "2 Cor",
+        "2CO"
+      ]
+    },
+    "GAL": {
+      "aliases": [
+        "Galatians",
+        "Gal",
+        "GAL"
+      ]
+    },
+    "EPH": {
+      "aliases": [
+        "Ephesians",
+        "Eph",
+        "EPH"
+      ]
+    },
+    "PHP": {
+      "aliases": [
+        "Philippians",
+        "Phil",
+        "PHP"
+      ]
+    },
+    "COL": {
+      "aliases": [
+        "Colossians",
+        "Col",
+        "COL"
+      ]
+    },
+    "1TH": {
+      "aliases": [
+        "1 Thessalonians",
+        "1 Thess",
+        "1TH"
+      ]
+    },
+    "2TH": {
+      "aliases": [
+        "2 Thessalonians",
+        "2 Thess",
+        "2TH"
+      ]
+    },
+    "1TI": {
+      "aliases": [
+        "1 Timothy",
+        "1 Tim",
+        "1TI"
+      ]
+    },
+    "2TI": {
+      "aliases": [
+        "2 Timothy",
+        "2 Tim",
+        "2TI"
+      ]
+    },
+    "TIT": {
+      "aliases": [
+        "Titus",
+        "Tit",
+        "TIT"
+      ]
+    },
+    "PHM": {
+      "aliases": [
+        "Philemon",
+        "Phlm",
+        "PHM"
+      ]
+    },
+    "HEB": {
+      "aliases": [
+        "Hebrews",
+        "Heb",
+        "HEB"
+      ]
+    },
+    "JAS": {
+      "aliases": [
+        "James",
+        "Jas",
+        "JAS"
+      ]
+    },
+    "1PE": {
+      "aliases": [
+        "1 Peter",
+        "1 Pet",
+        "1PE"
+      ]
+    },
+    "2PE": {
+      "aliases": [
+        "2 Peter",
+        "2 Pet",
+        "2PE"
+      ]
+    },
+    "1JN": {
+      "aliases": [
+        "1 John",
+        "1JN"
+      ]
+    },
+    "2JN": {
+      "aliases": [
+        "2 John",
+        "2JN"
+      ]
+    },
+    "3JN": {
+      "aliases": [
+        "3 John",
+        "3JN"
+      ]
+    },
+    "JUD": {
+      "aliases": [
+        "Jude",
+        "JUD"
+      ]
+    },
+    "REV": {
+      "aliases": [
+        "Revelation",
+        "Rev",
+        "REV"
+      ]
+    }
   }
 }

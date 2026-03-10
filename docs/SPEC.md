@@ -429,3 +429,153 @@ Once accepted, the Analyst moves each chapter into the appropriate version secti
 
 <!-- New proposed chapters go here -->
 
+### Bundled English Starter Pack
+**Status:** Proposed
+
+**User need:** A new user should be able to install BibLens and immediately
+recognise English Bible references and read verse text with zero downloads or
+configuration.
+
+**Proposed behaviour:**
+- The plugin ships three assets bundled into `main.js` at build time via
+  esbuild JSON imports:
+  - English recognition language pack — standard English book names and
+    abbreviations (Gen, Exod, Matt, Rev, etc.)
+  - English reference format pack — colon notation, space book-chapter
+    separator, hyphen range separator
+  - English Bible translation — World English Bible (WEB; public domain,
+    modern language)
+- On `onload()`, if any of these files does not yet exist in the plugin
+  directory, the plugin writes it from the bundled data:
+  - `recognition-languages/en.json`
+  - `reference-formats/en.json`
+  - `translations/en-web.json`
+- After writing, the normal loader reads them from disk. They appear in the
+  installed lists exactly like downloaded packs.
+- The auto-default mechanism activates them on first install without any user
+  action.
+- The user may delete any of them; the plugin will not recreate them on the
+  next launch (deletion is intentional).
+- Attribution for the World English Bible is added to `LICENSES.md`.
+
+**Removal of hidden code-level fallbacks:**
+The code-level constants `BUILT_IN_FORMAT_RULES` and `getBuiltInAbbreviationMap()`
+are removed. The bundled JSON files become the sole English defaults. This makes
+all active configuration visible to the user in the installed lists — nothing is
+silently hardcoded. If a bundled file is missing (deleted by user), the plugin
+shows "None" for that asset type in General status, which is honest.
+
+Removing these constants is a non-trivial refactor (affects `books.ts`,
+`parser.ts`, all callers, and tests) and must be tracked as a **separate
+follow-on task** after the write-to-disk behaviour is shipped and verified.
+The two concerns must not be bundled into one implementation task.
+
+**Scope notes:**
+- Distribution: Obsidian's community plugin installer fetches only `main.js`,
+  `manifest.json`, and `styles.css`. Bundling via esbuild ensures the data
+  reaches the user regardless of install method (community plugins, BRAT, or
+  manual).
+- WEB file size: approximately 4 MB uncompressed; the actual compressed size
+  inside `main.js` must be measured before the translation component is
+  approved for bundling. If the compressed delta exceeds ~1 MB the WEB
+  translation is deferred or replaced with a smaller public-domain text.
+- `SINGLE_CHAPTER_BOOKS` (a pure data set, not a user-configurable fallback)
+  is unaffected and stays in `books.ts`.
+
+**Open questions:**
+- Should `en.json` language pack and format pack be locked (non-deletable) or
+  freely deletable by the user? Recommendation: deletable, consistent with all
+  other packs.
+- What is the actual gzip-compressed size of the WEB translation inside the
+  esbuild bundle? This must be verified before committing to ship it bundled.
+
+---
+
+### Live Provider Item Discovery
+**Status:** Proposed
+
+**User need:** Users should be able to see a current, up-to-date list of
+downloadable items from each provider without waiting for a plugin release or
+a catalog update.
+
+**Proposed behaviour:**
+- Each "Install new" row gains an explicit **"Load"** button placed between
+  the provider dropdown and the items dropdown.
+- Clicking "Load" queries the selected provider for its current item list (for
+  example, reads `index.json` from the `biblens-data` repository, or calls the
+  getbible.net list endpoint) and repopulates the items dropdown with the live
+  result.
+- Before any live fetch, the items dropdown is pre-populated from the catalog
+  (offline-safe default). The UI is immediately usable without a network call.
+- After a live fetch, the result replaces the catalog-based list for the
+  current settings session only; it is not cached between tab opens.
+- If the fetch fails, a notice is shown and the catalog-based list is retained.
+- For providers that offer no discovery API, the "Load" button is hidden and
+  the catalog list is the sole source.
+
+**Why a button, not automatic on provider-select:**
+Silent network calls on dropdown change would violate the standing design
+principle: all network access requires an explicit user action. The "Load"
+button is consistent with "Download" and "Update catalog" and keeps the UI
+predictable when the user is browsing providers without intending to fetch data.
+
+**Settings section description text:**
+*"Items shown are from the catalog. Click Load to fetch the current list
+from the provider."*
+
+**Scope notes:**
+- Requires adding an optional `listAvailable(provider) → Promise<entries[]>`
+  method to each adapter interface. Adapters without this method omit the button.
+- `biblens-data` adapter: reads `resources/<category>/index.json` from the
+  repository.
+- `getbible-v2`: uses their translation list endpoint.
+- `beblia-xml`: no list endpoint anticipated; button hidden.
+- The Architect should assess the adapter interface extension.
+
+**Open questions:** none.
+
+---
+
+### Settings Reactivity and Panel Conventions
+**Status:** Proposed
+
+**User need:** Changing settings should take effect immediately in the open
+editor; the settings panel should follow Obsidian UI conventions consistently.
+
+**Proposed behaviour — editor reactivity (bug fix):**
+- After any setting that affects reference detection changes (Parsing rules,
+  active reference format, active language pack), all currently open editor
+  views must immediately recalculate their reference highlights and hover
+  behaviour without the user switching documents or reloading the plugin.
+- Implementation approach: replace the current factory-closure pattern (scanner
+  captured at registration time) with a `StateField` holding the active
+  `RefScanner` plus a `StateEffect` to push updates. After `reloadScanner()`,
+  `main.ts` dispatches the effect on all open `MarkdownView` editors via
+  `app.workspace.iterateAllLeaves`. The `ViewPlugin` reads the scanner from
+  the `StateField` on each update rather than from a closed-over variable.
+  This is the architecturally correct CM6 pattern for live value propagation.
+
+**Proposed behaviour — settings panel conventions:**
+- All section headings use `new Setting(el).setName(…).setHeading()` rather
+  than raw `createEl('h3')`.
+- Spacing between sections uses a CSS class (e.g. `biblens-section-spacer`)
+  rather than inline `style` attributes, ensuring compatibility with Obsidian
+  themes.
+- No functional changes; purely cosmetic alignment with Obsidian conventions.
+
+**Scope notes:**
+- The `StateField` + `StateEffect` definitions must live in a new
+  `src/editor/scannerState.ts` module (not in `parser.ts`, which must remain
+  CM6-free per module boundary rules). The change affects
+  `src/editor/scannerState.ts` (new — StateField + StateEffect),
+  `refDecorations.ts` (read scanner from state), `refTooltip.ts` (same), and
+  `main.ts` (dispatch after reload).
+- T032 ("Refresh Editor Views After Scanner Reload") used extension
+  re-registration to address a related problem. The `StateField`/`StateEffect`
+  approach is architecturally sounder and **supersedes T032's implementation**.
+  The Developer task for this chapter must replace, not extend, the T032 fix.
+- The panel conventions change is low-risk and can be combined with the
+  reactivity fix in a single task.
+
+**Open questions:** none.
+

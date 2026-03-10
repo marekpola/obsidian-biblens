@@ -1,81 +1,57 @@
 # BibLens
 
-An [Obsidian](https://obsidian.md) plugin that detects Bible references in your notes
-and displays the verse text as a hover preview — in both Reading View and the editor.
+An [Obsidian](https://obsidian.md) plugin that detects Bible references in your notes and shows the verse text as a hover preview — in the editor and in Reading View.
 
-Designed for academic and research workflows. Works fully offline. No external services required.
+Works fully offline. No external services required.
+
+---
+
+*(gif placeholder)*
 
 ---
 
 ## Features
 
-### Reference Detection
+**Reference detection** — BibLens recognises Bible references directly in your note text, e.g. `Gen 1:3`, `Genesis 22:1-19`, `Isa 11`. References are underlined; hovering shows a tooltip or popover with the verse text and a copy button.
 
-BibLens recognises Bible references written in Czech notation directly in your note text:
+**Multiple translations** — select the active translation in settings; switch without restarting.
 
-- `Mt 1,3` — single verse
-- `Gn 22,1-19` — verse range
-- `Iz 11` — whole chapter
+**Insert verse text** — command palette command inserts the verse text of the nearest reference before the cursor, in inline or blockquote format.
 
-References are underlined in the editor and trigger a tooltip on hover.
-In Reading View, hovering a reference opens a popover with the verse text.
+**Language & format packs** — download recognition language packs (book names for a given language) and reference format packs (notation rules, e.g. English, Czech Protestant, Czech Catholic) from within settings. Any combination can be active simultaneously. You can also author your own packs and drop them directly into the plugin folder.
 
-### Hover Preview
+**Parsing modes** — *Strict* matches only canonical notation; *Extended* accepts aliases and separator variants.
 
-- **Reading View:** a popover appears above the reference with formatted verse text.
-- **Editor (Live Preview):** a CodeMirror tooltip shows the same content on hover.
+---
 
-Each verse entry is displayed as a superscript label followed by the verse text.
-Unknown references show *Verš nenalezen*.
+## Translations
 
-A **copy button** in the popover/tooltip copies the full verse text to the clipboard.
+Bible translations are **not bundled** with the plugin. You download only what you need:
 
-### Insert Verse Text
+- Use **Settings → BibLens → Installed translations → Install new** to browse and download from the built-in catalog of providers.
+- Drop a compatible `.json` file directly into the `translations/` folder in the plugin directory.
 
-Two commands are available in the command palette:
+The catalog can be refreshed in **Advanced → Update catalog**. Auto-update on startup is available as an opt-in toggle.
 
-- **BibLens: Insert verse text after previous reference** — scans the document and inserts
-  text after the last detected reference before the cursor position.
+Multiple providers are supported. Once a translation is on disk the plugin operates fully offline.
 
-Insertion format is configurable: **Inline** (appended on the same line) or **Blockquote**
-(inserted on the next line as `> Reference verse text`).
+---
 
-Blockquote lines are excluded from reference detection, so inserted quotations are not
-re-decorated.
+## Language and Format Packs
 
-### Multiple Translations
+Recognition language packs (book names) and reference format packs (notation rules) are managed the same way as translations — download from the catalog or drop files manually:
 
-Select the active translation from **Settings → BibLens → Preferred translation**.
-The plugin reads all `.json` translation files from the `translations/` folder in the
-plugin directory. Changing the selection takes effect immediately without restarting Obsidian.
+- `recognition-languages/` — one file per language
+- `reference-formats/` — one file per notation style
 
-### Translation Source Management
-
-Download Bible translations directly from within the plugin settings:
-
-1. Open **Settings → BibLens → Translation Sources**.
-2. Select a provider from the list.
-3. Browse available translations and click **Download**.
-
-Downloaded translations are saved to `translations/` and appear in the **Preferred translation**
-dropdown immediately.
-
-To remove a translation, use the **Installed Translations** panel and click **Delete**.
-
-The provider catalog is bundled with the plugin. You can refresh it independently:
-
-- Click **Update catalog** in settings to fetch the latest provider list from GitHub.
-- Enable **Auto-update on startup** to refresh automatically when the cached catalog is stale
-  (disabled by default — no background network activity without opt-in).
-
+You can author your own packs in the JSON format defined in the [Translation File Format](#translation-file-format) section below, using the same approach for pack files. Manually placed files appear in the installed list the next time the settings tab is opened.
 
 ---
 
 ## Requirements
 
 - Obsidian desktop or mobile
-- No internet connection required for core functionality (translations must be on disk)
-- No external services or backends
+- No internet connection required for core features (translations and packs must be on disk)
 
 ---
 
@@ -83,70 +59,37 @@ The provider catalog is bundled with the plugin. You can refresh it independentl
 
 ### From the Community Plugin List
 
-1. Open **Settings → Community plugins → Browse**.
-2. Search for **BibLens**.
-3. Click **Install**, then **Enable**.
+1. **Settings → Community plugins → Browse**
+2. Search for **BibLens**, click **Install**, then **Enable**.
 
-### Manual Installation
+### Manual
 
 1. Download `main.js`, `styles.css`, and `manifest.json` from the latest release.
-2. Copy them to `<your vault>/.obsidian/plugins/biblens/`.
-3. Download `translations/cep.json` from the release and place it in
-   `<your vault>/.obsidian/plugins/biblens/translations/`.
-4. Enable the plugin in **Settings → Community plugins**.
+2. Copy to `<vault>/.obsidian/plugins/biblens/`.
+3. Enable in **Settings → Community plugins**.
+4. Download at least one translation from **Settings → BibLens → Installed translations**.
 
 ---
 
-## Adding Translations
+## Translation File Format
 
-BibLens ships with the **Czech CEP** translation. You can add others in two ways:
-
-**Download from the catalog (recommended):**
-Open **Settings → BibLens → Translation Sources** and download a translation from a listed provider.
-
-**Drop a file manually:**
-Copy a compatible `.json` translation file into the `translations/` folder in the plugin directory,
-then reload the plugin (or toggle it off and on).
-
-### Translation File Format
-
-Translation files must be valid JSON with the following structure (format version 1):
+Translation files are versioned JSON:
 
 ```json
 {
-  "id": "bible21",
-  "name": "Bible21",
-  "lang": "cs",
-  "source": "optional attribution text",
+  "id": "web",
+  "name": "World English Bible",
+  "lang": "en",
   "formatVersion": 1,
-  "canonicalAbbreviations": {
-    "GEN": "Gn",
-    "EXO": "Ex"
-  },
-  "allowedAbbreviations": {
-    "GEN": ["Gn", "Gen", "Genesis", "1. Mojžíšova"],
-    "EXO": ["Ex", "Exo", "Exodus", "2. Mojžíšova"]
-  },
   "verses": {
-    "GEN 1:1": "Na počátku Bůh stvořil nebe a zemi.",
-    "GEN 1:2": "Země pak byla pustá a prázdná…"
+    "GEN 1:1": "In the beginning, God created the heavens and the earth."
   }
 }
 ```
 
-**Required fields:** `id`, `name`, `lang`, `formatVersion`, `verses`
-**Optional fields:** `source`, `canonicalAbbreviations`, `allowedAbbreviations`
+Required: `id`, `name`, `lang`, `formatVersion`, `verses`. Legacy flat-format files also load.
 
-Verse keys use the format `USFM_BOOK CHAPTER:VERSE` (e.g. `GEN 1:1`, `MAT 28:19`).
-Book identifiers follow the [USFM 3.0 standard](https://ubsicap.github.io/usfm/usfm3.0/identification/books.html).
-
-Legacy flat-format files (plain `Record<string, string>` with dot-separated keys) continue
-to load without modification.
-
-BibLens ships with the World English Bible (WEB), which is in the public domain.
-
-Other Bible translations may be added by users in the `translations/` directory,
-subject to their respective licenses.
+Verse keys use USFM 3.0 identifiers: `BOOK CHAPTER:VERSE` (e.g. `GEN 1:1`, `MAT 28:19`).
 
 ---
 
@@ -154,52 +97,60 @@ subject to their respective licenses.
 
 | Setting | Description |
 |---|---|
-| Preferred translation | Active translation used in hover previews and verse insertion |
+| Translation | Active translation (read-only status row) |
+| Reference format | Active format pack (read-only status row) |
+| Recognition language | Active language pack (read-only status row) |
+| Parsing rules | Strict / Extended |
 | Verse insertion format | Inline or Blockquote |
-| Custom abbreviations | Additional book abbreviation → USFM ID mappings |
-| Translation Sources | Browse providers and download translations |
-| Installed Translations | Manage locally downloaded translations |
-| Auto-update catalog on startup | Silently refresh the provider catalog when stale (opt-in) |
-| Last catalog update | Timestamp of the most recent successful catalog refresh |
+| Installed translations | Manage and download translations |
+| Reference formats | Manage and download format packs |
+| Recognition languages | Manage and download language packs |
+| Advanced | Catalog update and auto-update toggle |
+
+---
+
+## Roadmap
+
+Planned for future versions:
+
+- Working with multiple translation languages simultaneously
+- Support for Hebrew and Greek source texts
+- Morphological analysis
 
 ---
 
 ## Changelog
 
+### 0.4.0
+
+- **Recognition language packs** — downloadable book-name definitions per language.
+- **Reference format packs** — downloadable notation rules (e.g. English, Czech Protestant, Czech Catholic). Own packs can be authored and dropped manually.
+- **Parsing modes** — Strict (canonical only) or Extended (aliases and separator variants).
+- Built-in English fallback; no download required for basic English use.
+- Restructured settings tab.
+
 ### 0.3.0
 
-- **New translation file format (v1):** versioned, self-describing JSON with metadata,
-  canonical display abbreviations, and allowed input abbreviations per translation.
-  `cep.json` migrated to v1. Legacy files continue to load.
-- **Translation Source Management:** download translations from a curated catalog of
-  HTTP providers. Delete installed translations from the settings UI.
-- **Catalog update:** refresh the provider catalog from GitHub without a plugin update.
-  Manual button + opt-in auto-update on startup.
-- **Custom abbreviations:** define additional book abbreviations in settings.
+- Translation file format v1 (versioned, self-describing JSON).
+- Translation Source Management: download from a curated catalog; delete installed translations.
+- Catalog update from GitHub (manual + opt-in auto-update).
+- Custom abbreviations in settings.
 
 ### 0.2.0
 
-- Multiple locally installed translations with a settings dropdown.
-- Insert verse text command (inline and blockquote formats).
-- Insert verse after last detected reference before cursor.
-- Blockquote lines excluded from reference detection.
-- Copy-to-clipboard button in hover previews and tooltips.
+- Multiple translations with settings dropdown.
+- Insert verse text command (inline and blockquote).
+- Copy-to-clipboard button.
 
 ### 0.1.0
 
-- Initial release.
-- Czech Bible reference detection (`Mt 1,3`, `Gn 22,1-19`, `Iz 11`).
-- Hover popover in Reading View with CEP verse text.
-- Reference underline decorations in editor (Live Preview).
-- Editor tooltip on hover.
+- Initial release: Czech reference detection, hover popover, editor underline decoration.
 
 ---
 
 ## Privacy
 
-BibLens makes no network requests by default. The Translation Sources feature and catalog
-update use network access only when you explicitly click **Download** or **Update catalog**,
-or when you enable the auto-update toggle. No data about your notes is ever transmitted.
+BibLens makes no network requests by default. Download and catalog update use network access only on explicit user action or when the opt-in auto-update toggle is enabled. No note content is ever transmitted.
 
 ---
 
