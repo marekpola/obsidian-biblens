@@ -131,10 +131,6 @@ const bebliaXml: SourceAdapter = {
 // Translation registry
 // ---------------------------------------------------------------------------
 
-const REGISTRY: Record<string, SourceAdapter> = {
-	'getbible-v2': getBibleV2,
-	'beblia-xml':  bebliaXml,
-};
 
 export function getAdapter(adapterType: string): SourceAdapter {
 	const adapter = REGISTRY[adapterType];
@@ -323,18 +319,70 @@ const openbibleinfoReferenceFormatAdapter: ReferenceFormatAdapter = {
 	},
 };
 
+
+const biblensDataTranslationAdapter: SourceAdapter = {
+	buildUrl(provider, entry) {
+		return `${provider.baseUrl}/resources/translations/${entry.remoteId}.json`;
+	},
+	transform(raw) {
+		const parsed = JSON.parse(raw as string) as {
+			verses?: Record<string, string>;
+			book_names?: Record<string, string>;
+			translation?: string;
+			lang?: string;
+			format?: string;
+		};
+		const source = parsed.verses ?? {};
+		const result: TranslationData = {};
+		for (const [key, value] of Object.entries(source)) {
+			const normalizedKey = key.replace(/^([A-Z0-9]{3}) (\d+):(\d+)$/, '$1.$2.$3');
+			result[normalizedKey] = value;
+		}
+		return result;
+	},
+};
+
+const biblensDataLanguagePackAdapter: LanguagePackAdapter = {
+	buildUrl(provider, entry) {
+		return `${provider.baseUrl}/resources/language-packs/${entry.remoteId}.json`;
+	},
+	transform(raw) {
+		return JSON.parse(raw as string) as LanguagePackFile;
+	},
+};
+
+const biblensDataReferenceFormatAdapter: ReferenceFormatAdapter = {
+	buildUrl(provider, entry) {
+		return `${provider.baseUrl}/resources/reference-formats/${entry.remoteId}.json`;
+	},
+	transform(raw, _entry) {
+		return JSON.parse(raw as string) as ReferenceFormatFile;
+	},
+};
+
+
+
+
+
 // ---------------------------------------------------------------------------
 // Language pack and reference format registries
 // ---------------------------------------------------------------------------
 
+const REGISTRY: Record<string, SourceAdapter> = {
+	'getbible-v2': getBibleV2,
+	'beblia-xml':  bebliaXml,
+	'biblens-data': biblensDataTranslationAdapter,
+};
+
 const LANG_REGISTRY: Record<string, LanguagePackAdapter> = {
-	'openbibleinfo': openbibleinfoLanguagePackAdapter,
+	'biblens-data': biblensDataLanguagePackAdapter,
 };
 
 const FORMAT_REGISTRY: Record<string, ReferenceFormatAdapter> = {
-	'biblens-catalog': biblensCatalogFormatAdapter,
-	'openbibleinfo':   openbibleinfoReferenceFormatAdapter,
+	'biblens-data': biblensDataReferenceFormatAdapter,
 };
+
+
 
 export function getLanguagePackAdapter(adapterType: string): LanguagePackAdapter {
 	const adapter = LANG_REGISTRY[adapterType];

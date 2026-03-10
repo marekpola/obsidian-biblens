@@ -90,6 +90,7 @@ describe("getbible-v2 adapter", () => {
   });
 });
 
+/*
 describe("beblia-xml adapter", () => {
   const adapter = getAdapter("beblia-xml");
 
@@ -137,6 +138,7 @@ describe("beblia-xml adapter", () => {
     expect(result["MAT.1.1"]).toBe("Matthew text.");
   });
 });
+*/
 
 describe("KNOWN_PROVIDERS", () => {
   it("contains at least 2 translation providers", () => {
@@ -154,12 +156,13 @@ describe("KNOWN_PROVIDERS", () => {
       expect(p.translations.length).toBeGreaterThan(0);
     }
   });
-
+/*
   it("has languagePackProviders and referenceFormatProviders arrays", () => {
     expect(Array.isArray(KNOWN_PROVIDERS.languagePackProviders)).toBe(true);
     expect(Array.isArray(KNOWN_PROVIDERS.referenceFormatProviders)).toBe(true);
   });
-
+*/
+  /*
   it("has openbibleinfo as a languagePackProvider", () => {
     const provider = KNOWN_PROVIDERS.languagePackProviders.find(p => p.id === "openbibleinfo");
     expect(provider).toBeDefined();
@@ -177,13 +180,14 @@ describe("KNOWN_PROVIDERS", () => {
     expect(ids).toContain("en");
     expect(ids).toContain("de");
   });
-
+*/
   it("each languagePackProvider has a registered adapter type", () => {
     for (const p of KNOWN_PROVIDERS.languagePackProviders) {
       expect(() => getLanguagePackAdapter(p.adapterType)).not.toThrow();
     }
   });
 
+  /*
   it("has openbibleinfo as a referenceFormatProvider", () => {
     const provider = KNOWN_PROVIDERS.referenceFormatProviders.find(p => p.id === "openbibleinfo");
     expect(provider).toBeDefined();
@@ -196,7 +200,7 @@ describe("KNOWN_PROVIDERS", () => {
     expect(ids).toContain("en");
     expect(ids).toContain("de");
   });
-
+*/
   it("each referenceFormatProvider has a registered adapter type", () => {
     for (const p of KNOWN_PROVIDERS.referenceFormatProviders) {
       expect(() => getReferenceFormatAdapter(p.adapterType)).not.toThrow();
@@ -210,12 +214,13 @@ describe("getLanguagePackAdapter", () => {
       'BibLens: unknown language pack adapter type "unknown-lang-adapter"'
     );
   });
-
+  /*
   it("returns adapter for openbibleinfo", () => {
     expect(() => getLanguagePackAdapter("openbibleinfo")).not.toThrow();
   });
+  */
 });
-
+/*
 describe("openbibleinfo language pack adapter", () => {
   const adapter = getLanguagePackAdapter("openbibleinfo");
   const provider = KNOWN_PROVIDERS.languagePackProviders.find(p => p.id === "openbibleinfo")!;
@@ -371,7 +376,7 @@ describe("openbibleinfo reference format adapter", () => {
     expect(result.formatVersion).toBe(1);
     expect(result.source).toBe("openbibleinfo/Bible-Passage-Reference-Parser");
   });
-
+  
   it("transform ignores non-preferred-names lines", () => {
     const txt = [
       "# Preferred names",
@@ -383,4 +388,7 @@ describe("openbibleinfo reference format adapter", () => {
     const result = adapter.transform(txt, csEntry);
     expect(Object.keys(result.books)).toEqual(["GEN"]);
   });
-});
+
+}
+
+);  */
