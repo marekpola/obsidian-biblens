@@ -104,7 +104,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 		});
 
 		containerEl.createDiv({ cls: 'biblens-section-spacer' });
-		
+
 		new Setting(containerEl)
 			.setName('Parsing rules')
 			.setDesc('Strict: enforce format separators. Extended: accept all common separator variants.')
@@ -135,7 +135,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 		const summaryEl = detailsEl.createEl('summary', { text: 'Translations' });
 		summaryEl.addClass('biblens-settings-summary');
 		detailsEl.createEl('p', {
-			text: 'Items shown are from the catalog. Click load to fetch the current list from the provider.',
+			text: 'Items shown are from the catalog. Click "Load" to fetch the current list from the provider and then click "Download".',
 			cls: 'setting-item-description',
 		});
 
@@ -219,6 +219,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 
 		let currentProvider: SourceProvider = providers.find(p => p.id === selectedProviderId) ?? first;
 		let selectedTranslId: string | null = null;
+		let liveTranslEntries: RemoteTranslationEntry[] | null = null;
 		let translDropRef!: DropdownComponent;
 		let loadBtnRef!: ButtonComponent;
 		let downloadBtnRef!: ButtonComponent;
@@ -229,7 +230,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 			const source = liveEntries ?? provider.translations;
 			const entries = source.filter(e => !installedIds.has(e.id));
 			if (entries.length > 0) {
-				for (const e of entries) drop.addOption(e.id, `${e.displayName} (${e.language})`);
+				for (const e of entries) drop.addOption(e.id, e.language ? `${e.displayName} (${e.language})` : e.displayName);
 				drop.setValue(entries[0]!.id);
 				return entries[0]!.id;
 			}
@@ -247,6 +248,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 				provDrop.onChange(id => {
 					this.selectedTranslProvId = id;
 					currentProvider = providers.find(p => p.id === id) ?? first;
+					liveTranslEntries = null;
 					selectedTranslId = populateDrop(translDropRef, currentProvider);
 					downloadBtnRef.setDisabled(!selectedTranslId);
 					const a = getAdapter(currentProvider.adapterType);
@@ -270,8 +272,9 @@ export class BibLensSettingTab extends PluginSettingTab {
 						const raw = a.listAvailable(resp.text);
 						const entries = raw.map(e => {
 							const cat = currentProvider.translations.find(c => c.remoteId === e.remoteId);
-							return cat ? { ...e, displayName: cat.displayName, language: cat.language } : e;
+							return cat ? { ...cat } : e;
 						});
+						liveTranslEntries = entries;
 						selectedTranslId = populateDrop(translDropRef, currentProvider, entries);
 						downloadBtnRef.setDisabled(!selectedTranslId);
 					} catch (e) {
@@ -298,7 +301,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 				btn.setDisabled(!selectedTranslId);
 				btn.onClick(async () => {
 					if (!selectedTranslId) return;
-					const entry = currentProvider.translations.find(e => e.id === selectedTranslId);
+					const entry = (liveTranslEntries ?? currentProvider.translations).find(e => e.id === selectedTranslId);
 					if (!entry) return;
 					btn.setDisabled(true);
 					btn.setButtonText('Downloading…');
@@ -333,7 +336,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 		const summaryEl = detailsEl.createEl('summary', { text: 'Reference formats' });
 		summaryEl.addClass('biblens-settings-summary');
 		detailsEl.createEl('p', {
-			text: 'Items shown are from the catalog. Click load to fetch the current list from the provider.',
+			text: 'Items shown are from the catalog. Click "Load" to fetch the current list from the provider and then click "Download".',
 			cls: 'setting-item-description',
 		});
 
@@ -414,6 +417,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 
 		let currentProvider: ReferenceFormatProvider = providers.find(p => p.id === selectedProviderId) ?? first;
 		let selectedFormatId: string | null = null;
+		let liveFormatEntries: RemoteReferenceFormatEntry[] | null = null;
 		let formatDropRef!: DropdownComponent;
 		let loadBtnRef!: ButtonComponent;
 		let downloadBtnRef!: ButtonComponent;
@@ -424,7 +428,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 			const source = liveEntries ?? provider.formats;
 			const entries = source.filter(e => !installedIds.has(e.id));
 			if (entries.length > 0) {
-				for (const e of entries) drop.addOption(e.id, `${e.displayName} (${e.language})`);
+				for (const e of entries) drop.addOption(e.id, e.language ? `${e.displayName} (${e.language})` : e.displayName);
 				drop.setValue(entries[0]!.id);
 				return entries[0]!.id;
 			}
@@ -442,6 +446,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 				provDrop.onChange(id => {
 					this.selectedFormatProvId = id;
 					currentProvider = providers.find(p => p.id === id) ?? first;
+					liveFormatEntries = null;
 					selectedFormatId = populateDrop(formatDropRef, currentProvider);
 					downloadBtnRef.setDisabled(!selectedFormatId);
 					const a = getReferenceFormatAdapter(currentProvider.adapterType);
@@ -463,6 +468,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 					try {
 						const resp = await requestUrl(a.listUrl(currentProvider));
 						const entries = a.listAvailable(resp.text);
+						liveFormatEntries = entries;
 						selectedFormatId = populateDrop(formatDropRef, currentProvider, entries);
 						downloadBtnRef.setDisabled(!selectedFormatId);
 					} catch (e) {
@@ -489,7 +495,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 				btn.setDisabled(!selectedFormatId);
 				btn.onClick(async () => {
 					if (!selectedFormatId) return;
-					const entry = currentProvider.formats.find(e => e.id === selectedFormatId);
+					const entry = (liveFormatEntries ?? currentProvider.formats).find(e => e.id === selectedFormatId);
 					if (!entry) return;
 					btn.setDisabled(true);
 					btn.setButtonText('Downloading…');
@@ -524,7 +530,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 		const summaryEl = detailsEl.createEl('summary', { text: 'Recognition languages' });
 		summaryEl.addClass('biblens-settings-summary');
 		detailsEl.createEl('p', {
-			text: 'Items shown are from the catalog. Click load to fetch the current list from the provider.',
+			text: 'Items shown are from the catalog. Click "Load" to fetch the current list from the provider and then click "Download".',
 			cls: 'setting-item-description',
 		});
 
@@ -605,6 +611,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 
 		let currentProvider: LanguagePackProvider = providers.find(p => p.id === selectedProviderId) ?? first;
 		let selectedPackId: string | null = null;
+		let livePackEntries: RemoteLanguagePackEntry[] | null = null;
 		let packDropRef!: DropdownComponent;
 		let loadBtnRef!: ButtonComponent;
 		let downloadBtnRef!: ButtonComponent;
@@ -615,7 +622,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 			const source = liveEntries ?? provider.packs;
 			const entries = source.filter(e => !installedIds.has(e.id));
 			if (entries.length > 0) {
-				for (const e of entries) drop.addOption(e.id, `${e.displayName} (${e.language})`);
+				for (const e of entries) drop.addOption(e.id, e.language ? `${e.displayName} (${e.language})` : e.displayName);
 				drop.setValue(entries[0]!.id);
 				return entries[0]!.id;
 			}
@@ -633,6 +640,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 				provDrop.onChange(id => {
 					this.selectedLangProvId = id;
 					currentProvider = providers.find(p => p.id === id) ?? first;
+					livePackEntries = null;
 					selectedPackId = populateDrop(packDropRef, currentProvider);
 					downloadBtnRef.setDisabled(!selectedPackId);
 					const a = getLanguagePackAdapter(currentProvider.adapterType);
@@ -654,6 +662,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 					try {
 						const resp = await requestUrl(a.listUrl(currentProvider));
 						const entries = a.listAvailable(resp.text);
+						livePackEntries = entries;
 						selectedPackId = populateDrop(packDropRef, currentProvider, entries);
 						downloadBtnRef.setDisabled(!selectedPackId);
 					} catch (e) {
@@ -680,7 +689,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 				btn.setDisabled(!selectedPackId);
 				btn.onClick(async () => {
 					if (!selectedPackId) return;
-					const entry = currentProvider.packs.find(e => e.id === selectedPackId);
+					const entry = (livePackEntries ?? currentProvider.packs).find(e => e.id === selectedPackId);
 					if (!entry) return;
 					btn.setDisabled(true);
 					btn.setButtonText('Downloading…');

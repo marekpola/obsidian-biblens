@@ -39,7 +39,8 @@
 }
 
 .biblens-install-row .biblens-install-fixed {
-	flex-shrink: 0;
+	flex: 0 0 auto;
+	width: auto;
 }
 
 .biblens-popover {

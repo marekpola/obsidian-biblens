@@ -187,7 +187,7 @@ const biblensCatalogFormatAdapter: ReferenceFormatAdapter = {
 	},
 };
 
-type BiblensIndexItem = { id: string; displayName: string; language: string };
+type BiblensIndexItem = { id: string; displayName: string; lang: string };
 type BiblensIndex    = { items: BiblensIndexItem[] };
 
 const biblensDataTranslationAdapter: SourceAdapter = {
@@ -218,7 +218,7 @@ const biblensDataTranslationAdapter: SourceAdapter = {
 		return (parsed.items ?? []).map(item => ({
 			id: item.id,
 			displayName: item.displayName,
-			language: item.language,
+			language: item.lang,
 			remoteId: item.id,
 		}));
 	},
@@ -239,7 +239,7 @@ const biblensDataLanguagePackAdapter: LanguagePackAdapter = {
 		return (parsed.items ?? []).map(item => ({
 			id: item.id,
 			displayName: item.displayName,
-			language: item.language,
+			language: item.lang,
 			remoteId: item.id,
 		}));
 	},
@@ -260,7 +260,7 @@ const biblensDataReferenceFormatAdapter: ReferenceFormatAdapter = {
 		return (parsed.items ?? []).map(item => ({
 			id: item.id,
 			displayName: item.displayName,
-			language: item.language,
+			language: item.lang,
 			remoteId: item.id,
 		}));
 	},
