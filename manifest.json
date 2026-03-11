@@ -3,7 +3,7 @@
 	"name": "BibLens",
 	"version": "1.0.0",
 	"minAppVersion": "1.5.0",
-	"description": "Preview Bible passages on hover from local vault sources.",
+	"description": "Detects Bible references, displays verse or passage text on hover, and lets you insert it into your note.",
 	"author": "Marek Polášek",
 	"authorUrl": "https://github.com/marekpola",
 	"isDesktopOnly": false
