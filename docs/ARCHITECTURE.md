@@ -9,21 +9,28 @@ This document describes the architecture of the BibLens plugin used by AI agents
 ## Modules
 - src/main.ts
   - Obsidian integration: plugin lifecycle, commands, registrations
-  - Exposes `reloadTranslation()` — mutates `translationData` in-place so all consumers (editor extensions, hover) see updated data without re-registration
-  - Registers CM6 extensions via `this.registerEditorExtension([...])`
-  - Calls `loadTranslation` on `onload()`; stores `translationData`; passes it to UI layers
+  - Stores `allTranslationData: Record<string, TranslationData>` — keyed by translation id; holds all priority-numbered translations loaded at startup
+  - On `onload()`: calls `migratePreferredTranslation` (from `translationOrder.ts`), then loads all priority-numbered translations in parallel via `loadTranslation`; stores results in `allTranslationData`
+  - `reloadAllTranslations()` — re-runs parallel load; updates `allTranslationData` in-place so all consumers see updated data without re-registration
+  - Derives ordered active-translation list via `getActiveTranslations(settings, allTranslationData)` (from `translationOrder.ts`) and passes it to command factories and hover/tooltip builders
   - Loads active language pack via `languagePackLoader.ts`; uses empty `AbbreviationMap` (no-op scanner) if none selected or load fails
   - Loads active reference format pack via `referenceFormatLoader.ts`; passes `undefined` (no-op scanner) if none selected or load fails
   - Builds `AbbreviationMap` from language pack data (USFM keys read directly)
   - Builds `RefScanner` via `buildRefScanner(map, formatRules, settings.parsingRules)` and passes it to editor extension factories; passes active `ReferenceFormatRules` as `refFormat` to `refTooltipExtension`, `insertAfterLastRefCommand`, and `replaceLastRefWithQuoteCommand`; also passes `refFormat` to `getVerses` when building Reading View hover content (before calling `PopoverManager.show`)
-  - Registers `biblens-insert-verse` command via `this.addCommand(...)`
+  - Registers `biblens-insert-verse`, `biblens-replace-ref-with-quote`, and `biblens-insert-book-abbreviation` commands via `this.addCommand(...)`
+- src/translationOrder.ts
+  - Pure module (no Obsidian imports)
+  - Exports: `migratePreferredTranslation(settings): boolean` — one-time migration from `preferredTranslation` to `translationOrder`; returns `true` if migration was applied
+  - Exports: `getActivePriority1Id(settings): string | undefined` — returns the translation id with priority `1`
+  - Exports: `getActiveTranslations(settings, allData: Record<string, TranslationData>): { id: string; abbreviation: string; data: TranslationData }[]` — returns entries from `allData` sorted by priority number; abbreviation defaults to translation `id` when not set in `translationAbbreviations`
 - src/settingsTab.ts
   - `BibLensSettingTab` class: Obsidian settings UI; imported and registered by `main.ts`
   - `display()` issues a single `Promise.all` over `loadCatalog`, `listAvailableTranslations`, `listAvailableReferenceFormats`, and `listAvailableLanguagePacks`; runs auto-default checks on the resolved data; then renders all sections with consistent, settled values
-  - Auto-default: if `settings.preferredTranslation`, `settings.standardReferenceFormat`, or `settings.preferredLanguage` is empty and at least one item of that type is installed, the first item is automatically set as default (save + reload); runs in `display()` before any section renders; covers first install, manual file drop, and active-item deletion
+  - Auto-default: for translations, if `translationOrder` has no entry with value `1` and at least one translation is installed, priority `1` is assigned to the first installed translation (save + reload); for reference format and language pack, if `settings.standardReferenceFormat` or `settings.preferredLanguage` is empty and at least one item of that type is installed, the first item is set as default; runs in `display()` before any section renders
   - `renderGeneral(status)` accepts resolved display names and renders three read-only status rows (Translation · Reference format · Recognition language) plus the Parsing rules dropdown; no dropdowns for asset selection
   - `renderInstalledTranslations`, `renderInstalledFormats`, `renderInstalledLanguages` each receive their pre-fetched list data as a parameter; no internal list calls
-  - "Set as default" buttons in the collapsible sections are the sole interactive path for changing the active item of each type
+  - Translation rows: abbreviation text field + priority dropdown + Delete button; priority dropdown is the sole path for changing active translation and ordering; no "Set as default" button
+  - Reference format and language pack rows: "Set as default" button + Delete button (unchanged from v1.0)
 - src/parser.ts
   - Pure parsing functions (no Obsidian imports)
   - Exports: `scanRefs`, `formatRef`, `RefMatch`
@@ -131,7 +138,17 @@ This document describes the architecture of the BibLens plugin used by AI agents
     - Returns a `<div class="biblens-verse-content">` containing verse entries as `<sup>label</sup> text` nodes
     - Entries with `chapterBreak: true` are preceded by a `<br>` element instead of a space, marking the chapter boundary
     - When `entries` is empty, returns a div containing `<em>No verse found.</em>`
+  - Exports: `buildMultiTranslationDOM(blocks: { abbreviation: string; entries: VerseEntry[] }[], refFormat?: ReferenceFormatRules): HTMLElement`
+    - Single verse / single-chapter ref: stacked layout — each block as `abbr label text`, separated by `<hr>`
+    - Multi-verse / chapter-range ref: paged layout — one page per translation, prev/next navigation, page heading shows abbreviation; resets to first page on each open
+    - Empty `entries` in a block: shows abbreviation only, no verse text
+    - All DOM construction via `createElement`/`textContent`; no `innerHTML`; no Obsidian imports
   - Used by both `hover.ts` (via main.ts) and `refTooltip.ts`
+- src/ui/bookAbbreviationModal.ts
+  - Obsidian-aware; may import from `obsidian` (extends `SuggestModal<string>`)
+  - Exports: `BookAbbreviationModal` — filterable modal listing canonical book abbreviations from the active reference format pack; inserts the selected abbreviation at the cursor via a callback
+  - Falls back to USFM ids when no format pack is active (empty `formatBooks`)
+  - No `innerHTML`
 - src/ui/hover.ts
   - `PopoverManager` class: DOM popover creation, positioning, and teardown
   - `show(anchor: HTMLElement, content: HTMLElement): void` — creates popover, positions it, sets up `mouseenter`/`mouseleave` on the popover element to track hover state
@@ -168,6 +185,8 @@ This document describes the architecture of the BibLens plugin used by AI agents
 - books.ts must not import from 'obsidian'
 - ui/hover.ts must not import from 'obsidian'
 - ui/verseDOM.ts must not import from 'obsidian'
+- src/translationOrder.ts must not import from 'obsidian'
+- src/ui/bookAbbreviationModal.ts may import from 'obsidian' (extends SuggestModal)
 - editor/*.ts must not import from 'obsidian'; may import from `@codemirror/*` (provided by Obsidian host)
 - src/editor/scannerState.ts must not import from 'obsidian'; may import from `@codemirror/*`
 - translationLoader.ts may import from 'obsidian'
