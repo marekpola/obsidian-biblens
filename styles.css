@@ -83,6 +83,10 @@
 	border-radius: var(--radius-s, 2px);
 }
 
+.biblens-book-abbr-modal {
+	max-width: 280px;
+}
+
 .biblens-popover {
 	position: fixed;
 	z-index: 1000;

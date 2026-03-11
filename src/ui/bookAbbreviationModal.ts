@@ -9,6 +9,7 @@ export class BookAbbreviationModal extends SuggestModal<string> {
 		super(app);
 		this.formatBooks = formatBooks;
 		this.onChoose = onChoose;
+		this.modalEl.addClass('biblens-book-abbr-modal');
 	}
 
 	getSuggestions(query: string): string[] {
