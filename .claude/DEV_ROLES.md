@@ -35,7 +35,6 @@ Rules:
 - Do not modify architecture documents.
 - Tasks must respect module boundaries defined in `docs/ARCHITECTURE.md`.
 - Tasks must be small enough to be implemented in one development step.
-- Do not move tasks to Active; that is the Manager's responsibility.
 - Prefer extending existing modules instead of creating new ones.
 - If the proposal is too vague or too large to slice into tasks, flag it to Manager rather than creating poor tasks.
 
@@ -61,7 +60,6 @@ Add a row to the index in `.claude/TASKS.md`:
 | XX | Short title | Next | [TXxx](Tasks/TXxx.md) |
 ```
 
-- show `git diff`
 
 ---
 

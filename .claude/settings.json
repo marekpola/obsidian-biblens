@@ -27,7 +27,9 @@
       "Edit(.claude/DESIGN_ROLES.md)",
       "Write(.claude/DESIGN_ROLES.md)",
       "Edit(src/*.ts)",
-      "Write(src/*.ts)"
+      "Write(src/*.ts)",
+      "Edit(.claude/Tasks/*.md)",
+      "Write(.claude/Tasks/*.md)"
     ]
   },
   "hooks": {
