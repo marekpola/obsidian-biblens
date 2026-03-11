@@ -240,14 +240,15 @@ Once accepted, the Analyst moves each chapter into the appropriate version secti
 **User need:** Users with multiple translations installed want to control which translations appear in the hover pop-up, in what order, and under what short label.
 
 **Proposed behaviour:**
-- Each row in the **Installed translations** list gains two new controls placed to the left of the Delete button:
+- Each row in the **Installed translations** list gains two new controls. Layout left to right: `[abbreviation field] [priority dropdown] [Delete button]`.
+  - An **abbreviation text field** pre-filled with the translation `id` (e.g. `web`). The user may change it to any short string (e.g. `WEB`, `NIV`). Soft limit of 3 characters enforced by the UI (input beyond 3 characters is accepted but visually flagged). This abbreviation is used as a prefix label in multi-translation pop-ups and inserted text.
   - A **priority dropdown** with options `1`, `2`, `3`, … (up to the number of installed translations) and `-`. A number means "show this translation in the pop-up at this position"; `-` means "do not show this translation in the pop-up."
-  - A **abbreviation text field** pre-filled with the translation `id` (e.g. `web`). The user may change it to any short string (e.g. `WEB`, `NIV`). This abbreviation is used as a prefix label in multi-translation pop-ups and inserted text.
-- When the user changes a priority number:
-  - Any other translation previously holding that number receives the displaced number (swap), or is renumbered so that the assigned numbers remain a contiguous sequence starting at 1 with no duplicates.
+- **Initial state:** when there is exactly one installed translation it automatically receives priority `1`. When additional translations are installed they default to `-` until the user assigns them a number.
+- Priority numbers are always unique and contiguous starting from 1, with no gaps. When the user changes a number:
+  - Other translations are renumbered so the sequence remains `1, 2, 3, …` without duplicates or gaps.
   - The list reorders to reflect the new priority: translation 1 at the top, highest number at the bottom, translations with `-` below all numbered ones.
 - The order can also be changed by **drag and drop** within the installed translations list. Dragging a row updates the priority numbers to match the new visual order; translations with `-` remain below all active ones.
-- Priority and abbreviation values are persisted in plugin settings per translation id.
+- Priority and abbreviation values are persisted in plugin settings per translation id. If a translation is deleted and re-downloaded its saved priority and abbreviation are restored (keyed by translation id).
 
 **Scope notes:**
 - Priority and abbreviation apply only to translations; reference format and language pack rows are unchanged.
@@ -255,9 +256,7 @@ Once accepted, the Analyst moves each chapter into the appropriate version secti
 - Drag-and-drop uses the browser-native HTML5 drag API (available in Obsidian desktop and mobile via Electron/WKWebView); no external library required.
 - New fields needed in settings: `translationOrder: Record<string, number | null>` and `translationAbbreviations: Record<string, string>`.
 
-**Open questions:**
-- Should the abbreviation field have a character limit? Recommendation: soft limit of 8 characters enforced by UI only.
-- When a translation is deleted and re-downloaded, should its saved priority and abbreviation be restored? Recommendation: yes — keyed by translation id.
+**Open questions:** none.
 
 ---
 
@@ -283,44 +282,48 @@ Once accepted, the Analyst moves each chapter into the appropriate version secti
     - Navigation arrows (previous / next) allow switching between translation pages.
     - The current translation abbreviation is shown as the page heading.
     - Page state resets to the first translation each time a new pop-up is opened.
+- If a verse or passage is not found in a given translation, that translation block shows the translation abbreviation only — no verse text and no error message.
 - The pop-up remains scrollable (v1.0 behaviour preserved) within each page.
 - Text selection continues to work within the visible content.
 
 **Scope notes:**
 - "Active translations" are those with a priority number set (not `-`), ordered by priority.
+- Translations are separated by a full-width horizontal rule (`<hr>`), consistent with Obsidian's native `<hr>` style.
 - The single-verse path requires fetching verse text from all active translations; translation data for each must be loaded and cached in memory (parallel to how v1.0 caches a single `TranslationData`).
 - The paged-view path requires a lightweight page controller in the DOM builder; no third-party UI library.
 - Both Reading View popover and editor tooltip should reflect the same multi-translation layout.
 - This feature depends on **Translation Display Priority and Abbreviation Settings** being implemented first.
 
-**Open questions:**
-- Should the horizontal rule separator be full-width or indented? Recommendation: full-width, consistent with Obsidian's native `<hr>` style.
-- If a verse is missing in one translation, should that translation be skipped silently or show a placeholder? Recommendation: show a brief "not available" placeholder so the user knows the translation was checked.
+**Open questions:** none.
 
 ---
 
-### Insert All Translations Command
+### Insert Commands — Multi-Translation Behaviour
 
 **Status:** Proposed
 
-**User need:** Users want to capture the full multi-translation pop-up content as text in their note with a single command, mirroring what the hover pop-up shows.
+**User need:** Users want fine-grained control over what is inserted: a quick single-translation insert for the primary source, and a full multi-translation insert when capturing a comparative study.
 
 **Proposed behaviour:**
-- Two new commands are added, parallel to the existing single-translation insert commands:
-  - `BibLens: Insert all translations after previous reference` — appends text for all active translations after the last reference before the cursor. Each translation is on its own line, prefixed by its abbreviation and the reference: `web Ex 1,1 — verse text` followed by `niv Ex 1,1 — verse text`.
-  - `BibLens: Replace previous reference with all-translation quote` — replaces the last reference before the cursor with a block quote containing each active translation on its own line: `> web Ex 1,1 verse text` / `> niv Ex 1,1 verse text`.
-- When only one translation is active, these commands produce output identical to the existing single-translation commands (no visible change for users who have not configured multiple translations).
-- The reference used as the label for each line uses the translation's configured abbreviation (from the abbreviation field in Settings).
-- Command order and output order both follow the priority order defined in Settings.
+- The two existing commands change behaviour when multiple translations are active:
+  - `BibLens: Insert verse after previous reference` — inserts the verse text from the **priority-1 translation only**, appended after the last reference before the cursor (` — abbr verse text`). Behaviour is identical to v1.0 except the active translation is always the priority-1 one.
+  - `BibLens: Replace previous reference with quote` — replaces the last reference before the cursor with a block quote containing **all active translations** in priority order, one per line, separated by a single newline:
+    ```
+    > web Ex 1,1 verse text
+    > niv Ex 1,1 verse text
+    ```
+- When only one translation is active (priority 1, all others `-`), both commands produce output identical to v1.0.
+- When translation returns no text, nothing is put into quote.
+- Each line uses the translation's configured abbreviation (from the abbreviation field in Settings) followed by the formatted reference and the verse text.
+- If a verse is not found in a given translation, that translation's line is omitted from the inserted text.
 
 **Scope notes:**
-- These commands operate on the last reference before the cursor, using the same cursor-relative logic as the existing insert commands (D018).
-- Implementation follows the existing `insertVerse.ts` pattern; the multi-translation variant iterates active translations in priority order and concatenates their output.
-- This feature depends on **Translation Display Priority and Abbreviation Settings** and **Multi-Translation Hover Pop-up** being implemented first.
-- Existing commands (`Insert verse after previous reference`, `Replace previous reference with quote`) are unchanged.
+- Both commands use the same cursor-relative "last reference before cursor" logic as v1.0 (D018).
+- `Insert verse after previous reference` requires no iteration — it reads the priority-1 translation only; implementation change is minimal.
+- `Replace previous reference with quote` iterates active translations in priority order; implementation extends the existing `replaceLastRefWithQuoteCommand` factory.
+- This feature depends on **Translation Display Priority and Abbreviation Settings** being implemented first.
 
-**Open questions:**
-- Should there be a blank line between translations in the inserted text, or only a newline? Recommendation: single newline only, keeping the block compact.
+**Open questions:** none.
 
 ### Insert Book Abbreviation
 
@@ -329,17 +332,18 @@ Once accepted, the Analyst moves each chapter into the appropriate version secti
 **User need:** Users who cannot recall the canonical abbreviation for a book can insert it directly at the cursor without typing it manually.
 
 **Proposed behaviour:**
-- Command `BibLens: Insert book abbreviation` opens a filterable `SuggestModal` showing all canonical book abbreviations from the active reference format pack as `<abbreviation> — <full book name>` (e.g. `Gen — Genesis`).
-- The user filters by typing any part of the abbreviation or book name.
+- Command `BibLens: Insert book abbreviation` opens a filterable `SuggestModal` listing all canonical book abbreviations from the active reference format pack (e.g. `Gen`, `Ex`, `Mt`).
+- The user filters by typing any part of the abbreviation string.
 - Selecting an entry inserts the abbreviation at the cursor in the active editor.
 - No-op (shows a Notice) when invoked outside an editing context (e.g. Reading View, no active editor).
 - Falls back to USFM identifiers (e.g. `GEN`) when no format pack is active.
 
 **Scope notes:**
+- The current data model (`ReferenceFormatRules.books`) maps USFM id → canonical display abbreviation only; full book names are not stored. The modal therefore shows abbreviations only — there is no "full name" column. Filtering is limited to matching against the abbreviation string.
+- Future improvement: if a recognition language pack is active its `aliases` list includes full-name strings (e.g. `Genesis`, `Exodus`) which could be surfaced alongside the abbreviation for richer filtering. This is not in scope for the initial implementation.
 - Uses Obsidian's built-in `SuggestModal`; works on desktop and mobile.
 - Reads abbreviations from `ReferenceFormatRules.books`; no new data source needed.
 - Insertion uses a CM6 transaction (same pattern as existing insert commands); no `innerHTML`.
 - Source modules: `src/main.ts` (command registration), `src/ui/bookAbbreviationModal.ts` (new).
 
-**Open questions:**
-- Should the modal show both abbreviation and full name, or abbreviation only? Recommendation: show both for discoverability.
+**Open questions:** none.
