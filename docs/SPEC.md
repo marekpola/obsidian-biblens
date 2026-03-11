@@ -252,9 +252,12 @@ Once accepted, the Analyst moves each chapter into the appropriate version secti
 
 **Scope notes:**
 - Priority and abbreviation apply only to translations; reference format and language pack rows are unchanged.
+- **Priority 1 replaces `settings.preferredTranslation`**: the translation with priority 1 is the default/active translation used everywhere in v1.0 (hover pop-up when single translation, insert commands). `settings.preferredTranslation` is retired; the active translation is always derived from `translationOrder`. On upgrade from v1.0, the existing `preferredTranslation` value is used to initialise priority 1; the field is then removed from settings.
+- The **"Set as default"** button in the installed translations list is removed — assigning priority 1 via the dropdown serves this role.
+- The existing auto-default mechanism (D025) that sets `preferredTranslation` when empty is extended: on first install (or after all priorities are cleared), the first installed translation automatically receives priority 1 in `translationOrder`.
 - When only one translation has a priority number (all others are `-`), the pop-up behaves identically to v1.0 (no label prefix, no separator lines).
 - Drag-and-drop uses the browser-native HTML5 drag API (available in Obsidian desktop and mobile via Electron/WKWebView); no external library required.
-- New fields needed in settings: `translationOrder: Record<string, number | null>` and `translationAbbreviations: Record<string, string>`.
+- New fields needed in settings: `translationOrder: Record<string, number | null>` and `translationAbbreviations: Record<string, string>`. `preferredTranslation` is removed.
 
 **Open questions:** none.
 
@@ -289,9 +292,10 @@ Once accepted, the Analyst moves each chapter into the appropriate version secti
 **Scope notes:**
 - "Active translations" are those with a priority number set (not `-`), ordered by priority.
 - Translations are separated by a full-width horizontal rule (`<hr>`), consistent with Obsidian's native `<hr>` style.
-- The single-verse path requires fetching verse text from all active translations; translation data for each must be loaded and cached in memory (parallel to how v1.0 caches a single `TranslationData`).
+- **Multi-translation data loading:** `main.ts` currently stores a single `translationData` object. Supporting multiple active translations requires storing a map of all priority-numbered translations (`Record<string, TranslationData>`). The `reloadTranslation()` mechanism must be extended to handle per-translation reloads. This is the largest implementation change in v1.1.
+- **`buildVerseDOM` extension:** the multi-translation stacked and paged layouts are structurally different from the current single-translation `VerseEntry[]` input. Implementation will require either a meaningful extension of `buildVerseDOM` or a parallel DOM-builder function for the multi-translation case, keeping the existing single-translation path unchanged.
+- **Paged view in editor tooltip:** the Reading View `PopoverManager` uses `_popoverHovered` tracking (D024) to keep the pop-up alive while the user interacts with it. CM6's `hoverTooltip` dismisses when the mouse leaves the decorated token range; whether paged navigation arrows remain reachable in the editor tooltip is an open implementation question. If not viable, the paged view may be limited to the Reading View popover; the editor tooltip would show a simplified multi-translation layout for multi-verse passages.
 - The paged-view path requires a lightweight page controller in the DOM builder; no third-party UI library.
-- Both Reading View popover and editor tooltip should reflect the same multi-translation layout.
 - This feature depends on **Translation Display Priority and Abbreviation Settings** being implemented first.
 
 **Open questions:** none.
@@ -320,7 +324,7 @@ Once accepted, the Analyst moves each chapter into the appropriate version secti
 **Scope notes:**
 - Both commands use the same cursor-relative "last reference before cursor" logic as v1.0 (D018).
 - `Insert verse after previous reference` requires no iteration — it reads the priority-1 translation only; implementation change is minimal.
-- `Replace previous reference with quote` iterates active translations in priority order; implementation extends the existing `replaceLastRefWithQuoteCommand` factory.
+- `Replace previous reference with quote` iterates active translations in priority order; implementation extends the existing `replaceLastRefWithQuoteCommand` factory. The factory signature changes from `(scanner, data, refFormat)` to an ordered list of `{ abbreviation: string; data: TranslationData }` pairs plus `refFormat`; `insertVerse.ts` remains a pure module.
 - This feature depends on **Translation Display Priority and Abbreviation Settings** being implemented first.
 
 **Open questions:** none.
