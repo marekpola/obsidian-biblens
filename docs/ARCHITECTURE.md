@@ -6,43 +6,6 @@ This document describes the architecture of the BibLens plugin used by AI agents
 - Keep mobile compatibility.
 - Keep changes incremental (MVP first).
 
-## Module Paths
-
-All source files live under `src/`:
-- src/main.ts
-- src/settingsTab.ts
-- src/parser.ts
-- src/types.ts
-- src/settings.ts
-- src/books.ts
-- src/provider.ts
-- src/translationLoader.ts
-- src/translationRegistry.ts
-- src/translationManager.ts
-- src/packManager.ts
-- src/sources/catalog.ts
-- src/sources/adapters.ts
-- src/sources/catalogManager.ts
-- src/osisMapping.ts
-- src/languagePackLoader.ts
-- src/languagePackRegistry.ts
-- src/referenceFormatLoader.ts
-- src/referenceFormatRegistry.ts
-- src/ui/hover.ts
-- src/ui/verseDOM.ts
-- src/editor/refDecorations.ts
-- src/editor/refTooltip.ts
-- src/editor/insertVerse.ts
-
-Translation data files live under `translations/` in the plugin directory (not in `src/`):
-- translations/*.json  (additional translations dropped by user or downloaded)
-
-Recognition language pack files live under `recognition-languages/` in the plugin directory:
-- recognition-languages/*.json  (book names and aliases per language)
-
-Reference format pack files live under `reference-formats/` in the plugin directory:
-- reference-formats/*.json  (notation rules per reference style)
-
 ## Modules
 - src/main.ts
   - Obsidian integration: plugin lifecycle, commands, registrations
@@ -645,22 +608,6 @@ Remote catalog file shape — `schemaVersion: 2` (stored in `biblens-data` repo 
 ```
 
 `schemaVersion` allows breaking catalog changes to be detected. Older plugin versions (expecting `schemaVersion: 1`) will reject a v2 catalog and fall back to bundled `KNOWN_PROVIDERS`.
-
-## Existing stubs (do not rename)
-
-- `src/parser.ts` exports: `parseCzechBibleRef(input: string): ParseResult`
-- `src/parser.ts` exports: `scanRefs(text: string): RefMatch[]`
-- `src/parser.ts` exports: `formatRef(ref: BibleRef, refFormat?: ReferenceFormatRules): string` — when `refFormat` is provided, uses `refFormat.books[ref.bookId]` for the abbreviation and `refFormat.chapterVerseSeparator`, `refFormat.rangeSeparator`, `refFormat.bookChapterSeparator` for separators; falls back to built-in English defaults when omitted
-- `src/parser.ts` exports: `buildRefScanner(map: AbbreviationMap, format?: ReferenceFormatRules, mode?: ParsingMode): RefScanner`
-- `src/provider.ts` exports: `getVerses(data: TranslationData, ref: BibleRef, refFormat?: ReferenceFormatRules): VerseEntry[]`
-- `src/ui/hover.ts` exports: `PopoverManager` (methods: `show`, `requestHide`, `hide`)
-- `src/ui/verseDOM.ts` exports: `buildVerseDOM(entries: VerseEntry[]): HTMLElement`
-- `src/editor/scannerState.ts` exports: `scannerEffect: StateEffect<RefScanner>`, `scannerField: StateField<RefScanner>`
-- `src/editor/refDecorations.ts` exports: `refDecorationsExtension(): Extension`
-- `src/editor/refTooltip.ts` exports: `refTooltipExtension(data: TranslationData, refFormat?: ReferenceFormatRules): Extension`
-- `src/editor/insertVerse.ts` exports: `insertAfterLastRefCommand(scanner: RefScanner, data: TranslationData, refFormat?: ReferenceFormatRules): Command`
-- `src/editor/insertVerse.ts` exports: `replaceLastRefWithQuoteCommand(scanner: RefScanner, data: TranslationData, refFormat?: ReferenceFormatRules): Command`
-- `src/translationRegistry.ts` exports: `listAvailableTranslations(adapter: DataAdapter, pluginDir: string): Promise<TranslationMeta[]>`
 
 ## Build
 - esbuild bundles to main.js

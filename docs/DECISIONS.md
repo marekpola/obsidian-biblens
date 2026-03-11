@@ -1,22 +1,5 @@
 # Decisions
 
-## D001 – MVP scope: placeholder only, no Bible text data *(superseded by D009)*
-Decision: MVP will only detect references and show placeholder content (no real Bible text retrieval).
-Reason: keep initial release small, avoid data licensing/storage questions, and validate UX first.
-Consequences:
-- Task 3 hover preview shows "Detected reference: …" only.
-Superseded by: D009 (Tasks 6–7 promote real verse text to MVP scope).
-Date: 2026-03-04
-
-## D002 – Reference format for MVP: Czech abbreviations and comma notation
-Decision: MVP parser supports Czech-style abbreviations and punctuation: "Mt 1,3", "Gn 22,1-19", "Iz 11".
-Reason: aligns with the author's workflow and allows a minimal parser and hover UX.
-Consequences:
-- Parser focuses on one regex/grammar and returns a structured BibleRef.
-- Other notations (e.g., "Gen 22:1-19") are deferred to a later task.
-Revisit: when adding configurable abbreviation systems and separators.
-Date: 2026-03-04
-
 ## D003 – BibleRef shape: flat object, no verse range as separate type
 Decision: BibleRef uses a flat object with optional chapterEnd/verseEnd fields rather than a nested range type.
 The book field is named `bookId` (canonical internal identifier, not the raw input abbreviation).
@@ -31,26 +14,6 @@ Consequences:
 - Callers must check `result.ok` before accessing `result.ref`.
 - Parser must not throw on invalid input — return `{ ok: false, error: '...' }` instead.
 Revisit: if a richer error model (error codes, positions) is needed later.
-Date: 2026-03-04
-
-## D005 – Task 2 test cases documented in TESTPLAN.md, not a separate test file
-Decision: Parser test cases for Task 2 are added to TESTPLAN.md as manual verification steps.
-Reason: no test runner is configured for MVP; keeps testing lightweight and consistent with Task 1 approach.
-Consequences:
-- No `.test.ts` files until a unit test runner is introduced.
-- TESTPLAN.md is the single source of truth for test cases.
-Revisit: when adding a unit test runner (e.g., vitest).
-Date: 2026-03-04
-
-## D006 – bookId as canonical internal book identifier in OSIS format
-Decision: The `BibleRef.book` field is renamed to `bookId`. Input abbreviations (e.g., "Mt", "Gn", "Iz") are mapped to a canonical `bookId` string in OSIS format (e.g., "MAT", "GEN", "ISA") before being stored in `BibleRef`.
-*Note: D019 clarifies that the identifier standard in use is USFM 3.0, not OSIS. The identifiers are identical in practice (uppercase 2–3 char, e.g. `GEN`, `MAT`), but the correct formal reference is USFM 3.0.*
-Reason: separates user-facing notation from the internal representation; OSIS is a well-established standard for Bible book identifiers, enabling interoperability with future data providers; enables future support for multiple abbreviation systems without changing downstream consumers.
-Consequences:
-- `src/types.ts` defines `bookId: string` in BibleRef (not `book`); values are OSIS IDs.
-- Task 2 parser must perform abbreviation → OSIS bookId mapping (even if minimal for MVP).
-- Task 4 (Internal Abbreviation Mapping) formalises the full mapping module.
-Revisit: when abbreviation systems become configurable.
 Date: 2026-03-04
 
 ## D007 – Use CM6 ViewPlugin for editor reference decorations (Task 4)
@@ -125,45 +88,6 @@ Consequences:
 - `main.ts` reads `settings.preferredTranslation` on load and reloads on settings change
 - `translationLoader.ts` interface is unchanged
 Revisit: when a full settings UI with translation manager (list, download, delete) is built.
-Date: 2026-03-05
-
-## D013 – Abbreviation map parameterization: scanner factory pattern
-Decision: The parser regex is compiled from the active abbreviation map at startup via a new
-`buildRefScanner(map: AbbreviationMap): RefScanner` factory in `src/parser.ts`.
-Editor extensions (`refDecorationsExtension`, `refTooltipExtension`) change from exported values
-to exported factory functions that accept the scanner as a parameter, removing the static import of `scanRefs`.
-User-defined abbreviations are stored in `settings.customAbbreviations` and merged with built-in
-defaults by `buildAbbreviationMap(custom)` in `src/books.ts`. Custom entries win on conflict.
-Reason: D006 deferred this; D002 hardcoded Czech abbreviations. This is the minimal generalization
-that enables user configuration without redesigning the parser internals. Compiling once at startup
-satisfies the performance constraint (no regex allocation in hot loops).
-Consequences:
-- `src/books.ts` exports `type CustomAbbreviations = Record<string, BookId>` and `buildAbbreviationMap(custom)`
-- `src/parser.ts` exports `type RefScanner = { scan(text: string): RefMatch[] }` and `buildRefScanner(map): RefScanner`
-- Abbreviation keys are regex-escaped before insertion into the compiled pattern
-- `refDecorationsExtension(scanner): Extension` — factory function
-- `refTooltipExtension(scanner, data): Extension` — factory function
-- `src/settings.ts` gains `customAbbreviations: CustomAbbreviations`
-- `main.ts` builds the scanner on load and after settings change
-Supersedes: D002 (hardcoded Czech abbreviations become the built-in default set, not the only set).
-Revisit: when a UI editor for abbreviation lists is built.
-Date: 2026-03-05
-
-## D014 – Verse insertion as a CM6 command; insertion format configurable
-Decision: A new `src/editor/insertVerse.ts` module exports a CM6 command factory
-`insertVerseCommand(scanner: RefScanner, data: TranslationData): Command`.
-The command finds the reference spanning the cursor on the current line, retrieves verses via `getVerses`,
-and inserts the formatted text via a CM6 transaction dispatch.
-The exact insertion format (inline append / blockquote on next line / replace reference) is deferred
-to a `settings.verseInsertionFormat` option defined in a later task.
-Reason: All required machinery (parser, provider, CM6 editor access) already exists.
-A command factory pattern keeps the module free of Obsidian imports and independently testable.
-Consequences:
-- `src/editor/insertVerse.ts` — no Obsidian imports; uses CM6 only
-- `main.ts` registers the command via `this.addCommand({ id: 'biblens-insert-verse', ... })`
-- Insertion format default: append verse text on the same line separated by ` — `
-- No insertion occurs if the cursor is not on a detected reference
-Revisit: when settings UI exposes the insertion format option.
 Date: 2026-03-05
 
 ## D015 – Translation source catalog and per-provider adapter pattern
@@ -444,24 +368,6 @@ Consequences:
 
 Date: 2026-03-09
 
-## D022 – Separate `biblens-data` repository for distributable data packages
-
-Decision: Distributable data packages (translations, language packs, reference format packs) are maintained in a dedicated `biblens-data` repository, separate from the main BibLens plugin source.
-
-The repository is data-oriented: no plugin runtime logic is stored there.
-
-The plugin's `CATALOG_REMOTE_URL` constant points to `catalog/catalog.json` in this repository.
-
-Reason: Separating data from plugin code allows resources to be published without a plugin release, enables independent licensing per resource, and makes community contributions to datasets easier to manage. The adapter boundary ensures the remote repository contains only data — no executable logic can be introduced remotely.
-
-Consequences:
-- `CATALOG_REMOTE_URL` in `src/sources/catalogManager.ts` points to the `biblens-data` repo, not the main BibLens repo
-- `catalog/catalog.json` in `biblens-data` is the source-of-truth; `KNOWN_PROVIDERS` in the plugin is regenerated from it at each release
-- Plugin code, plugin data, and data contributions evolve on independent release cycles
-
-Superseded by (repository layout): D027.
-Date: 2026-03-09
-
 ## D027 – Migrate sourcing to biblens-data: flat resource layout, unified adapter type, openbibleinfo removed
 
 Decision: All downloadable resource types (translations, language packs, reference format packs) served from the `biblens-data` repository use a single flat file layout and a new `"biblens-data"` adapter type. The `"openbibleinfo"` provider is removed from language pack and reference format downloads. The `"biblens-catalog"` adapter type is removed and replaced by `"biblens-data"`.
@@ -546,22 +452,6 @@ Consequences:
 - Bundled format pack changes from `cs-protestant` to `en`
 - `CatalogData` type defined in `src/types.ts`
 Date: 2026-03-08
-
-## D028 – Cross-chapter verse labels use bare verse numbers; chapter boundary is unlabelled *(superseded by D030)*
-
-Decision: In `getVerses`, all verse entries after the first carry a bare verse number as their label, regardless of whether the result spans multiple chapters. No chapter indicator is added when the chapter boundary is crossed.
-
-Example: `Gn 1:30-2:3` produces labels `Gn 1:30-2:3`, `31`, `1`, `2`, `3` — verse `1` belongs to chapter 2 but its label is indistinguishable from verse 1 of chapter 1.
-
-Reason: The label scheme (first = `formatRef`, rest = verse number) was established in D011 for chapter-only refs where all verses share the same chapter. Introducing chapter-qualified labels (e.g. `2:1`) for cross-chapter results would require changing the label scheme and updating all callers and the DOM builder. The existing scheme is sufficient for the current use cases (hover preview, insert command); readers who need precise verse identification can consult the first label.
-
-Consequences:
-- `provider.ts` `addChapterVerses` helper always uses `entries.length === 0` to pick the label, with no chapter context.
-- `buildVerseDOM` and callers are unchanged.
-- Reviewers and testers should be aware that label `1` in a cross-chapter result may belong to a chapter other than `chapterStart`.
-
-Superseded by: D030.
-Date: 2026-03-10
 
 ## D030 – Verse label scheme: first-verse label and chapter-boundary markers *(supersedes D028)*
 
