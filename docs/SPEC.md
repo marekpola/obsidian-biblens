@@ -369,7 +369,6 @@ The settings tab is organized into five areas in order:
 - **Installed translations** (collapsible, collapsed by default) — list of installed translations; active translation marked; Delete and Set as default buttons; “Install new” row at the bottom with provider + translation dropdowns and Download button (already-installed translations are excluded from the dropdown)
 - **Reference formats** (collapsible, collapsed by default) — list of installed format packs with Delete and Set as default buttons; “Install new” row at the bottom with provider + format dropdowns and Download button
 - **Recognition languages** (collapsible, collapsed by default) — list of installed language packs with Delete and Set as default buttons; “Install new” row at the bottom with provider + language dropdowns and Download button
-- **Advanced** — reserved for future diagnostic or reset actions
 
 **Auto-default behaviour:** when `display()` renders and the preference for any asset type is empty while at least one item of that type is installed, the first installed item is automatically set as default. This fires on first download, manual file drop (detected on next tab open), and active-item deletion (preference cleared → next available item auto-selected).
 
