@@ -512,3 +512,71 @@ Consequences:
 
 Revisit: if a background catalog-refresh mechanism is added in a future version.
 Date: 2026-03-11
+
+## D032 – v1.1: translationOrder replaces preferredTranslation; new translationOrder.ts module
+
+Decision: `settings.preferredTranslation` (introduced in D012) and the auto-default mechanism keyed to it (D025) are retired and replaced by two new settings fields and a dedicated pure module.
+
+**New settings fields (src/settings.ts):**
+- `translationOrder: Record<string, number | null>` (default `{}`) — maps translation id to priority number (1-based, contiguous, no gaps) or `null` (inactive). The translation with value `1` is the active/primary translation; translations with values `2, 3, …` are secondary active translations shown in multi-translation pop-ups; `null` means not shown.
+- `translationAbbreviations: Record<string, string>` (default `{}`) — maps translation id to user-configured short label used as prefix in pop-ups and inserted text. Defaults to the translation `id` when not explicitly set.
+- `preferredTranslation` removed.
+
+**Migration (src/translationOrder.ts → called from main.ts onload):**
+On first load with saved data: if `preferredTranslation` is present, copy it to `translationOrder[preferredTranslation] = 1`, then delete `preferredTranslation`. Save settings. The `Object.assign({}, DEFAULT_SETTINGS, saved)` merge pattern means `preferredTranslation` is ignored going forward once removed.
+
+**New pure module: src/translationOrder.ts** (no Obsidian imports):
+- `migratePreferredTranslation(settings): boolean` — performs the one-time migration; returns `true` if migration was applied.
+- `getActivePriority1Id(settings): string | undefined` — returns the id with `translationOrder[id] === 1`.
+- `getActiveTranslations(settings, allData: Record<string, TranslationData>): { id: string; abbreviation: string; data: TranslationData }[]` — returns entries from `allData` sorted by their priority number, each paired with the configured abbreviation (fallback to `id`). Entries without a priority number are excluded.
+
+**Auto-default (src/settingsTab.ts):**
+The existing auto-default mechanism is extended: if `translationOrder` has no entry with value `1` and at least one translation is installed, priority `1` is assigned to the first installed translation (save + reload). Replaces the `preferredTranslation === ''` check from D025.
+
+Reason: The priority/abbreviation model requires a richer data structure than a single `preferredTranslation` string. Extracting the ordering helpers to `translationOrder.ts` keeps `main.ts` within its lifecycle-only role and keeps the logic pure and unit-testable.
+
+Consequences:
+- `src/settings.ts`: `preferredTranslation` removed; `translationOrder` and `translationAbbreviations` added
+- `src/translationOrder.ts`: new pure module; no Obsidian imports
+- `src/main.ts`: calls `migratePreferredTranslation` on `onload`; uses `getActivePriority1Id` for initial single-translation load; uses `getActiveTranslations` to supply ordered list to consumers; stores `allTranslationData: Record<string, TranslationData>`
+- `src/settingsTab.ts`: auto-default logic updated; "Set as default" button removed from translation rows
+
+Supersedes: D012 (preferredTranslation field) and D025 (auto-default for preferredTranslation).
+Date: 2026-03-11
+
+## D033 – v1.1: Multi-translation insert command signatures
+
+Decision: The two insert command factories in `src/editor/insertVerse.ts` adopt a new ordered-list signature to support multiple active translations.
+
+**`insertAfterLastRefCommand` new signature:**
+```ts
+insertAfterLastRefCommand(
+  scanner: RefScanner,
+  activeTranslations: { id: string; abbreviation: string; data: TranslationData }[],
+  refFormat?: ReferenceFormatRules
+): Command
+```
+Reads only the first entry (priority-1 translation). Inserted text: ` — {abbr} {verse text}`. No-op when `activeTranslations` is empty.
+
+**`replaceLastRefWithQuoteCommand` new signature:**
+```ts
+replaceLastRefWithQuoteCommand(
+  scanner: RefScanner,
+  activeTranslations: { id: string; abbreviation: string; data: TranslationData }[],
+  refFormat?: ReferenceFormatRules
+): Command
+```
+Iterates all entries in priority order. For each, calls `getVerses`; if non-empty, appends `> {abbr} {Ref} {verse text}`. Translations with no verse text for the reference are silently omitted.
+
+**Output format change:** Both commands now prefix verse text with the translation abbreviation. When only one translation is active the output is functionally equivalent to v1.0 with an abbreviation prefix added.
+
+**`main.ts` call sites:** Both factories receive the result of `getActiveTranslations(settings, allTranslationData)` from `src/translationOrder.ts`.
+
+Reason: The single-translation `data: TranslationData` parameter cannot express multi-translation output. The ordered-list type is the minimal change that supports both the single-translation (list of 1) and multi-translation (list of n) cases without conditional branching in the factory.
+
+Consequences:
+- `src/editor/insertVerse.ts`: both factory signatures change; `data: TranslationData` parameter replaced by `activeTranslations` list; module remains pure (no Obsidian imports)
+- `src/main.ts`: both `addCommand` registrations updated to pass ordered list
+
+Supersedes: D023 (factory signatures and output format for insert commands).
+Date: 2026-03-11

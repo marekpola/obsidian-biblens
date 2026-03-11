@@ -43,6 +43,50 @@
 	width: auto;
 }
 
+.biblens-transl-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 0;
+	cursor: grab;
+}
+
+.biblens-transl-row-name {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.biblens-transl-row-controls {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex: 0 0 auto;
+}
+
+.biblens-transl-abbr {
+	width: 5em;
+}
+
+.biblens-abbr-over-limit {
+	outline: 2px solid var(--color-orange, orange);
+}
+
+.biblens-transl-dragging {
+	opacity: 0.4;
+}
+
+.biblens-transl-dragover {
+	outline: 2px solid var(--interactive-accent);
+	border-radius: var(--radius-s, 2px);
+}
+
+.biblens-book-abbr-modal {
+	max-width: 280px;
+}
+
 .biblens-popover {
 	position: fixed;
 	z-index: 1000;

@@ -1,4 +1,4 @@
-import { MarkdownPostProcessorContext, Notice, Plugin } from 'obsidian';
+import { MarkdownPostProcessorContext, MarkdownView, Notice, Plugin } from 'obsidian';
 import enLanguagePack from './data/en.json';
 import enSblFormatPack from './data/en-sbl.json';
 import webTranslation from './data/web.json';
@@ -12,7 +12,7 @@ import { refTooltipExtension } from './editor/refTooltip';
 import { insertAfterLastRefCommand, replaceLastRefWithQuoteCommand } from './editor/insertVerse';
 import type { TranslationData } from './provider';
 import { getVerses } from './provider';
-import { buildVerseDOM } from './ui/verseDOM';
+import { buildVerseDOM, buildMultiTranslationDOM } from './ui/verseDOM';
 import { loadTranslation } from './translationLoader';
 import { listAvailableTranslations } from './translationRegistry';
 import { loadLanguagePack } from './languagePackLoader';
@@ -22,8 +22,10 @@ import { listAvailableReferenceFormats } from './referenceFormatRegistry';
 import type { AbbreviationMap } from './books';
 import type { BibLensSettings } from './settings';
 import { DEFAULT_SETTINGS } from './settings';
+import { migratePreferredTranslation, getActivePriority1Id, getActiveTranslations } from './translationOrder';
 import type { ReferenceFormatRules } from './types';
 import { BibLensSettingTab } from './settingsTab';
+import { BookAbbreviationModal } from './ui/bookAbbreviationModal';
 
 const EXCLUDED_TAGS = new Set(['A', 'CODE', 'PRE', 'SCRIPT', 'STYLE', 'BUTTON', 'INPUT', 'TEXTAREA']);
 
@@ -48,7 +50,9 @@ function collectTextNodes(root: HTMLElement): Text[] {
 
 export default class BibLensPlugin extends Plugin {
 	private popover = new PopoverManager();
-	private translationData: TranslationData = {};
+	allTranslationData: Record<string, TranslationData> = {};
+	private readonly _translationData: TranslationData = {};
+	private readonly _activeTranslations: { id: string; abbreviation: string; data: TranslationData }[] = [];
 	settings!: BibLensSettings;
 
 	// Mutable refFormat — mutated in-place so extensions always read current state
@@ -75,17 +79,14 @@ export default class BibLensPlugin extends Plugin {
 		await this.writeStarterPackIfAbsent('recognition-languages/en.json', enLanguagePack);
 		await this.writeStarterPackIfAbsent('reference-formats/en-sbl.json', enSblFormatPack);
 		await this.writeStarterPackIfAbsent('translations/web.json', webTranslation);
+
+		if (migratePreferredTranslation(this.settings)) {
+			await this.saveSettings();
+		}
+
 		await this.applyStarterPackDefaults();
 
-		try {
-			this.translationData = await loadTranslation(
-				this.app.vault.adapter,
-				this.manifest.dir!,
-				this.settings.preferredTranslation
-			);
-		} catch (e) {
-			console.error('BibLens: failed to load translation', e);
-		}
+		await this.reloadAllTranslations();
 
 		await this.reloadScanner();
 
@@ -104,7 +105,7 @@ export default class BibLensPlugin extends Plugin {
 				const view = (editor as unknown as { cm: EditorView }).cm;
 				if (view) insertAfterLastRefCommand(
 					this.scanner,
-					this.translationData,
+					this._activeTranslations,
 					this._refFormat
 				)(view);
 			}
@@ -117,9 +118,31 @@ export default class BibLensPlugin extends Plugin {
 				const view = (editor as unknown as { cm: EditorView }).cm;
 				if (view) replaceLastRefWithQuoteCommand(
 					this.scanner,
-					this.translationData,
+					this._activeTranslations,
 					this._refFormat
 				)(view);
+			}
+		});
+
+		this.addCommand({
+			id: 'insert-book-abbreviation',
+			name: 'Insert book abbreviation',
+			checkCallback: (checking: boolean) => {
+				const mdView = this.app.workspace.getActiveViewOfType(MarkdownView);
+				if (!mdView) {
+					if (!checking) new Notice('No active editor.');
+					return false;
+				}
+				if (!checking) {
+					new BookAbbreviationModal(this.app, this._refFormat.books, (abbr) => {
+						const view = (mdView.editor as unknown as { cm: EditorView }).cm;
+						if (view) {
+							const cursor = view.state.selection.main.head;
+							view.dispatch({ changes: { from: cursor, insert: abbr } });
+						}
+					}).open();
+				}
+				return true;
 			}
 		});
 
@@ -137,7 +160,7 @@ export default class BibLensPlugin extends Plugin {
 			id: 'reload-for-development',
 			name: 'Reload for development',
 			callback: async () => {
-				await this.reloadTranslation();
+				await this.reloadAllTranslations();
 				await this.reloadScanner();
 				new Notice('Plugin reloaded.');
 			}
@@ -150,7 +173,7 @@ export default class BibLensPlugin extends Plugin {
 		this.registerEditorExtension([
 			scannerField,
 			refDecorationsExtension(),
-			refTooltipExtension(this.translationData, this._refFormat),
+			refTooltipExtension(this._activeTranslations, this._refFormat),
 		]);
 
 		// Dispatch the scanner built during onload to editors that are already open
@@ -176,19 +199,38 @@ export default class BibLensPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	async reloadTranslation() {
-		for (const k of Object.keys(this.translationData)) delete this.translationData[k];
-		if (!this.settings.preferredTranslation) return;
-		try {
-			const newData = await loadTranslation(
-				this.app.vault.adapter,
-				this.manifest.dir!,
-				this.settings.preferredTranslation
-			);
-			Object.assign(this.translationData, newData);
-		} catch (e) {
-			console.error('BibLens: failed to reload translation', e);
+	async reloadAllTranslations() {
+		const ids = Object.entries(this.settings.translationOrder)
+			.filter(([, p]) => p !== null)
+			.map(([id]) => id);
+
+		const results = await Promise.all(
+			ids.map(async (id) => {
+				try {
+					const data = await loadTranslation(this.app.vault.adapter, this.manifest.dir!, id);
+					return { id, data };
+				} catch (e) {
+					console.error('BibLens: failed to load translation', id, e);
+					return null;
+				}
+			})
+		);
+
+		for (const k of Object.keys(this.allTranslationData)) delete this.allTranslationData[k];
+		for (const r of results) {
+			if (r) this.allTranslationData[r.id] = r.data;
 		}
+
+		// Keep _translationData populated from priority-1 for existing consumers (updated in T057)
+		for (const k of Object.keys(this._translationData)) delete this._translationData[k];
+		const priority1Id = getActivePriority1Id(this.settings);
+		if (priority1Id && this.allTranslationData[priority1Id]) {
+			Object.assign(this._translationData, this.allTranslationData[priority1Id]);
+		}
+
+		// Update ordered active-translation list in-place so registered extensions see current state
+		const newActive = getActiveTranslations(this.settings, this.allTranslationData);
+		this._activeTranslations.splice(0, this._activeTranslations.length, ...newActive);
 	}
 
 	async reloadScanner() {
@@ -253,15 +295,15 @@ export default class BibLensPlugin extends Plugin {
 	}
 
 	private async applyStarterPackDefaults(): Promise<void> {
-		if (this.settings.preferredTranslation && this.settings.standardReferenceFormat && this.settings.preferredLanguage) return;
+		if (getActivePriority1Id(this.settings) && this.settings.standardReferenceFormat && this.settings.preferredLanguage) return;
 		const [translations, formats, packs] = await Promise.all([
 			listAvailableTranslations(this.app.vault.adapter, this.manifest.dir!),
 			listAvailableReferenceFormats(this.app.vault.adapter, this.manifest.dir!),
 			listAvailableLanguagePacks(this.app.vault.adapter, this.manifest.dir!),
 		]);
 		let needsSave = false;
-		if (!this.settings.preferredTranslation && translations.length > 0) {
-			this.settings.preferredTranslation = translations[0]!.id;
+		if (!getActivePriority1Id(this.settings) && translations.length > 0) {
+			this.settings.translationOrder[translations[0]!.id] = 1;
 			needsSave = true;
 		}
 		if (!this.settings.standardReferenceFormat && formats.length > 0) {
@@ -313,8 +355,21 @@ export default class BibLensPlugin extends Plugin {
 			span.textContent = match.matchText;
 
 			const ref = match.ref;
-			this.registerDomEvent(span, 'mouseenter', (e) =>
-				this.popover.show(e.target as HTMLElement, buildVerseDOM(getVerses(this.translationData, ref, this._refFormat))));
+			this.registerDomEvent(span, 'mouseenter', (e) => {
+				const translations = this._activeTranslations;
+				if (translations.length === 0) return;
+				let dom: HTMLElement;
+				if (translations.length === 1) {
+					dom = buildVerseDOM(getVerses(translations[0]!.data, ref, this._refFormat));
+				} else {
+					const blocks = translations.map(t => ({
+						abbreviation: t.abbreviation,
+						entries: getVerses(t.data, ref, this._refFormat),
+					}));
+					dom = buildMultiTranslationDOM(blocks);
+				}
+				this.popover.show(e.target as HTMLElement, dom);
+			});
 			this.registerDomEvent(span, 'mouseleave', () => this.popover.requestHide());
 
 			fragment.appendChild(span);

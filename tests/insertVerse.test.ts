@@ -13,10 +13,23 @@ const EN_FORMAT: ReferenceFormatRules = {
 	books: { GEN: "Gen", MAT: "Matt" },
 };
 
-const data: TranslationData = {
+const dataA: TranslationData = {
 	"GEN.1.1": "Na počátku stvořil Bůh nebe a zemi.",
+	"GEN.1.2": "Země pak byla pustá a prázdná.",
 	"MAT.5.3": "Blahoslavení chudí duchem.",
 };
+
+const dataB: TranslationData = {
+	"GEN.1.1": "In the beginning God created the heavens and the earth.",
+	"GEN.1.2": "Now the earth was formless and empty.",
+	"MAT.5.3": "Blessed are the poor in spirit.",
+};
+
+const translA = [{ id: 'cep', abbreviation: 'CEP', data: dataA }];
+const translAB = [
+	{ id: 'cep', abbreviation: 'CEP', data: dataA },
+	{ id: 'web', abbreviation: 'WEB', data: dataB },
+];
 
 function makeView(docText: string, cursor?: number) {
 	let lastInsert: string | undefined;
@@ -44,60 +57,112 @@ const scanner: RefScanner = { scan: scanRefs };
 describe("insertAfterLastRefCommand", () => {
 	it("returns false when no references found", () => {
 		const { view, wasDispatched } = makeView("No references here.");
-		expect(insertAfterLastRefCommand(scanner, data)(view)).toBe(false);
+		expect(insertAfterLastRefCommand(scanner, translA)(view)).toBe(false);
 		expect(wasDispatched()).toBe(false);
 	});
 
 	it("returns false when verse data missing", () => {
 		const { view, wasDispatched } = makeView("Rev 99,1");
-		expect(insertAfterLastRefCommand(scanner, data)(view)).toBe(false);
+		expect(insertAfterLastRefCommand(scanner, translA)(view)).toBe(false);
+		expect(wasDispatched()).toBe(false);
+	});
+
+	it("returns false when activeTranslations is empty", () => {
+		const { view, wasDispatched } = makeView("See Gn 1,1 for reference.");
+		expect(insertAfterLastRefCommand(scanner, [])(view)).toBe(false);
 		expect(wasDispatched()).toBe(false);
 	});
 
 	it("inserts inline verse after last reference before cursor", () => {
 		const { view, getInsert } = makeView("See Gn 1,1 for reference.");
-		expect(insertAfterLastRefCommand(scanner, data)(view)).toBe(true);
+		expect(insertAfterLastRefCommand(scanner, translA)(view)).toBe(true);
+		expect(getInsert()).toBe(" — Na počátku stvořil Bůh nebe a zemi.");
+	});
+
+	it("uses priority-1 translation only", () => {
+		const { view, getInsert } = makeView("See Gn 1,1 for reference.");
+		expect(insertAfterLastRefCommand(scanner, translAB)(view)).toBe(true);
 		expect(getInsert()).toBe(" — Na počátku stvořil Bůh nebe a zemi.");
 	});
 
 	it("uses last reference before cursor, not last in document", () => {
-		// cursor placed between the two references
 		const doc = "Mt 5,3 and then more text. Gn 1,1 appears later.";
-		const cursorAfterMt = "Mt 5,3".length + 1; // just after Mt 5,3
+		const cursorAfterMt = "Mt 5,3".length + 1;
 		const { view, getInsert } = makeView(doc, cursorAfterMt);
-		insertAfterLastRefCommand(scanner, data)(view);
+		insertAfterLastRefCommand(scanner, translA)(view);
 		expect(getInsert()).toBe(" — Blahoslavení chudí duchem.");
 	});
 
 	it("returns false when cursor is before all references", () => {
 		const doc = "Start. Gn 1,1 appears later.";
-		const { view, wasDispatched } = makeView(doc, 3); // cursor at "Sta|rt"
-		expect(insertAfterLastRefCommand(scanner, data)(view)).toBe(false);
+		const { view, wasDispatched } = makeView(doc, 3);
+		expect(insertAfterLastRefCommand(scanner, translA)(view)).toBe(false);
 		expect(wasDispatched()).toBe(false);
 	});
 });
 
 describe("replaceLastRefWithQuoteCommand", () => {
-	it("replaces reference with blockquote (mid-line adds leading newline)", () => {
+	it("single translation: replaces reference without abbreviation (mid-line adds leading newline)", () => {
 		const doc = "See Gn 1,1 for reference.";
 		const { view, getInsert, getFrom, getTo } = makeView(doc);
-		replaceLastRefWithQuoteCommand(scanner, data, EN_FORMAT)(view);
+		replaceLastRefWithQuoteCommand(scanner, translA, EN_FORMAT)(view);
 		expect(getInsert()).toBe("\n> Gen 1:1 Na počátku stvořil Bůh nebe a zemi.\n");
-		// "See " = 4 chars; "Gn 1,1" starts at 4, ends at 10
 		expect(getFrom()).toBe(4);
 		expect(getTo()).toBe(10);
 	});
 
-	it("replaces reference without leading newline when reference is at line start", () => {
+	it("single translation: replaces reference without leading newline when reference is at line start", () => {
 		const doc = "Some intro.\nGn 1,1";
 		const { view, getInsert } = makeView(doc);
-		replaceLastRefWithQuoteCommand(scanner, data, EN_FORMAT)(view);
+		replaceLastRefWithQuoteCommand(scanner, translA, EN_FORMAT)(view);
 		expect(getInsert()).toBe("> Gen 1:1 Na počátku stvořil Bůh nebe a zemi.\n");
 	});
 
 	it("returns false when no references found", () => {
 		const { view, wasDispatched } = makeView("No references here.");
-		expect(replaceLastRefWithQuoteCommand(scanner, data, EN_FORMAT)(view)).toBe(false);
+		expect(replaceLastRefWithQuoteCommand(scanner, translA, EN_FORMAT)(view)).toBe(false);
+		expect(wasDispatched()).toBe(false);
+	});
+
+	it("returns false when activeTranslations is empty", () => {
+		const { view, wasDispatched } = makeView("Gn 1,1");
+		expect(replaceLastRefWithQuoteCommand(scanner, [], EN_FORMAT)(view)).toBe(false);
+		expect(wasDispatched()).toBe(false);
+	});
+
+	it("two translations, single verse: abbreviation on each block's only line", () => {
+		const doc = "See Gn 1,1.";
+		const { view, getInsert } = makeView(doc);
+		replaceLastRefWithQuoteCommand(scanner, translAB, EN_FORMAT)(view);
+		expect(getInsert()).toBe(
+			"\n> CEP Gen 1:1 Na počátku stvořil Bůh nebe a zemi.\n> WEB Gen 1:1 In the beginning God created the heavens and the earth.\n"
+		);
+	});
+
+	it("two translations, multi-verse: abbreviation only on first line of each block", () => {
+		const doc = "See Gn 1,1-2.";
+		const { view, getInsert } = makeView(doc);
+		replaceLastRefWithQuoteCommand(scanner, translAB, EN_FORMAT)(view);
+		expect(getInsert()).toBe(
+			"\n> CEP Gen 1:1 Na počátku stvořil Bůh nebe a zemi.\n> 2 Země pak byla pustá a prázdná.\n> WEB Gen 1:1 In the beginning God created the heavens and the earth.\n> 2 Now the earth was formless and empty.\n"
+		);
+	});
+
+	it("two translations with one missing verse: missing omitted, remaining has abbreviation", () => {
+		const emptyB = [
+			{ id: 'cep', abbreviation: 'CEP', data: dataA },
+			{ id: 'noverses', abbreviation: 'XYZ', data: {} },
+		];
+		const doc = "See Gn 1,1.";
+		const { view, getInsert } = makeView(doc);
+		replaceLastRefWithQuoteCommand(scanner, emptyB, EN_FORMAT)(view);
+		// Two translations active → abbreviation prefix present for remaining line
+		expect(getInsert()).toBe("\n> CEP Gen 1:1 Na počátku stvořil Bůh nebe a zemi.\n");
+	});
+
+	it("returns false when all translations have no verse for the reference", () => {
+		const { view, wasDispatched } = makeView("Rev 99,1");
+		expect(replaceLastRefWithQuoteCommand(scanner, translAB, EN_FORMAT)(view)).toBe(false);
 		expect(wasDispatched()).toBe(false);
 	});
 });

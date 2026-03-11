@@ -221,21 +221,7 @@ All network access is an explicit user action; no silent background downloads.
 
 # Version 1.1
 
-
-# Next version
-Items in this section are prepared for the implementation of the future versions
-
-
-## Proposed
-
-Chapters in this section are design proposals awaiting Architect review and Reviewer approval.
-Once accepted, the Analyst moves each chapter into the appropriate version section and removes the `**Status:** Proposed` line.
-
-<!-- New proposed chapters go here -->
-
 ### Translation Display Priority and Abbreviation Settings
-
-**Status:** Proposed
 
 **User need:** Users with multiple translations installed want to control which translations appear in the hover pop-up, in what order, and under what short label.
 
@@ -264,8 +250,6 @@ Once accepted, the Analyst moves each chapter into the appropriate version secti
 ---
 
 ### Multi-Translation Hover Pop-up
-
-**Status:** Proposed
 
 **User need:** Users who have multiple translations active want to compare verse text from all active translations in a single hover interaction, without switching settings.
 
@@ -304,8 +288,6 @@ Once accepted, the Analyst moves each chapter into the appropriate version secti
 
 ### Insert Commands — Multi-Translation Behaviour
 
-**Status:** Proposed
-
 **User need:** Users want fine-grained control over what is inserted: a quick single-translation insert for the primary source, and a full multi-translation insert when capturing a comparative study.
 
 **Proposed behaviour:**
@@ -331,8 +313,6 @@ Once accepted, the Analyst moves each chapter into the appropriate version secti
 
 ### Insert Book Abbreviation
 
-**Status:** Proposed
-
 **User need:** Users who cannot recall the canonical abbreviation for a book can insert it directly at the cursor without typing it manually.
 
 **Proposed behaviour:**
@@ -351,3 +331,16 @@ Once accepted, the Analyst moves each chapter into the appropriate version secti
 - Source modules: `src/main.ts` (command registration), `src/ui/bookAbbreviationModal.ts` (new).
 
 **Open questions:** none.
+
+---
+
+# Next version
+
+Items in this section are prepared for the implementation of future versions.
+
+## Proposed
+
+Chapters in this section are design proposals awaiting Architect review and Reviewer approval.
+Once accepted, the Analyst moves each chapter into the appropriate version section and removes the `**Status:** Proposed` line.
+
+<!-- New proposed chapters go here -->

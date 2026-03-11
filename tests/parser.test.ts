@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { parseCzechBibleRef, scanRefs, buildRefScanner, formatRef } from "../src/parser";
 import { BOOK_ALIASES } from "../src/books";
+import type { BookId, AbbreviationMap } from "../src/books";
 import type { ReferenceFormatRules } from "../src/types";
-import type { AbbreviationMap } from "../src/books";
 
 // Inline English SBL-style format rules (mirrors the removed EN_FORMAT constant)
 const EN_FORMAT: ReferenceFormatRules = {
@@ -363,5 +363,49 @@ describe("buildRefScanner – separator enforcement", () => {
       chapterEnd: 2,
       verseEnd: 20,
     });
+  });
+});
+
+describe("buildRefScanner – format abbreviation fallback in extended mode", () => {
+  // Format pack has "1SA" → "1S"; language pack has no alias for 1 Samuel.
+  // Extended mode should still recognise "1S" via the format pack fallback.
+  const formatWithShortAbbr: ReferenceFormatRules = {
+    chapterVerseSeparator: ':',
+    rangeSeparator: '-',
+    bookChapterSeparator: ' ',
+    books: { "1SA": "1S", GEN: "Gen" },
+  };
+  const emptyLangMap: AbbreviationMap = {};
+  const scanner = buildRefScanner(emptyLangMap, formatWithShortAbbr, 'extended');
+
+  it("recognises format canonical abbreviation absent from language pack", () => {
+    const m = scanner.scan("1S 1:1");
+    expect(m).toHaveLength(1);
+    expect(m[0]!.ref.bookId).toBe("1SA");
+  });
+
+  it("language pack alias takes priority over format fallback", () => {
+    // Language pack maps "primer samuel" → 1SA; format maps "1S" → 1SA.
+    // Both should resolve to 1SA.
+    const langMap: AbbreviationMap = { "primer samuel": "1SA" as BookId };
+    const s = buildRefScanner(langMap, formatWithShortAbbr, 'extended');
+    expect(s.scan("1S 1:1")).toHaveLength(1);
+    expect(s.scan("primer samuel 1:1")).toHaveLength(1);
+  });
+
+  it("language pack alias overrides format abbreviation when same key", () => {
+    // Language pack explicitly maps "1s" to a different book id — should win.
+    const langMap: AbbreviationMap = { "1s": "GEN" as BookId };
+    const s = buildRefScanner(langMap, formatWithShortAbbr, 'extended');
+    const m = s.scan("1S 1:1");
+    expect(m).toHaveLength(1);
+    expect(m[0]!.ref.bookId).toBe("GEN");
+  });
+
+  it("format fallback not added in strict mode", () => {
+    // Strict mode uses only fmt.books values as aliases — format abbr already present.
+    // Verify strict still works: "1S" in fmt.books → recognised.
+    const strict = buildRefScanner(emptyLangMap, formatWithShortAbbr, 'strict');
+    expect(strict.scan("1S 1:1")).toHaveLength(1);
   });
 });
