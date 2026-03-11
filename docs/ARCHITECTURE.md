@@ -23,7 +23,6 @@ All source files live under `src/`:
 - src/sources/catalog.ts
 - src/sources/adapters.ts
 - src/sources/catalogManager.ts
-- src/sources/catalogUtils.ts
 - src/osisMapping.ts
 - src/languagePackLoader.ts
 - src/languagePackRegistry.ts
@@ -77,11 +76,9 @@ Reference format pack files live under `reference-formats/` in the plugin direct
 - src/settings.ts
   - Plugin settings shape and defaults
   - `preferredTranslation: string`
-  - `preferredLanguage: string` 
-  - `standardReferenceFormat: string` 
+  - `preferredLanguage: string`
+  - `standardReferenceFormat: string`
   - `parsingRules: 'strict' | 'extended'` (default: `'extended'`)
-  - `autoUpdateCatalog: boolean` (default: `false`) — fetch catalog from GitHub on plugin load if cache is stale
-  - `catalogLastUpdated: string` (default: `""`) — ISO timestamp of last successful catalog fetch; shown in settings UI
 - src/books.ts
   - Definition of standard representation of biblical books and built-in abbreviation mapping
   - Exports: `SINGLE_CHAPTER_BOOKS: Set<BookId>` — the set of USFM book identifiers that have only one chapter (`OBA`, `PHM`, `2JN`, `3JN`, `JUD`); used by `parseCVPart` and `formatRef` to apply single-chapter interpretation rules (see D029)
@@ -162,17 +159,8 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - Exports: `deleteReferenceFormat(vaultAdapter: DataAdapter, pluginDir: string, id: string): Promise<void>`
   - Download pipeline per pack type: `requestUrl` → `getLanguagePackAdapter()/getReferenceFormatAdapter()` → `transform(raw)` → validate → `DataAdapter.write`
 - src/sources/catalogManager.ts
-  - Obsidian-aware; may import from 'obsidian' (uses `requestUrl` and `DataAdapter`)
-  - Constant: `CATALOG_REMOTE_URL` — hardcoded GitHub raw URL pointing to `catalog/catalog.json` in the `biblens-data` repository; not user-configurable
+  - Obsidian-aware; may import from 'obsidian' (uses `DataAdapter`)
   - Exports: `loadCatalog(adapter: DataAdapter, pluginDir: string): Promise<CatalogData>` — returns cached `catalog.json` if present and parseable, falls back to bundled `KNOWN_PROVIDERS`; `CatalogData` contains all three provider arrays
-  - Exports: `fetchCatalogUpdate(adapter: DataAdapter, pluginDir: string): Promise<CatalogUpdateResult>` — fetches remote catalog, validates `SourceProvider[]` schema, filters entries with unknown `adapterType`, writes to `catalog.json`, returns result with `updatedAt` timestamp
-  - `type CatalogUpdateResult = { ok: true; updatedAt: string; providerCount: number } | { ok: false; error: string }`
-  - Providers with unknown `adapterType` are silently filtered (forward-compatibility: newer catalog entries don't crash older plugin versions)
-- src/sources/catalogUtils.ts
-  - Pure module (no Obsidian imports)
-  - Exports: `CATALOG_STALE_DAYS: number` — number of days before the cached catalog is considered stale
-  - Exports: `isCatalogStale(catalogLastUpdated: string): boolean` — returns `true` if the cache timestamp is missing, unparseable, or older than `CATALOG_STALE_DAYS`
-  - Used by `main.ts` (auto-update check on startup) and `catalogManager.ts`
 - src/ui/verseDOM.ts
   - DOM builder for verse content (no Obsidian imports)
   - Exports: `buildVerseDOM(entries: VerseEntry[]): HTMLElement`
@@ -222,7 +210,6 @@ Reference format pack files live under `reference-formats/` in the plugin direct
 - translationRegistry.ts may import from 'obsidian'
 - translationManager.ts may import from 'obsidian'
 - sources/catalog.ts must not import from 'obsidian'
-- sources/catalogUtils.ts must not import from 'obsidian'
 - sources/adapters.ts must not import from 'obsidian' or use DOM APIs
 - sources/catalogManager.ts may import from 'obsidian'
 - src/osisMapping.ts must not import from 'obsidian'
@@ -308,17 +295,6 @@ main.ts / settings UI
   → catalog.json (if cached in plugin dir)      [priority 1]
   OR → sources/catalog.ts: KNOWN_PROVIDERS      [bundled fallback]
 → SourceProvider[] (active in memory)
-
-Catalog update (explicit user action OR opt-in auto on startup):
-
-settings UI / main.ts (if autoUpdateCatalog = true and cache is stale)
-→ sources/catalogManager.ts: fetchCatalogUpdate()
-  → requestUrl(CATALOG_REMOTE_URL)
-  → validate SourceProvider[] schema
-  → filter entries with unknown adapterType (forward-compat)
-  → DataAdapter.write → catalog.json
-→ CatalogUpdateResult { ok, updatedAt, providerCount }
-→ settings UI: display last updated date
 
 Translation download from source catalog (explicit user action):
 
@@ -619,14 +595,6 @@ available files (`items[].path` is relative to the repo root).
 - **Translations** — adapter type `"biblens-data"` (biblens-data provider): fetches `resources/translations/${remoteId}.json`; transforms v1 JSON → flat TranslationData; writes to `translations/${id}.json`. Other translation providers (`"getbible-v2"`, `"beblia-xml"`) continue to serve from their own URLs using their own adapters.
 - **Language packs** — adapter type `"biblens-data"` (sole provider): fetches `resources/language-packs/${remoteId}.json`; pass-through — file is already `LanguagePackFile` format with USFM keys; writes to `recognition-languages/${id}.json`.
 - **Reference format packs** — adapter type `"biblens-data"` (sole provider): fetches `resources/reference-formats/${remoteId}.json`; pass-through — file is already `ReferenceFormatFile` format; writes to `reference-formats/${id}.json`.
-
-Catalog manager types live in `src/sources/catalogManager.ts`:
-
-```ts
-type CatalogUpdateResult =
-  | { ok: true;  updatedAt: string; providerCount: number }
-  | { ok: false; error: string };
-```
 
 Shared types (defined in `src/types.ts`):
 

@@ -20,7 +20,7 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 | 52 | Implement Beblia listAvailable via GitHub Contents API | Next | [T052](Tasks/T052.md) |
 | 51 | Fix Load button: tooltip, biblens-data result display, layout | Next | [T051](Tasks/T051.md) |
 | 50 | Fix write-once flag for bundled starter packs | Next | [T050](Tasks/T050.md) |
-| 49 | Remove Advanced (Catalog Management) section from Settings | Next | [T049](Tasks/T049.md) |
+| 49 | Remove Advanced (Catalog Management) section from Settings | Done | [T049](Tasks/T049.md) |
 | 48 | Settings panel heading and spacing conventions | Done | [T048](Tasks/T048.md) |
 | 47 | CM6 StateField/StateEffect live scanner propagation | Done | [T047](Tasks/T047.md) |
 | 46 | Settings UI: "Load" button for live provider item discovery | Done | [T046](Tasks/T046.md) |

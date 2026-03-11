@@ -1,18 +1,7 @@
-import { requestUrl } from 'obsidian';
 import type { DataAdapter } from 'obsidian';
 import { KNOWN_PROVIDERS } from './catalog';
 import type { SourceProvider, LanguagePackProvider, ReferenceFormatProvider } from './catalog';
-import { getAdapter, getLanguagePackAdapter, getReferenceFormatAdapter } from './adapters';
 import type { CatalogData } from '../types';
-export { isCatalogStale } from './catalogUtils';
-
-// TODO: confirm biblens-data repo URL once the repository is live
-export const CATALOG_REMOTE_URL =
-	'https://raw.githubusercontent.com/marekpola/biblens-data/master/catalog/catalog.json';
-
-export type CatalogUpdateResult =
-	| { ok: true; updatedAt: string; providerCount: number }
-	| { ok: false; error: string };
 
 type RemoteCatalogV2 = {
 	schemaVersion: 2;
@@ -35,20 +24,6 @@ function isValidSourceProviders(arr: unknown): arr is SourceProvider[] {
 			Array.isArray(o.translations)
 		);
 	});
-}
-
-function filterCatalog(data: CatalogData): CatalogData {
-	return {
-		translationProviders: data.translationProviders.filter(p => {
-			try { getAdapter(p.adapterType); return true; } catch { return false; }
-		}),
-		languagePackProviders: data.languagePackProviders.filter(p => {
-			try { getLanguagePackAdapter(p.adapterType); return true; } catch { return false; }
-		}),
-		referenceFormatProviders: data.referenceFormatProviders.filter(p => {
-			try { getReferenceFormatAdapter(p.adapterType); return true; } catch { return false; }
-		}),
-	};
 }
 
 export async function loadCatalog(
@@ -80,49 +55,3 @@ export async function loadCatalog(
 	};
 }
 
-export async function fetchCatalogUpdate(
-	adapter: DataAdapter,
-	pluginDir: string
-): Promise<CatalogUpdateResult> {
-	try {
-		const response = await requestUrl({ url: CATALOG_REMOTE_URL });
-		const parsed = response.json as RemoteCatalogV2;
-
-		if (typeof parsed.schemaVersion !== 'number' || parsed.schemaVersion !== 2) {
-			return { ok: false, error: `Unsupported catalog schemaVersion: ${String(parsed.schemaVersion)}` };
-		}
-		if (!isValidSourceProviders(parsed.translationProviders)) {
-			return { ok: false, error: 'Invalid catalog format: translationProviders validation failed' };
-		}
-		if (!Array.isArray(parsed.languagePackProviders) || !Array.isArray(parsed.referenceFormatProviders)) {
-			return { ok: false, error: 'Invalid catalog format: missing provider arrays' };
-		}
-
-		const filtered = filterCatalog({
-			translationProviders: parsed.translationProviders,
-			languagePackProviders: parsed.languagePackProviders,
-			referenceFormatProviders: parsed.referenceFormatProviders,
-		});
-
-		const updatedAt = parsed.updatedAt ?? new Date().toISOString();
-		const catalog: RemoteCatalogV2 = {
-			schemaVersion: 2,
-			updatedAt,
-			translationProviders: filtered.translationProviders,
-			languagePackProviders: filtered.languagePackProviders,
-			referenceFormatProviders: filtered.referenceFormatProviders,
-		};
-
-		await adapter.write(`${pluginDir}/catalog.json`, JSON.stringify(catalog, null, 2));
-		return {
-			ok: true,
-			updatedAt,
-			providerCount:
-				filtered.translationProviders.length +
-				filtered.languagePackProviders.length +
-				filtered.referenceFormatProviders.length,
-		};
-	} catch (e) {
-		return { ok: false, error: e instanceof Error ? e.message : String(e) };
-	}
-}

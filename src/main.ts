@@ -4,8 +4,6 @@ import enSblFormatPack from './data/en-sbl.json';
 import webTranslation from './data/web.json';
 import { EditorView } from '@codemirror/view';
 import { scannerEffect, scannerField } from './editor/scannerState';
-import { fetchCatalogUpdate } from './sources/catalogManager';
-import { isCatalogStale } from './sources/catalogUtils';
 import { buildRefScanner } from './parser';
 import type { RefScanner } from './parser';
 import { PopoverManager } from './ui/hover';
@@ -90,17 +88,6 @@ export default class BibLensPlugin extends Plugin {
 		}
 
 		await this.reloadScanner();
-
-		if (this.settings.autoUpdateCatalog && isCatalogStale(this.settings.catalogLastUpdated)) {
-			fetchCatalogUpdate(this.app.vault.adapter, this.manifest.dir!)
-				.then(result => {
-					if (result.ok) {
-						this.settings.catalogLastUpdated = result.updatedAt;
-						void this.saveSettings();
-					}
-				})
-				.catch((e: unknown) => console.error('BibLens: catalog auto-update failed', e));
-		}
 
 		this.addSettingTab(new BibLensSettingTab(this.app, this));
 

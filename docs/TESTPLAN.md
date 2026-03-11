@@ -1262,11 +1262,11 @@ Expected:
 
 Steps:
 1. Open **Settings → BibLens**.
-2. Observe the "Current" section heading and the "Advanced" heading.
+2. Observe the "Current" section heading.
 
 Expected:
-- Both headings render using the Obsidian heading style (same appearance as other plugin settings headings — bold, styled by the active theme).
-- No raw `<h3>` element is visible in DevTools for these headings.
+- The heading renders using the Obsidian heading style (same appearance as other plugin settings headings — bold, styled by the active theme).
+- No raw `<h3>` element is visible in DevTools for this heading.
 
 ### 48b – Theme compatibility (manual)
 

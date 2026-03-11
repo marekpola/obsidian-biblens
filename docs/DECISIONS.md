@@ -607,3 +607,18 @@ Consequences:
 
 Revisit: if more complex multi-chapter-with-no-verse patterns are needed for single-chapter books.
 Date: 2026-03-10
+
+## D031 – Remove catalog management UI; catalog loaded transparently on settings-tab open
+
+Decision: The Advanced section (catalog update button, auto-update-on-startup toggle) has been removed from the BibLens settings UI. The catalog is now loaded transparently each time the settings tab opens via `loadCatalog()`, which reads the cached `catalog.json` or falls back to the bundled `KNOWN_PROVIDERS`. No explicit user action or network call is needed to populate the provider dropdowns.
+
+Reason: Simplification. The Advanced section added visible complexity and a startup network call (`autoUpdateCatalog`) that brought no user-visible benefit over the transparent fallback. Keeping the catalog fresh is better handled by a future background mechanism if needed.
+
+Consequences:
+- `autoUpdateCatalog` and `catalogLastUpdated` removed from `BibLensSettings` and `DEFAULT_SETTINGS`.
+- `fetchCatalogUpdate` and `isCatalogStale` removed from the codebase.
+- `src/sources/catalogUtils.ts` deleted.
+- Existing user data with leftover `autoUpdateCatalog`/`catalogLastUpdated` keys is silently ignored by the `Object.assign({}, DEFAULT_SETTINGS, saved)` merge pattern.
+
+Revisit: if a background catalog-refresh mechanism is added in a future version.
+Date: 2026-03-11

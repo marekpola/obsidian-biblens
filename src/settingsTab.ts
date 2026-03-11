@@ -3,7 +3,7 @@ import type BibLensPlugin from './main';
 import { listAvailableTranslations } from './translationRegistry';
 import { listAvailableLanguagePacks } from './languagePackRegistry';
 import { listAvailableReferenceFormats } from './referenceFormatRegistry';
-import { loadCatalog, fetchCatalogUpdate } from './sources/catalogManager';
+import { loadCatalog } from './sources/catalogManager';
 import { downloadFromSource, deleteTranslation } from './translationManager';
 import { downloadLanguagePack, deleteLanguagePack, downloadReferenceFormat, deleteReferenceFormat } from './packManager';
 import type { SourceProvider, LanguagePackProvider, ReferenceFormatProvider, RemoteTranslationEntry, RemoteLanguagePackEntry, RemoteReferenceFormatEntry } from './sources/catalog';
@@ -32,8 +32,6 @@ export class BibLensSettingTab extends PluginSettingTab {
 		const translContainer = containerEl.createDiv();
 		const formatsContainer = containerEl.createDiv();
 		const langsContainer = containerEl.createDiv();
-
-		this.renderAdvanced(containerEl);
 
 		Promise.all([
 			loadCatalog(this.app.vault.adapter, this.plugin.manifest.dir!),
@@ -681,48 +679,4 @@ export class BibLensSettingTab extends PluginSettingTab {
 			});
 	}
 
-	private renderAdvanced(containerEl: HTMLElement): void {
-		containerEl.createDiv({ cls: 'biblens-section-spacer' });
-
-		new Setting(containerEl).setName('Advanced').setHeading();
-
-		const lastUpdated = this.plugin.settings.catalogLastUpdated;
-		const lastUpdatedText = lastUpdated
-			? `Last update: ${new Date(lastUpdated).toLocaleDateString()}`
-			: 'Never updated';
-
-		new Setting(containerEl)
-			.setName('Catalog')
-			.setDesc(lastUpdatedText)
-			.addButton(btn => {
-				btn.setButtonText('Update catalog');
-				btn.onClick(async () => {
-					btn.setButtonText('Updating…');
-					btn.setDisabled(true);
-					const result = await fetchCatalogUpdate(
-						this.app.vault.adapter,
-						this.plugin.manifest.dir!
-					);
-					if (result.ok) {
-						this.plugin.settings.catalogLastUpdated = result.updatedAt;
-						await this.plugin.saveSettings();
-						new Notice(`BibLens: catalog updated (${result.providerCount} providers)`);
-					} else {
-						new Notice(`BibLens: catalog update failed — ${result.error}`);
-					}
-					this.display();
-				});
-			});
-
-		new Setting(containerEl)
-			.setName('Auto-update catalog on startup')
-			.setDesc('Silently refresh the catalog when it is older than 7 days. Requires network access on plugin load.')
-			.addToggle(toggle => {
-				toggle.setValue(this.plugin.settings.autoUpdateCatalog);
-				toggle.onChange(async (value) => {
-					this.plugin.settings.autoUpdateCatalog = value;
-					await this.plugin.saveSettings();
-				});
-			});
-	}
 }
