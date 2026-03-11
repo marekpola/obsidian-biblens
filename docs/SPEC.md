@@ -219,6 +219,9 @@ All network access is an explicit user action; no silent background downloads.
 
 ---
 
+# Version 1.1
+
+
 # Next version
 Items in this section are prepared for the implementation of the future versions
 
@@ -229,6 +232,95 @@ Chapters in this section are design proposals awaiting Architect review and Revi
 Once accepted, the Analyst moves each chapter into the appropriate version section and removes the `**Status:** Proposed` line.
 
 <!-- New proposed chapters go here -->
+
+### Translation Display Priority and Abbreviation Settings
+
+**Status:** Proposed
+
+**User need:** Users with multiple translations installed want to control which translations appear in the hover pop-up, in what order, and under what short label.
+
+**Proposed behaviour:**
+- Each row in the **Installed translations** list gains two new controls placed to the left of the Delete button:
+  - A **priority dropdown** with options `1`, `2`, `3`, … (up to the number of installed translations) and `-`. A number means "show this translation in the pop-up at this position"; `-` means "do not show this translation in the pop-up."
+  - A **abbreviation text field** pre-filled with the translation `id` (e.g. `web`). The user may change it to any short string (e.g. `WEB`, `NIV`). This abbreviation is used as a prefix label in multi-translation pop-ups and inserted text.
+- When the user changes a priority number:
+  - Any other translation previously holding that number receives the displaced number (swap), or is renumbered so that the assigned numbers remain a contiguous sequence starting at 1 with no duplicates.
+  - The list reorders to reflect the new priority: translation 1 at the top, highest number at the bottom, translations with `-` below all numbered ones.
+- The order can also be changed by **drag and drop** within the installed translations list. Dragging a row updates the priority numbers to match the new visual order; translations with `-` remain below all active ones.
+- Priority and abbreviation values are persisted in plugin settings per translation id.
+
+**Scope notes:**
+- Priority and abbreviation apply only to translations; reference format and language pack rows are unchanged.
+- When only one translation has a priority number (all others are `-`), the pop-up behaves identically to v1.0 (no label prefix, no separator lines).
+- Drag-and-drop uses the browser-native HTML5 drag API (available in Obsidian desktop and mobile via Electron/WKWebView); no external library required.
+- New fields needed in settings: `translationOrder: Record<string, number | null>` and `translationAbbreviations: Record<string, string>`.
+
+**Open questions:**
+- Should the abbreviation field have a character limit? Recommendation: soft limit of 8 characters enforced by UI only.
+- When a translation is deleted and re-downloaded, should its saved priority and abbreviation be restored? Recommendation: yes — keyed by translation id.
+
+---
+
+### Multi-Translation Hover Pop-up
+
+**Status:** Proposed
+
+**User need:** Users who have multiple translations active want to compare verse text from all active translations in a single hover interaction, without switching settings.
+
+**Proposed behaviour:**
+- **Single active translation** (only one translation has a priority number): behaviour is identical to v1.0 — no change.
+- **Multiple active translations** (two or more translations have a priority number):
+  - **Single verse or single-chapter reference identified:**
+    - The pop-up shows each active translation's verse text in priority order.
+    - Translations are separated by a horizontal rule (`<hr>`).
+    - Each translation block begins with the translation abbreviation followed by the formatted reference, then the verse text. Example for `Ex 1,1` with translations `web` and `niv`:
+      ```
+      web Ex 1,1  Now these are the names of the sons of Israel…
+      niv Ex 1,1  These are the names of the sons of Israel…
+      ```
+  - **Multiple verses or chapter-range reference identified:**
+    - The pop-up becomes a **paged view**: each page shows all verses for one translation.
+    - Navigation arrows (previous / next) allow switching between translation pages.
+    - The current translation abbreviation is shown as the page heading.
+    - Page state resets to the first translation each time a new pop-up is opened.
+- The pop-up remains scrollable (v1.0 behaviour preserved) within each page.
+- Text selection continues to work within the visible content.
+
+**Scope notes:**
+- "Active translations" are those with a priority number set (not `-`), ordered by priority.
+- The single-verse path requires fetching verse text from all active translations; translation data for each must be loaded and cached in memory (parallel to how v1.0 caches a single `TranslationData`).
+- The paged-view path requires a lightweight page controller in the DOM builder; no third-party UI library.
+- Both Reading View popover and editor tooltip should reflect the same multi-translation layout.
+- This feature depends on **Translation Display Priority and Abbreviation Settings** being implemented first.
+
+**Open questions:**
+- Should the horizontal rule separator be full-width or indented? Recommendation: full-width, consistent with Obsidian's native `<hr>` style.
+- If a verse is missing in one translation, should that translation be skipped silently or show a placeholder? Recommendation: show a brief "not available" placeholder so the user knows the translation was checked.
+
+---
+
+### Insert All Translations Command
+
+**Status:** Proposed
+
+**User need:** Users want to capture the full multi-translation pop-up content as text in their note with a single command, mirroring what the hover pop-up shows.
+
+**Proposed behaviour:**
+- Two new commands are added, parallel to the existing single-translation insert commands:
+  - `BibLens: Insert all translations after previous reference` — appends text for all active translations after the last reference before the cursor. Each translation is on its own line, prefixed by its abbreviation and the reference: `web Ex 1,1 — verse text` followed by `niv Ex 1,1 — verse text`.
+  - `BibLens: Replace previous reference with all-translation quote` — replaces the last reference before the cursor with a block quote containing each active translation on its own line: `> web Ex 1,1 verse text` / `> niv Ex 1,1 verse text`.
+- When only one translation is active, these commands produce output identical to the existing single-translation commands (no visible change for users who have not configured multiple translations).
+- The reference used as the label for each line uses the translation's configured abbreviation (from the abbreviation field in Settings).
+- Command order and output order both follow the priority order defined in Settings.
+
+**Scope notes:**
+- These commands operate on the last reference before the cursor, using the same cursor-relative logic as the existing insert commands (D018).
+- Implementation follows the existing `insertVerse.ts` pattern; the multi-translation variant iterates active translations in priority order and concatenates their output.
+- This feature depends on **Translation Display Priority and Abbreviation Settings** and **Multi-Translation Hover Pop-up** being implemented first.
+- Existing commands (`Insert verse after previous reference`, `Replace previous reference with quote`) are unchanged.
+
+**Open questions:**
+- Should there be a blank line between translations in the inserted text, or only a newline? Recommendation: single newline only, keeping the block compact.
 
 ### Insert Book Abbreviation
 
