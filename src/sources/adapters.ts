@@ -7,7 +7,6 @@ import type {
 	ReferenceFormatProvider, RemoteReferenceFormatEntry,
 } from './catalog';
 import type { LanguagePackFile, ReferenceFormatFile } from '../types';
-import { osisToUsfm } from '../osisMapping';
 
 export interface SourceAdapter {
 	buildUrl(provider: SourceProvider, entry: RemoteTranslationEntry): string;
@@ -172,20 +171,6 @@ export function getAdapter(adapterType: string): SourceAdapter {
 	if (!adapter) throw new Error(`BibLens: unknown adapter type "${adapterType}"`);
 	return adapter;
 }
-
-// ---------------------------------------------------------------------------
-// biblens-catalog reference format adapter
-// Fetches a pre-authored ReferenceFormatFile JSON from the biblens-data repository.
-// ---------------------------------------------------------------------------
-
-const biblensCatalogFormatAdapter: ReferenceFormatAdapter = {
-	buildUrl(provider, entry) {
-		return `${provider.baseUrl}/resources/reference-formats/${entry.remoteId}.json`;
-	},
-	transform(raw, _entry) {
-		return JSON.parse(raw as string) as ReferenceFormatFile;
-	},
-};
 
 type BiblensIndexItem = { id: string; displayName: string; lang: string };
 type BiblensIndex    = { items: BiblensIndexItem[] };
