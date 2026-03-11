@@ -94,7 +94,7 @@ export const KNOWN_PROVIDERS = {
 			baseUrl: 'https://raw.githubusercontent.com/marekpola/biblens-data/main',
 			adapterType: 'biblens-data',
 			packs: [
-			{ id: 'en', displayName: 'English', language: 'en', remoteId: 'en' },	
+			{ id: 'en', displayName: 'English', language: 'en', remoteId: 'en' },
 			{ id: 'cs', displayName: 'Czech', language: 'cs', remoteId: 'cs' },
 			],
 		},

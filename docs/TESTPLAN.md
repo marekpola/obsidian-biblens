@@ -1126,7 +1126,58 @@ Steps:
 1. Open any of the three collapsible sections.
 
 Expected:
-- A description reads: "Items shown are from the catalog. Click load to fetch the current list from the provider."
+- A description reads: "Items shown are from the catalog. Click "load" to fetch the current list from the provider and then click "download"."
+
+### 46g – Beblia: Load then Download succeeds
+
+Setup:
+- Active network connection.
+- No `translations/niv.json` present.
+
+Steps:
+1. Open Settings → BibLens → Translations section.
+2. Select provider "Beblia XML (GitHub)".
+3. Click **load**; wait for the live list to appear.
+4. Select "New International Version" from the items dropdown.
+5. Click **download**.
+
+Expected:
+- Download completes; a Notice confirms "BibLens: New International Version downloaded".
+- File `translations/niv.json` exists in the plugin directory.
+- No "download failed" or silent no-op.
+
+### 46h – biblens-data formats and languages: Load then Download succeeds
+
+Setup:
+- Active network connection.
+- `reference-formats/cs-liturgicky.json` and `recognition-languages/de.json` not present.
+
+Steps:
+1. Open Settings → BibLens → Reference formats section.
+2. Ensure provider "BibLens Data" is selected; click **load**.
+3. Select "Czech (liturgical style)" from the items dropdown.
+4. Click **download**.
+5. Open Settings → BibLens → Recognition languages section.
+6. Ensure provider "BibLens Data" is selected; click **load**.
+7. Select "German" from the items dropdown.
+8. Click **download**.
+
+Expected:
+- Both downloads complete with a confirming Notice each.
+- `reference-formats/cs-liturgicky.json` and `recognition-languages/de.json` exist.
+- No "download failed" or silent no-op.
+
+### 46i – No empty parentheses in items dropdown
+
+Steps:
+1. Open Settings → BibLens → Translations section.
+2. Select provider "Beblia XML (GitHub)".
+3. Click **load**.
+4. Inspect the items dropdown entries.
+
+Expected:
+- Entries with a known language show `Name (lang)` e.g. "New International Version (en)".
+- No entry shows trailing empty parentheses `()` or `(undefined)`.
 
 ---
 
