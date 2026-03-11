@@ -18,6 +18,10 @@
 	overflow-y: auto;
 }
 
+.biblens-section-spacer {
+	margin-top: 2em;
+}
+
 .biblens-popover {
 	position: fixed;
 	z-index: 1000;

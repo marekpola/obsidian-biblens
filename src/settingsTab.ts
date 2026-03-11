@@ -89,7 +89,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 	status: { translName: string; fmtName: string; langName: string }
 	): void {
 
-		containerEl.createEl('h3', { text: 'Current settings' });
+		new Setting(containerEl).setName('Current').setHeading();
 
 		const info = containerEl.createDiv('biblens-current-settings');
 
@@ -105,8 +105,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 			text: `Recognition language: ${status.langName}`
 		});
 
-		// spacing before interactive setting
-		containerEl.createDiv({ attr: { style: 'height: 12px;' } });
+		containerEl.createDiv({ cls: 'biblens-section-spacer' });
 		
 		new Setting(containerEl)
 			.setName('Parsing rules')
@@ -683,8 +682,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 	}
 
 	private renderAdvanced(containerEl: HTMLElement): void {
-		
-		containerEl.createDiv({ attr: { style: 'height: 12px;' } });
+		containerEl.createDiv({ cls: 'biblens-section-spacer' });
 
 		new Setting(containerEl).setName('Advanced').setHeading();
 

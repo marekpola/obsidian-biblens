@@ -1256,6 +1256,36 @@ Expected:
 
 ---
 
+## T048 – Settings panel heading and spacing conventions
+
+### 48a – Heading style (manual)
+
+Steps:
+1. Open **Settings → BibLens**.
+2. Observe the "Current" section heading and the "Advanced" heading.
+
+Expected:
+- Both headings render using the Obsidian heading style (same appearance as other plugin settings headings — bold, styled by the active theme).
+- No raw `<h3>` element is visible in DevTools for these headings.
+
+### 48b – Theme compatibility (manual)
+
+Steps:
+1. Switch to a community theme (or toggle dark/light mode).
+2. Open **Settings → BibLens**.
+
+Expected:
+- Section headings and spacing adapt correctly to the theme.
+- No hardcoded colours or fixed pixel spacings override the theme.
+
+### 48c – No inline style attributes (automated)
+
+- `grep -n "style=" src/settingsTab.ts` returns no matches.
+- `grep -n "createEl('h3'" src/settingsTab.ts` returns no matches.
+- `npm run ci` passes with 0 errors.
+
+---
+
 ## Regression Checklist
 
 - Plugin still loads after Obsidian reload.

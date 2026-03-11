@@ -17,7 +17,7 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 
 | #  | Title | Status | File |
 |----|-------|--------|------|
-| 48 | Settings panel heading and spacing conventions | Next | [T048](Tasks/T048.md) |
+| 48 | Settings panel heading and spacing conventions | Done | [T048](Tasks/T048.md) |
 | 47 | CM6 StateField/StateEffect live scanner propagation | Done | [T047](Tasks/T047.md) |
 | 46 | Settings UI: "Load" button for live provider item discovery | Done | [T046](Tasks/T046.md) |
 | 45 | Adapter listAvailable interface extension and biblens-data implementation | Done | [T045](Tasks/T045.md) |
