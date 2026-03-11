@@ -111,8 +111,8 @@ describe("getLanguagePackAdapter", () => {
 
 const MOCK_INDEX = JSON.stringify({
   items: [
-    { id: "en",  displayName: "English", language: "en" },
-    { id: "cs",  displayName: "Czech",   language: "cs" },
+    { id: "en",  displayName: "English", lang: "en" },
+    { id: "cs",  displayName: "Czech",   lang: "cs" },
   ],
 });
 

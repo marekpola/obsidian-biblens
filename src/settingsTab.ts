@@ -135,7 +135,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 		const summaryEl = detailsEl.createEl('summary', { text: 'Translations' });
 		summaryEl.addClass('biblens-settings-summary');
 		detailsEl.createEl('p', {
-			text: 'Items shown are from the catalog. Click "Load" to fetch the current list from the provider and then click "Download".',
+			text: 'Items shown are from the catalog. Click "load" to fetch the current list from the provider and then click "download".',
 			cls: 'setting-item-description',
 		});
 
@@ -336,7 +336,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 		const summaryEl = detailsEl.createEl('summary', { text: 'Reference formats' });
 		summaryEl.addClass('biblens-settings-summary');
 		detailsEl.createEl('p', {
-			text: 'Items shown are from the catalog. Click "Load" to fetch the current list from the provider and then click "Download".',
+			text: 'Items shown are from the catalog. Click "load" to fetch the current list from the provider and then click "download".',
 			cls: 'setting-item-description',
 		});
 
@@ -530,7 +530,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 		const summaryEl = detailsEl.createEl('summary', { text: 'Recognition languages' });
 		summaryEl.addClass('biblens-settings-summary');
 		detailsEl.createEl('p', {
-			text: 'Items shown are from the catalog. Click "Load" to fetch the current list from the provider and then click "Download".',
+			text: 'Items shown are from the catalog. Click "load" to fetch the current list from the provider and then click "download".',
 			cls: 'setting-item-description',
 		});
 
