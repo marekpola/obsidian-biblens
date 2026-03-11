@@ -22,6 +22,26 @@
 	margin-top: 2em;
 }
 
+.biblens-install-row {
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: 4px;
+	width: 100%;
+	min-width: 0;
+}
+
+.biblens-install-row .biblens-install-items {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.biblens-install-row .biblens-install-fixed {
+	flex-shrink: 0;
+}
+
 .biblens-popover {
 	position: fixed;
 	z-index: 1000;

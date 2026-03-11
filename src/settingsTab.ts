@@ -233,14 +233,15 @@ export class BibLensSettingTab extends PluginSettingTab {
 				drop.setValue(entries[0]!.id);
 				return entries[0]!.id;
 			}
-			drop.addOption('', 'All translations installed');
+			drop.addOption('', 'All items installed');
 			drop.setValue('');
 			return null;
 		};
 
-		new Setting(container)
+		const translInstallSetting = new Setting(container)
 			.setName('Install new')
 			.addDropdown(provDrop => {
+				provDrop.selectEl.addClass('biblens-install-fixed');
 				provDrop.addOptions(providerOptions);
 				provDrop.setValue(selectedProviderId);
 				provDrop.onChange(id => {
@@ -255,6 +256,8 @@ export class BibLensSettingTab extends PluginSettingTab {
 			.addButton(loadBtn => {
 				loadBtnRef = loadBtn;
 				loadBtn.setButtonText('Load');
+				loadBtn.setTooltip('Fetch the current list of available items from the selected provider.');
+				loadBtn.buttonEl.addClass('biblens-install-fixed');
 				const adapter = getAdapter(currentProvider.adapterType);
 				loadBtn.buttonEl.toggle('listUrl' in adapter);
 				loadBtn.onClick(async () => {
@@ -276,6 +279,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 			})
 			.addDropdown(translDrop => {
 				translDropRef = translDrop;
+				translDrop.selectEl.addClass('biblens-install-items');
 				selectedTranslId = populateDrop(translDrop, currentProvider);
 				translDrop.onChange(id => {
 					selectedTranslId = id || null;
@@ -285,6 +289,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 			.addButton(btn => {
 				downloadBtnRef = btn;
 				btn.setButtonText('Download');
+				btn.buttonEl.addClass('biblens-install-fixed');
 				btn.setCta();
 				btn.setDisabled(!selectedTranslId);
 				btn.onClick(async () => {
@@ -307,6 +312,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 					this.display();
 				});
 			});
+		translInstallSetting.controlEl.addClass('biblens-install-row');
 	}
 
 	private renderInstalledFormats(
@@ -418,14 +424,15 @@ export class BibLensSettingTab extends PluginSettingTab {
 				drop.setValue(entries[0]!.id);
 				return entries[0]!.id;
 			}
-			drop.addOption('', 'No formats available');
+			drop.addOption('', 'All items installed');
 			drop.setValue('');
 			return null;
 		};
 
-		new Setting(container)
+		const formatInstallSetting = new Setting(container)
 			.setName('Install new')
 			.addDropdown(provDrop => {
+				provDrop.selectEl.addClass('biblens-install-fixed');
 				provDrop.addOptions(providerOptions);
 				provDrop.setValue(selectedProviderId);
 				provDrop.onChange(id => {
@@ -440,6 +447,8 @@ export class BibLensSettingTab extends PluginSettingTab {
 			.addButton(loadBtn => {
 				loadBtnRef = loadBtn;
 				loadBtn.setButtonText('Load');
+				loadBtn.setTooltip('Fetch the current list of available items from the selected provider.');
+				loadBtn.buttonEl.addClass('biblens-install-fixed');
 				const adapter = getReferenceFormatAdapter(currentProvider.adapterType);
 				loadBtn.buttonEl.toggle('listUrl' in adapter);
 				loadBtn.onClick(async () => {
@@ -461,6 +470,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 			})
 			.addDropdown(drop => {
 				formatDropRef = drop;
+				drop.selectEl.addClass('biblens-install-items');
 				selectedFormatId = populateDrop(drop, currentProvider);
 				drop.onChange(id => {
 					selectedFormatId = id || null;
@@ -470,6 +480,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 			.addButton(btn => {
 				downloadBtnRef = btn;
 				btn.setButtonText('Download');
+				btn.buttonEl.addClass('biblens-install-fixed');
 				btn.setCta();
 				btn.setDisabled(!selectedFormatId);
 				btn.onClick(async () => {
@@ -492,6 +503,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 					this.display();
 				});
 			});
+		formatInstallSetting.controlEl.addClass('biblens-install-row');
 	}
 
 	private renderInstalledLanguages(
@@ -603,14 +615,15 @@ export class BibLensSettingTab extends PluginSettingTab {
 				drop.setValue(entries[0]!.id);
 				return entries[0]!.id;
 			}
-			drop.addOption('', 'No language packs available');
+			drop.addOption('', 'All items installed');
 			drop.setValue('');
 			return null;
 		};
 
-		new Setting(container)
+		const langInstallSetting = new Setting(container)
 			.setName('Install new')
 			.addDropdown(provDrop => {
+				provDrop.selectEl.addClass('biblens-install-fixed');
 				provDrop.addOptions(providerOptions);
 				provDrop.setValue(selectedProviderId);
 				provDrop.onChange(id => {
@@ -625,6 +638,8 @@ export class BibLensSettingTab extends PluginSettingTab {
 			.addButton(loadBtn => {
 				loadBtnRef = loadBtn;
 				loadBtn.setButtonText('Load');
+				loadBtn.setTooltip('Fetch the current list of available items from the selected provider.');
+				loadBtn.buttonEl.addClass('biblens-install-fixed');
 				const adapter = getLanguagePackAdapter(currentProvider.adapterType);
 				loadBtn.buttonEl.toggle('listUrl' in adapter);
 				loadBtn.onClick(async () => {
@@ -646,6 +661,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 			})
 			.addDropdown(drop => {
 				packDropRef = drop;
+				drop.selectEl.addClass('biblens-install-items');
 				selectedPackId = populateDrop(drop, currentProvider);
 				drop.onChange(id => {
 					selectedPackId = id || null;
@@ -655,6 +671,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 			.addButton(btn => {
 				downloadBtnRef = btn;
 				btn.setButtonText('Download');
+				btn.buttonEl.addClass('biblens-install-fixed');
 				btn.setCta();
 				btn.setDisabled(!selectedPackId);
 				btn.onClick(async () => {
@@ -677,6 +694,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 					this.display();
 				});
 			});
+		langInstallSetting.controlEl.addClass('biblens-install-row');
 	}
 
 }

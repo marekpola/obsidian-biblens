@@ -1286,6 +1286,160 @@ Expected:
 
 ---
 
+## T043 – Bundle WEB English translation on first install
+
+### 43a – Translation written on clean install (manual)
+
+Steps:
+1. Delete `translations/web.json` from the plugin folder and clear `bundledPacksWritten` from plugin data (or use a fresh vault).
+2. Reload the plugin.
+3. Open **Settings → BibLens → Translations** (expand).
+
+Expected:
+- `translations/web.json` is present in the plugin folder.
+- The translation appears in the installed list.
+- If no preferred translation was set, it is auto-selected as the active translation.
+
+### 43b – File not overwritten on subsequent load (manual)
+
+Steps:
+1. Note the modification time of `translations/web.json`.
+2. Reload the plugin.
+
+Expected:
+- Modification time is unchanged — the file was not rewritten.
+
+### 43c – WEB attribution in LICENSES.md (automated)
+
+- `grep -i "World English Bible\|WEB" LICENSES.md` returns a match.
+
+### 43d – CI (automated)
+
+- `npm run ci` passes with 0 errors.
+
+---
+
+## T049 – Remove Advanced (Catalog Management) section from Settings
+
+### 49a – Advanced section absent (manual)
+
+Steps:
+1. Open **Settings → BibLens**.
+2. Scroll through the entire settings tab.
+
+Expected:
+- No "Advanced" heading or section is visible.
+- No "Update catalog" button is present.
+- No "Auto-update catalog on startup" toggle is present.
+
+### 49b – No startup catalog network request (manual)
+
+Steps:
+1. Open **DevTools → Network**.
+2. Reload Obsidian (or disable and re-enable the plugin).
+3. Observe network activity during plugin load.
+
+Expected:
+- No network request to the catalog URL is made on startup.
+
+### 49c – Fields removed from settings interface (automated)
+
+- `grep -n "autoUpdateCatalog\|catalogLastUpdated" src/settings.ts` returns no matches.
+- `grep -n "autoUpdateCatalog\|catalogLastUpdated\|fetchCatalogUpdate\|isCatalogStale\|catalogUtils" src/main.ts src/settingsTab.ts src/sources/catalogManager.ts` returns no matches.
+- `npm run ci` passes with 0 errors.
+
+---
+
+## T050 – Fix write-once flag for bundled starter packs
+
+### 50a – Deleted bundled pack is not recreated (manual)
+
+Steps:
+1. Confirm the plugin has loaded at least once (all three bundled packs written and flags set).
+2. Delete `recognition-languages/en.json` from the plugin folder.
+3. Reload the plugin (Command palette → **Reload app**).
+4. Check whether `recognition-languages/en.json` has reappeared.
+
+Expected:
+- The file is **not** recreated.
+
+Steps (repeat for remaining packs):
+- Repeat steps 2–4 for `reference-formats/en-sbl.json`.
+- Repeat steps 2–4 for `translations/web.json`.
+
+Expected:
+- Neither file is recreated.
+
+### 50b – Write-once flags persisted in plugin data (manual)
+
+Steps:
+1. Open **DevTools → Console** and run:
+   `app.plugins.plugins['biblens'].loadData().then(d => console.log(d.bundledPacksWritten))`
+2. Observe the output.
+
+Expected:
+- An object is logged containing truthy entries for all three paths:
+  `recognition-languages/en.json`, `reference-formats/en-sbl.json`, `translations/web.json`.
+
+### 50c – CI (automated)
+
+- `npm run ci` passes with 0 errors.
+
+---
+
+## T051 – Fix Load button: tooltip, result display, layout
+
+### 51a – Load button tooltip (manual)
+
+Steps:
+1. Open **Settings → BibLens → Translations** (expand).
+2. Hover over the **Load** button in the Install new row.
+3. Repeat for **Reference formats** and **Recognition languages** sections.
+
+Expected:
+- A tooltip reading "Fetch the current list of available items from the selected provider." appears in all three sections.
+
+### 51b – All items installed placeholder (manual)
+
+Steps:
+1. Ensure all items from the selected provider are already installed.
+2. Press **Load** in the Install new row.
+
+Expected:
+- After loading, the items dropdown shows "All items installed".
+- The Download button remains disabled.
+- The row does not collapse or show an error state.
+
+### 51c – Live results populate dropdown (manual)
+
+Steps:
+1. Ensure at least one item from the selected provider is not yet installed.
+2. Press **Load**.
+
+Expected:
+- The items dropdown is repopulated with the live list from the provider.
+- The Download button becomes enabled.
+
+### 51d – No layout shift on dropdown repopulation (manual)
+
+Steps:
+1. Press **Load** in any Install new row.
+2. Observe the provider dropdown, Load button, and Download button during and after repopulation.
+
+Expected:
+- Provider dropdown, Load button, and Download button do not shift or resize.
+- The items dropdown absorbs available space and does not push other controls.
+
+### 51e – Layout fix applies to all three sections (manual)
+
+- Verify steps 51d in the Translations, Reference formats, and Recognition languages sections.
+
+### 51f – CI (automated)
+
+- `npm run ci` passes with 0 errors.
+
+---
+
 ## Regression Checklist
 
 - Plugin still loads after Obsidian reload.
