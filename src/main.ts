@@ -84,16 +84,7 @@ export default class BibLensPlugin extends Plugin {
 
 		await this.applyStarterPackDefaults();
 
-		const priority1Id = getActivePriority1Id(this.settings);
-		if (priority1Id) {
-			try {
-				const data = await loadTranslation(this.app.vault.adapter, this.manifest.dir!, priority1Id);
-				this.allTranslationData[priority1Id] = data;
-				Object.assign(this._translationData, data);
-			} catch (e) {
-				console.error('BibLens: failed to load translation', e);
-			}
-		}
+		await this.reloadAllTranslations();
 
 		await this.reloadScanner();
 
@@ -145,7 +136,7 @@ export default class BibLensPlugin extends Plugin {
 			id: 'reload-for-development',
 			name: 'Reload for development',
 			callback: async () => {
-				await this.reloadTranslation();
+				await this.reloadAllTranslations();
 				await this.reloadScanner();
 				new Notice('Plugin reloaded.');
 			}
@@ -185,20 +176,32 @@ export default class BibLensPlugin extends Plugin {
 	}
 
 	async reloadAllTranslations() {
-		await this.reloadTranslation();
-	}
+		const ids = Object.entries(this.settings.translationOrder)
+			.filter(([, p]) => p !== null)
+			.map(([id]) => id);
 
-	async reloadTranslation() {
+		const results = await Promise.all(
+			ids.map(async (id) => {
+				try {
+					const data = await loadTranslation(this.app.vault.adapter, this.manifest.dir!, id);
+					return { id, data };
+				} catch (e) {
+					console.error('BibLens: failed to load translation', id, e);
+					return null;
+				}
+			})
+		);
+
 		for (const k of Object.keys(this.allTranslationData)) delete this.allTranslationData[k];
+		for (const r of results) {
+			if (r) this.allTranslationData[r.id] = r.data;
+		}
+
+		// Keep _translationData populated from priority-1 for existing consumers (updated in T056/T057)
 		for (const k of Object.keys(this._translationData)) delete this._translationData[k];
 		const priority1Id = getActivePriority1Id(this.settings);
-		if (!priority1Id) return;
-		try {
-			const newData = await loadTranslation(this.app.vault.adapter, this.manifest.dir!, priority1Id);
-			this.allTranslationData[priority1Id] = newData;
-			Object.assign(this._translationData, newData);
-		} catch (e) {
-			console.error('BibLens: failed to reload translation', e);
+		if (priority1Id && this.allTranslationData[priority1Id]) {
+			Object.assign(this._translationData, this.allTranslationData[priority1Id]);
 		}
 	}
 

@@ -81,7 +81,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 				}
 
 				if (needsSave) await this.plugin.saveSettings();
-				if (needsReloadTranslation) await this.plugin.reloadTranslation();
+				if (needsReloadTranslation) await this.plugin.reloadAllTranslations();
 				if (needsReloadScanner) await this.plugin.reloadScanner();
 
 				// Build status
