@@ -1544,6 +1544,95 @@ Expected:
 
 ---
 
+## T056 – Multi-translation verse DOM
+
+### 56a – Single active translation: hover unchanged (manual)
+
+Setup:
+- Exactly one translation installed and set to priority 1; no other priority-numbered translations.
+
+Steps:
+1. Open a note in Reading View containing a single-verse reference (e.g. `Gen 1:1`).
+2. Hover over the reference.
+
+Expected:
+- Popover appears with the single-translation verse text — identical to v1.0 behaviour.
+- No abbreviation prefix, no `<hr>`, no navigation buttons.
+
+### 56b – Two translations, single verse: stacked layout (manual)
+
+Setup:
+- Two translations installed, both assigned a priority number (e.g. WEB at 1, CEP at 2).
+- Open a note in Reading View containing `Gen 1:1`.
+
+Steps:
+1. Hover over `Gen 1:1`.
+
+Expected:
+- Popover shows two stacked blocks separated by `<hr>`.
+- First block: `WEB Gen 1:1` in superscript followed by verse text.
+- Second block: `CEP Gen 1:1` in superscript followed by verse text.
+- No navigation buttons.
+
+### 56c – Two translations, multi-verse cross-chapter ref: paged layout (manual)
+
+Setup:
+- Two translations installed with priority numbers.
+- Open a note in Reading View with a cross-chapter reference (e.g. `Gen 1:31-2:3`).
+
+Steps:
+1. Hover over `Gen 1:31-2:3`.
+
+Expected:
+- Popover shows paged layout: first page displays the first translation's verses with its abbreviation heading at the top.
+- Prev (←) and Next (→) navigation buttons are visible.
+- Prev button is disabled on the first page.
+- Clicking Next switches to the second translation's verses; Next is then disabled.
+- Clicking Prev returns to the first page.
+- Each new hover resets to the first page.
+
+### 56d – Two translations, same-chapter multi-verse ref: stacked layout (manual)
+
+Setup:
+- Two translations installed with priority numbers.
+- Reference such as `Gen 1:1-3` (same chapter, 3 verses).
+
+Steps:
+1. Hover over `Gen 1:1-3` in Reading View.
+
+Expected:
+- Stacked layout: both translations shown inline with abbreviation prefix, separated by `<hr>`.
+- No navigation buttons.
+
+### 56e – Translation with no verse found: abbreviation only, no error (manual)
+
+Setup:
+- Two translations installed; one does NOT contain the referenced verse.
+- Hover over a reference that exists in one translation but not the other.
+
+Expected:
+- Block for the missing translation shows only its abbreviation superscript — no "Verse not found." text.
+- Block for the present translation shows verse text normally.
+
+### 56f – Editor tooltip: stacked layout for cross-chapter ref (manual)
+
+Setup:
+- Two translations installed with priority numbers.
+- Open a note in Live Preview with a cross-chapter reference.
+
+Steps:
+1. Hover over the reference in the editor.
+
+Expected:
+- Tooltip shows stacked layout (not paged) — no navigation buttons.
+- Both translations displayed inline with abbreviation prefixes and `<hr>` separator.
+
+### 56g – CI (automated)
+
+- `npm run ci` passes with 0 errors.
+
+---
+
 ## Regression Checklist
 
 - Plugin still loads after Obsidian reload.

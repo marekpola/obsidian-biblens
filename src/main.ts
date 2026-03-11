@@ -12,7 +12,7 @@ import { refTooltipExtension } from './editor/refTooltip';
 import { insertAfterLastRefCommand, replaceLastRefWithQuoteCommand } from './editor/insertVerse';
 import type { TranslationData } from './provider';
 import { getVerses } from './provider';
-import { buildVerseDOM } from './ui/verseDOM';
+import { buildVerseDOM, buildMultiTranslationDOM } from './ui/verseDOM';
 import { loadTranslation } from './translationLoader';
 import { listAvailableTranslations } from './translationRegistry';
 import { loadLanguagePack } from './languagePackLoader';
@@ -22,7 +22,7 @@ import { listAvailableReferenceFormats } from './referenceFormatRegistry';
 import type { AbbreviationMap } from './books';
 import type { BibLensSettings } from './settings';
 import { DEFAULT_SETTINGS } from './settings';
-import { migratePreferredTranslation, getActivePriority1Id } from './translationOrder';
+import { migratePreferredTranslation, getActivePriority1Id, getActiveTranslations } from './translationOrder';
 import type { ReferenceFormatRules } from './types';
 import { BibLensSettingTab } from './settingsTab';
 
@@ -51,6 +51,7 @@ export default class BibLensPlugin extends Plugin {
 	private popover = new PopoverManager();
 	allTranslationData: Record<string, TranslationData> = {};
 	private readonly _translationData: TranslationData = {};
+	private readonly _activeTranslations: { id: string; abbreviation: string; data: TranslationData }[] = [];
 	settings!: BibLensSettings;
 
 	// Mutable refFormat — mutated in-place so extensions always read current state
@@ -149,7 +150,7 @@ export default class BibLensPlugin extends Plugin {
 		this.registerEditorExtension([
 			scannerField,
 			refDecorationsExtension(),
-			refTooltipExtension(this._translationData, this._refFormat),
+			refTooltipExtension(this._activeTranslations, this._refFormat),
 		]);
 
 		// Dispatch the scanner built during onload to editors that are already open
@@ -197,12 +198,16 @@ export default class BibLensPlugin extends Plugin {
 			if (r) this.allTranslationData[r.id] = r.data;
 		}
 
-		// Keep _translationData populated from priority-1 for existing consumers (updated in T056/T057)
+		// Keep _translationData populated from priority-1 for existing consumers (updated in T057)
 		for (const k of Object.keys(this._translationData)) delete this._translationData[k];
 		const priority1Id = getActivePriority1Id(this.settings);
 		if (priority1Id && this.allTranslationData[priority1Id]) {
 			Object.assign(this._translationData, this.allTranslationData[priority1Id]);
 		}
+
+		// Update ordered active-translation list in-place so registered extensions see current state
+		const newActive = getActiveTranslations(this.settings, this.allTranslationData);
+		this._activeTranslations.splice(0, this._activeTranslations.length, ...newActive);
 	}
 
 	async reloadScanner() {
@@ -327,8 +332,21 @@ export default class BibLensPlugin extends Plugin {
 			span.textContent = match.matchText;
 
 			const ref = match.ref;
-			this.registerDomEvent(span, 'mouseenter', (e) =>
-				this.popover.show(e.target as HTMLElement, buildVerseDOM(getVerses(this._translationData, ref, this._refFormat))));
+			this.registerDomEvent(span, 'mouseenter', (e) => {
+				const translations = this._activeTranslations;
+				if (translations.length === 0) return;
+				let dom: HTMLElement;
+				if (translations.length === 1) {
+					dom = buildVerseDOM(getVerses(translations[0]!.data, ref, this._refFormat));
+				} else {
+					const blocks = translations.map(t => ({
+						abbreviation: t.abbreviation,
+						entries: getVerses(t.data, ref, this._refFormat),
+					}));
+					dom = buildMultiTranslationDOM(blocks);
+				}
+				this.popover.show(e.target as HTMLElement, dom);
+			});
 			this.registerDomEvent(span, 'mouseleave', () => this.popover.requestHide());
 
 			fragment.appendChild(span);
