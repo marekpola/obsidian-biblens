@@ -3,6 +3,7 @@ export interface BibLensSettings {
 	preferredLanguage: string;
 	standardReferenceFormat: string;
 	parsingRules: 'strict' | 'extended';
+	bundledPacksWritten: Record<string, boolean>;
 }
 
 export const DEFAULT_SETTINGS: BibLensSettings = {
@@ -10,4 +11,5 @@ export const DEFAULT_SETTINGS: BibLensSettings = {
 	preferredLanguage: '',
 	standardReferenceFormat: '',
 	parsingRules: 'extended',
+	bundledPacksWritten: {},
 };

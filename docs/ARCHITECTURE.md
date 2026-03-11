@@ -79,6 +79,7 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - `preferredLanguage: string`
   - `standardReferenceFormat: string`
   - `parsingRules: 'strict' | 'extended'` (default: `'extended'`)
+  - `bundledPacksWritten: Record<string, boolean>` (default: `{}`) — write-once flags keyed by relative pack path; once set, the pack is never rewritten even if the file is deleted
 - src/books.ts
   - Definition of standard representation of biblical books and built-in abbreviation mapping
   - Exports: `SINGLE_CHAPTER_BOOKS: Set<BookId>` — the set of USFM book identifiers that have only one chapter (`OBA`, `PHM`, `2JN`, `3JN`, `JUD`); used by `parseCVPart` and `formatRef` to apply single-chapter interpretation rules (see D029)

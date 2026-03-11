@@ -276,13 +276,14 @@ export default class BibLensPlugin extends Plugin {
 	}
 
 	private async writeStarterPackIfAbsent(relativePath: string, data: unknown): Promise<void> {
+		if (this.settings.bundledPacksWritten[relativePath]) return;
 		const fullPath = `${this.manifest.dir!}/${relativePath}`;
 		try {
-			if (!await this.app.vault.adapter.exists(fullPath)) {
-				const dir = fullPath.substring(0, fullPath.lastIndexOf('/'));
-				await this.app.vault.adapter.mkdir(dir);
-				await this.app.vault.adapter.write(fullPath, JSON.stringify(data, null, 2));
-			}
+			const dir = fullPath.substring(0, fullPath.lastIndexOf('/'));
+			await this.app.vault.adapter.mkdir(dir);
+			await this.app.vault.adapter.write(fullPath, JSON.stringify(data, null, 2));
+			this.settings.bundledPacksWritten[relativePath] = true;
+			await this.saveSettings();
 		} catch (e) {
 			console.error(`BibLens: failed to write bundled starter pack ${relativePath}`, e);
 		}
