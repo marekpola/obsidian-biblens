@@ -12,6 +12,8 @@ The plugin:
 
 ---
 
+# Version 1.0
+
 ## What BibLens Does
 
 - Detects Bible references in notes and underlines them in the editor
@@ -74,13 +76,13 @@ Single-chapter books: `N`, `N-N` (interpreted as verses of chapter 1).
 
 ```json
 {
-  "id": "bible21",
-  "name": "Bible21",
-  "lang": "cs",
-  "source": "dava3.net",
+  "id": "web",
+  "name": "World English Bible",
+  "lang": "en",
+  "source": "GetBible (api.getbible.net)",
   "formatVersion": 1,
   "verses": {
-    "GEN 1:1": "Na počátku Bůh stvořil nebe a zemi."
+    "GEN 1:1": "In the beginning, God created the heavens and the earth.",
   }
 }
 ```
@@ -102,13 +104,16 @@ Deprecated fields `canonicalAbbreviations` and `allowedAbbreviations` are silent
 
 ```json
 {
-  "id": "cs",
-  "displayName": "Czech",
-  "lang": "cs",
+  "id": "en",
+  "displayName": "English",
+  "lang": "en",
   "formatVersion": 1,
+  "source": "cleaned",
   "books": {
-    "GEN": { "aliases": ["Gn", "Gen", "Genesis", "1. Mojžíšova"] },
-    "MAT": { "aliases": ["Mt", "Mat", "Matouš"] }
+    "GEN": {
+      "aliases": [
+        "Genesis",["Gn", "Gen", "Genesis", "1. Mojžíšova"] },
+        "MAT": { "aliases": ["Mt", "Mat", "Matouš"] }
   }
 }
 ```
@@ -125,8 +130,8 @@ Deprecated fields `canonicalAbbreviations` and `allowedAbbreviations` are silent
 
 ```json
 {
-  "id": "cs-protestant",
-  "displayName": "Czech Protestant",
+  "id": "cs-cek",
+  "displayName":"Czech (Český ekumenický komentář)",
   "lang": "cs",
   "formatVersion": 1,
   "books": { "GEN": "Gn", "EXO": "Ex", "MAT": "Mt" },
@@ -213,6 +218,10 @@ All network access is an explicit user action; no silent background downloads.
 - All new features must update TESTPLAN.md.
 
 ---
+
+# Next version
+Items in this section are prepared for the implementation of the future versions
+
 
 ## Proposed
 
