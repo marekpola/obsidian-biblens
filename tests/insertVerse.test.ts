@@ -15,11 +15,13 @@ const EN_FORMAT: ReferenceFormatRules = {
 
 const dataA: TranslationData = {
 	"GEN.1.1": "Na počátku stvořil Bůh nebe a zemi.",
+	"GEN.1.2": "Země pak byla pustá a prázdná.",
 	"MAT.5.3": "Blahoslavení chudí duchem.",
 };
 
 const dataB: TranslationData = {
 	"GEN.1.1": "In the beginning God created the heavens and the earth.",
+	"GEN.1.2": "Now the earth was formless and empty.",
 	"MAT.5.3": "Blessed are the poor in spirit.",
 };
 
@@ -100,20 +102,20 @@ describe("insertAfterLastRefCommand", () => {
 });
 
 describe("replaceLastRefWithQuoteCommand", () => {
-	it("replaces reference with blockquote including abbreviation (mid-line adds leading newline)", () => {
+	it("single translation: replaces reference without abbreviation (mid-line adds leading newline)", () => {
 		const doc = "See Gn 1,1 for reference.";
 		const { view, getInsert, getFrom, getTo } = makeView(doc);
 		replaceLastRefWithQuoteCommand(scanner, translA, EN_FORMAT)(view);
-		expect(getInsert()).toBe("\n> CEP Gen 1:1 Na počátku stvořil Bůh nebe a zemi.\n");
+		expect(getInsert()).toBe("\n> Gen 1:1 Na počátku stvořil Bůh nebe a zemi.\n");
 		expect(getFrom()).toBe(4);
 		expect(getTo()).toBe(10);
 	});
 
-	it("replaces reference without leading newline when reference is at line start", () => {
+	it("single translation: replaces reference without leading newline when reference is at line start", () => {
 		const doc = "Some intro.\nGn 1,1";
 		const { view, getInsert } = makeView(doc);
 		replaceLastRefWithQuoteCommand(scanner, translA, EN_FORMAT)(view);
-		expect(getInsert()).toBe("> CEP Gen 1:1 Na počátku stvořil Bůh nebe a zemi.\n");
+		expect(getInsert()).toBe("> Gen 1:1 Na počátku stvořil Bůh nebe a zemi.\n");
 	});
 
 	it("returns false when no references found", () => {
@@ -128,7 +130,7 @@ describe("replaceLastRefWithQuoteCommand", () => {
 		expect(wasDispatched()).toBe(false);
 	});
 
-	it("two translations produce two quote lines in priority order", () => {
+	it("two translations, single verse: abbreviation on each block's only line", () => {
 		const doc = "See Gn 1,1.";
 		const { view, getInsert } = makeView(doc);
 		replaceLastRefWithQuoteCommand(scanner, translAB, EN_FORMAT)(view);
@@ -137,7 +139,16 @@ describe("replaceLastRefWithQuoteCommand", () => {
 		);
 	});
 
-	it("translation with no verse for the reference is silently omitted", () => {
+	it("two translations, multi-verse: abbreviation only on first line of each block", () => {
+		const doc = "See Gn 1,1-2.";
+		const { view, getInsert } = makeView(doc);
+		replaceLastRefWithQuoteCommand(scanner, translAB, EN_FORMAT)(view);
+		expect(getInsert()).toBe(
+			"\n> CEP Gen 1:1 Na počátku stvořil Bůh nebe a zemi.\n> 2 Země pak byla pustá a prázdná.\n> WEB Gen 1:1 In the beginning God created the heavens and the earth.\n> 2 Now the earth was formless and empty.\n"
+		);
+	});
+
+	it("two translations with one missing verse: missing omitted, remaining has abbreviation", () => {
 		const emptyB = [
 			{ id: 'cep', abbreviation: 'CEP', data: dataA },
 			{ id: 'noverses', abbreviation: 'XYZ', data: {} },
@@ -145,6 +156,7 @@ describe("replaceLastRefWithQuoteCommand", () => {
 		const doc = "See Gn 1,1.";
 		const { view, getInsert } = makeView(doc);
 		replaceLastRefWithQuoteCommand(scanner, emptyB, EN_FORMAT)(view);
+		// Two translations active → abbreviation prefix present for remaining line
 		expect(getInsert()).toBe("\n> CEP Gen 1:1 Na počátku stvořil Bůh nebe a zemi.\n");
 	});
 

@@ -215,10 +215,25 @@ export function buildRefScanner(
   const fmt = format;
   const parsingMode = mode ?? 'strict';
 
+  // In extended mode, supplement the language-pack alias map with the format pack's
+  // canonical abbreviations as fallbacks, so references written using the format's
+  // canonical forms (e.g. "1S") are recognised even when the language pack omits them.
+  const effectiveMap: AbbreviationMap =
+    parsingMode === 'extended'
+      ? (() => {
+          const m: AbbreviationMap = { ...map };
+          for (const [id, abbr] of Object.entries(fmt.books)) {
+            const key = normalizeBookKey(abbr);
+            if (!(key in m)) m[key] = id as BookId;
+          }
+          return m;
+        })()
+      : map;
+
   const rawAliases: string[] =
     parsingMode === 'strict'
       ? Object.values(fmt.books)
-      : Object.keys(map);
+      : Object.keys(effectiveMap);
 
   if (rawAliases.length === 0) {
     return { scan: () => [] };
@@ -266,7 +281,7 @@ const cvScanPat =
     }
   } else {
     aliasToId = {} as Record<string, BookId>;
-    for (const [alias, id] of Object.entries(map)) {
+    for (const [alias, id] of Object.entries(effectiveMap)) {
       aliasToId[normalizeLooseBookKey(alias)] = id;
     }
   }

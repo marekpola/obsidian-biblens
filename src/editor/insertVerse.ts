@@ -48,11 +48,13 @@ export function replaceLastRefWithQuoteCommand(
 		const last = matches[matches.length - 1];
 		if (!last) return false;
 
+		const showAbbr = activeTranslations.length > 1;
 		const lines: string[] = [];
 		for (const t of activeTranslations) {
 			const entries = getVerses(t.data, last.ref, refFormat);
-			for (const e of entries) {
-				lines.push(`> ${t.abbreviation} ${e.label} ${e.text}`);
+			for (let i = 0; i < entries.length; i++) {
+				const e = entries[i]!;
+				lines.push(showAbbr && i === 0 ? `> ${t.abbreviation} ${e.label} ${e.text}` : `> ${e.label} ${e.text}`);
 			}
 		}
 		if (lines.length === 0) return false;
