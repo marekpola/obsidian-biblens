@@ -22,6 +22,7 @@ import { listAvailableReferenceFormats } from './referenceFormatRegistry';
 import type { AbbreviationMap } from './books';
 import type { BibLensSettings } from './settings';
 import { DEFAULT_SETTINGS } from './settings';
+import { migratePreferredTranslation, getActivePriority1Id } from './translationOrder';
 import type { ReferenceFormatRules } from './types';
 import { BibLensSettingTab } from './settingsTab';
 
@@ -48,7 +49,8 @@ function collectTextNodes(root: HTMLElement): Text[] {
 
 export default class BibLensPlugin extends Plugin {
 	private popover = new PopoverManager();
-	private translationData: TranslationData = {};
+	allTranslationData: Record<string, TranslationData> = {};
+	private readonly _translationData: TranslationData = {};
 	settings!: BibLensSettings;
 
 	// Mutable refFormat — mutated in-place so extensions always read current state
@@ -75,16 +77,22 @@ export default class BibLensPlugin extends Plugin {
 		await this.writeStarterPackIfAbsent('recognition-languages/en.json', enLanguagePack);
 		await this.writeStarterPackIfAbsent('reference-formats/en-sbl.json', enSblFormatPack);
 		await this.writeStarterPackIfAbsent('translations/web.json', webTranslation);
+
+		if (migratePreferredTranslation(this.settings)) {
+			await this.saveSettings();
+		}
+
 		await this.applyStarterPackDefaults();
 
-		try {
-			this.translationData = await loadTranslation(
-				this.app.vault.adapter,
-				this.manifest.dir!,
-				this.settings.preferredTranslation
-			);
-		} catch (e) {
-			console.error('BibLens: failed to load translation', e);
+		const priority1Id = getActivePriority1Id(this.settings);
+		if (priority1Id) {
+			try {
+				const data = await loadTranslation(this.app.vault.adapter, this.manifest.dir!, priority1Id);
+				this.allTranslationData[priority1Id] = data;
+				Object.assign(this._translationData, data);
+			} catch (e) {
+				console.error('BibLens: failed to load translation', e);
+			}
 		}
 
 		await this.reloadScanner();
@@ -104,7 +112,7 @@ export default class BibLensPlugin extends Plugin {
 				const view = (editor as unknown as { cm: EditorView }).cm;
 				if (view) insertAfterLastRefCommand(
 					this.scanner,
-					this.translationData,
+					this._translationData,
 					this._refFormat
 				)(view);
 			}
@@ -117,7 +125,7 @@ export default class BibLensPlugin extends Plugin {
 				const view = (editor as unknown as { cm: EditorView }).cm;
 				if (view) replaceLastRefWithQuoteCommand(
 					this.scanner,
-					this.translationData,
+					this._translationData,
 					this._refFormat
 				)(view);
 			}
@@ -150,7 +158,7 @@ export default class BibLensPlugin extends Plugin {
 		this.registerEditorExtension([
 			scannerField,
 			refDecorationsExtension(),
-			refTooltipExtension(this.translationData, this._refFormat),
+			refTooltipExtension(this._translationData, this._refFormat),
 		]);
 
 		// Dispatch the scanner built during onload to editors that are already open
@@ -177,15 +185,14 @@ export default class BibLensPlugin extends Plugin {
 	}
 
 	async reloadTranslation() {
-		for (const k of Object.keys(this.translationData)) delete this.translationData[k];
-		if (!this.settings.preferredTranslation) return;
+		for (const k of Object.keys(this.allTranslationData)) delete this.allTranslationData[k];
+		for (const k of Object.keys(this._translationData)) delete this._translationData[k];
+		const priority1Id = getActivePriority1Id(this.settings);
+		if (!priority1Id) return;
 		try {
-			const newData = await loadTranslation(
-				this.app.vault.adapter,
-				this.manifest.dir!,
-				this.settings.preferredTranslation
-			);
-			Object.assign(this.translationData, newData);
+			const newData = await loadTranslation(this.app.vault.adapter, this.manifest.dir!, priority1Id);
+			this.allTranslationData[priority1Id] = newData;
+			Object.assign(this._translationData, newData);
 		} catch (e) {
 			console.error('BibLens: failed to reload translation', e);
 		}
@@ -253,15 +260,15 @@ export default class BibLensPlugin extends Plugin {
 	}
 
 	private async applyStarterPackDefaults(): Promise<void> {
-		if (this.settings.preferredTranslation && this.settings.standardReferenceFormat && this.settings.preferredLanguage) return;
+		if (getActivePriority1Id(this.settings) && this.settings.standardReferenceFormat && this.settings.preferredLanguage) return;
 		const [translations, formats, packs] = await Promise.all([
 			listAvailableTranslations(this.app.vault.adapter, this.manifest.dir!),
 			listAvailableReferenceFormats(this.app.vault.adapter, this.manifest.dir!),
 			listAvailableLanguagePacks(this.app.vault.adapter, this.manifest.dir!),
 		]);
 		let needsSave = false;
-		if (!this.settings.preferredTranslation && translations.length > 0) {
-			this.settings.preferredTranslation = translations[0]!.id;
+		if (!getActivePriority1Id(this.settings) && translations.length > 0) {
+			this.settings.translationOrder[translations[0]!.id] = 1;
 			needsSave = true;
 		}
 		if (!this.settings.standardReferenceFormat && formats.length > 0) {
@@ -314,7 +321,7 @@ export default class BibLensPlugin extends Plugin {
 
 			const ref = match.ref;
 			this.registerDomEvent(span, 'mouseenter', (e) =>
-				this.popover.show(e.target as HTMLElement, buildVerseDOM(getVerses(this.translationData, ref, this._refFormat))));
+				this.popover.show(e.target as HTMLElement, buildVerseDOM(getVerses(this._translationData, ref, this._refFormat))));
 			this.registerDomEvent(span, 'mouseleave', () => this.popover.requestHide());
 
 			fragment.appendChild(span);

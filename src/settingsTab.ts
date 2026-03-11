@@ -9,6 +9,7 @@ import { downloadLanguagePack, deleteLanguagePack, downloadReferenceFormat, dele
 import type { SourceProvider, LanguagePackProvider, ReferenceFormatProvider, RemoteTranslationEntry, RemoteLanguagePackEntry, RemoteReferenceFormatEntry } from './sources/catalog';
 import { getAdapter, getLanguagePackAdapter, getReferenceFormatAdapter } from './sources/adapters';
 import type { CatalogData, TranslationMeta, ReferenceFormatMeta, LanguagePackMeta } from './types';
+import { getActivePriority1Id } from './translationOrder';
 
 export class BibLensSettingTab extends PluginSettingTab {
 	private plugin: BibLensPlugin;
@@ -46,8 +47,8 @@ export class BibLensSettingTab extends PluginSettingTab {
 				let needsReloadTranslation = false;
 				let needsReloadScanner = false;
 
-				if (s.preferredTranslation === '' && translations.length > 0) {
-					s.preferredTranslation = translations[0]!.id;
+				if (!getActivePriority1Id(s) && translations.length > 0) {
+					s.translationOrder[translations[0]!.id] = 1;
 					needsSave = true;
 					needsReloadTranslation = true;
 				}
@@ -67,7 +68,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 				if (needsReloadScanner) await this.plugin.reloadScanner();
 
 				// Build status
-				const translName = translations.find(t => t.id === s.preferredTranslation)?.displayName
+				const translName = translations.find(t => t.id === getActivePriority1Id(s))?.displayName
 					?? 'None — verse text unavailable';
 				const fmtName = formats.find(f => f.id === s.standardReferenceFormat)?.displayName
 					?? 'None — reference format unavailable';
@@ -152,7 +153,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 		}
 
 		for (const t of translations) {
-			const isActive = t.id === this.plugin.settings.preferredTranslation;
+			const isActive = t.id === getActivePriority1Id(this.plugin.settings);
 			const desc = [
 				t.lang ? `Language: ${t.lang}` : '',
 				t.source ? `Source: ${t.source}` : '',
@@ -168,7 +169,12 @@ export class BibLensSettingTab extends PluginSettingTab {
 					btn.setButtonText('Set as default');
 					btn.onClick(async () => {
 						btn.setDisabled(true);
-						this.plugin.settings.preferredTranslation = t.id;
+						for (const k of Object.keys(this.plugin.settings.translationOrder)) {
+							if (this.plugin.settings.translationOrder[k] === 1) {
+								this.plugin.settings.translationOrder[k] = null;
+							}
+						}
+						this.plugin.settings.translationOrder[t.id] = 1;
 						await this.plugin.saveSettings();
 						await this.plugin.reloadTranslation();
 						new Notice(`BibLens: switched to ${t.displayName}`);
