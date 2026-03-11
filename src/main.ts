@@ -1,4 +1,4 @@
-import { MarkdownPostProcessorContext, Notice, Plugin } from 'obsidian';
+import { MarkdownPostProcessorContext, MarkdownView, Notice, Plugin } from 'obsidian';
 import enLanguagePack from './data/en.json';
 import enSblFormatPack from './data/en-sbl.json';
 import webTranslation from './data/web.json';
@@ -25,6 +25,7 @@ import { DEFAULT_SETTINGS } from './settings';
 import { migratePreferredTranslation, getActivePriority1Id, getActiveTranslations } from './translationOrder';
 import type { ReferenceFormatRules } from './types';
 import { BibLensSettingTab } from './settingsTab';
+import { BookAbbreviationModal } from './ui/bookAbbreviationModal';
 
 const EXCLUDED_TAGS = new Set(['A', 'CODE', 'PRE', 'SCRIPT', 'STYLE', 'BUTTON', 'INPUT', 'TEXTAREA']);
 
@@ -104,7 +105,7 @@ export default class BibLensPlugin extends Plugin {
 				const view = (editor as unknown as { cm: EditorView }).cm;
 				if (view) insertAfterLastRefCommand(
 					this.scanner,
-					this._translationData,
+					this._activeTranslations,
 					this._refFormat
 				)(view);
 			}
@@ -117,9 +118,31 @@ export default class BibLensPlugin extends Plugin {
 				const view = (editor as unknown as { cm: EditorView }).cm;
 				if (view) replaceLastRefWithQuoteCommand(
 					this.scanner,
-					this._translationData,
+					this._activeTranslations,
 					this._refFormat
 				)(view);
+			}
+		});
+
+		this.addCommand({
+			id: 'insert-book-abbreviation',
+			name: 'Insert book abbreviation',
+			checkCallback: (checking: boolean) => {
+				const mdView = this.app.workspace.getActiveViewOfType(MarkdownView);
+				if (!mdView) {
+					if (!checking) new Notice('No active editor.');
+					return false;
+				}
+				if (!checking) {
+					new BookAbbreviationModal(this.app, this._refFormat.books, (abbr) => {
+						const view = (mdView.editor as unknown as { cm: EditorView }).cm;
+						if (view) {
+							const cursor = view.state.selection.main.head;
+							view.dispatch({ changes: { from: cursor, insert: abbr } });
+						}
+					}).open();
+				}
+				return true;
 			}
 		});
 

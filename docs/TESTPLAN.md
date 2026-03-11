@@ -1633,6 +1633,155 @@ Expected:
 
 ---
 
+## T057 – Multi-translation insert commands
+
+### 57a – Insert verse: single translation includes abbreviation prefix (manual)
+
+Setup:
+- One translation (e.g. WEB) set to priority 1.
+- Open a note in Live Preview containing `Gen 1:1`.
+- Place cursor after the reference.
+
+Steps:
+1. Run command **BibLens: Insert verse after previous reference**.
+
+Expected:
+- Text ` — WEB In the beginning...` is inserted immediately after the reference.
+- Abbreviation prefix (`WEB`) is present.
+
+### 57b – Insert verse: uses priority-1 translation only (manual)
+
+Setup:
+- Two translations installed (e.g. WEB at priority 1, CEP at priority 2).
+- Open a note in Live Preview with a reference; cursor placed after it.
+
+Steps:
+1. Run command **BibLens: Insert verse after previous reference**.
+
+Expected:
+- Only the priority-1 translation text is inserted.
+- No text from the second translation appears.
+
+### 57c – Replace with quote: single translation includes abbreviation (manual)
+
+Setup:
+- One translation (e.g. WEB) at priority 1.
+- Open a note in Live Preview containing `Gen 1:1` mid-line.
+
+Steps:
+1. Place cursor after the reference.
+2. Run command **BibLens: Replace previous reference with quote**.
+
+Expected:
+- Reference is replaced with `\n> WEB Gen 1:1 In the beginning...\n`.
+- Abbreviation prefix (`WEB`) is present in the blockquote line.
+
+### 57d – Replace with quote: two translations produce two lines in priority order (manual)
+
+Setup:
+- Two translations installed with priority numbers (e.g. CEP=1, WEB=2).
+- Open a note in Live Preview with `Gen 1:1`.
+
+Steps:
+1. Place cursor after the reference.
+2. Run command **BibLens: Replace previous reference with quote**.
+
+Expected:
+- Reference is replaced with two consecutive blockquote lines:
+  ```
+  > CEP Gen 1:1 Na počátku...
+  > WEB Gen 1:1 In the beginning...
+  ```
+- Lines appear in priority order (CEP first, WEB second).
+
+### 57e – Replace with quote: translation with no verse is silently omitted (manual)
+
+Setup:
+- Two translations installed; one does not contain the referenced verse.
+
+Steps:
+1. Place cursor after a reference that only exists in one translation.
+2. Run command **BibLens: Replace previous reference with quote**.
+
+Expected:
+- Only the translation that has verse text produces a blockquote line.
+- No empty or error line for the missing translation.
+
+### 57f – CI (automated)
+
+- `npm run ci` passes with 0 errors.
+- `insertVerse.ts` contains no `obsidian` import.
+
+---
+
+## T058 – Insert book abbreviation command
+
+### 58a – Command appears in palette (manual)
+
+Steps:
+1. Open command palette, type "BibLens".
+
+Expected:
+- `BibLens: Insert book abbreviation` is listed.
+
+### 58b – Modal lists format-pack abbreviations and filters by substring (manual)
+
+Setup:
+- A reference format pack is active (e.g. `en-sbl.json`).
+- Open a note in Live Preview; place cursor in the editor.
+
+Steps:
+1. Run **BibLens: Insert book abbreviation**.
+2. Observe the modal list.
+3. Type a partial abbreviation (e.g. `Gen`).
+
+Expected:
+- Modal opens with a filterable list of canonical abbreviations from the active format pack.
+- Typing `Gen` narrows the list to entries containing "gen" (case-insensitive).
+
+### 58c – Selecting an abbreviation inserts it at cursor (manual)
+
+Setup:
+- Same as 58b; cursor placed at a specific position in the editor.
+
+Steps:
+1. Run **BibLens: Insert book abbreviation**.
+2. Select an abbreviation from the modal (e.g. `Gen`).
+
+Expected:
+- The selected abbreviation is inserted at the cursor position.
+- No extra whitespace or characters added.
+
+### 58d – No active format pack: modal falls back to USFM ids (manual)
+
+Setup:
+- Clear `standardReferenceFormat` from plugin settings (or set it to a non-existent pack so `_refFormat.books` is empty `{}`).
+
+Steps:
+1. Run **BibLens: Insert book abbreviation**.
+
+Expected:
+- Modal lists USFM ids (e.g. `GEN`, `EXO`, `MAT`).
+- Filtering still works by substring match.
+
+### 58e – Invoked outside editing context: Notice shown, no error (manual)
+
+Steps:
+1. Switch to Reading View or close all notes.
+2. Run **BibLens: Insert book abbreviation** from the command palette.
+
+Expected:
+- A Notice reading "No active editor." appears.
+- No modal opens.
+- No console errors.
+
+### 58f – CI (automated)
+
+- `npm run ci` passes with 0 errors.
+- `bookAbbreviationModal.ts` contains no `innerHTML`.
+
+---
+
 ## Regression Checklist
 
 - Plugin still loads after Obsidian reload.

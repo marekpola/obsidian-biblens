@@ -18,8 +18,8 @@ Both the task's own DoD and this global DoD must pass before a task is marked Do
 | #  | Title | Status | File |
 |----|-------|--------|------|
 | 58 | Insert book abbreviation command | Next | [T058](Tasks/T058.md) |
-| 57 | Multi-translation insert commands | Next | [T057](Tasks/T057.md) |
-| 56 | Multi-translation verse DOM | Next | [T056](Tasks/T056.md) |
+| 57 | Multi-translation insert commands | Done | [T057](Tasks/T057.md) |
+| 56 | Multi-translation verse DOM | Done | [T056](Tasks/T056.md) |
 | 55 | Multi-translation data loading | Done | [T055](Tasks/T055.md) |
 | 54 | Translation priority/abbreviation: settings UI | Done | [T054](Tasks/T054.md) |
 | 53 | Translation priority/abbreviation: settings data model | Done | [T053](Tasks/T053.md) |
