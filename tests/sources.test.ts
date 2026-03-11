@@ -181,12 +181,51 @@ describe("biblens-data reference format adapter — listUrl / listAvailable", ()
   });
 });
 
-describe("getbible-v2 and beblia-xml — no listAvailable", () => {
+describe("getbible-v2 — no listAvailable", () => {
   it("getbible-v2 does not implement listAvailable", () => {
     expect("listAvailable" in getAdapter("getbible-v2")).toBe(false);
   });
+});
 
-  it("beblia-xml does not implement listAvailable", () => {
-    expect("listAvailable" in getAdapter("beblia-xml")).toBe(false);
+const GITHUB_CONTENTS_RESPONSE = JSON.stringify([
+  { name: "CzechEkumenickyBible.xml", type: "file" },
+  { name: "EnglishKJV.xml",           type: "file" },
+  { name: "somedir",                  type: "dir"  },
+  { name: "README.md",                type: "file" },
+]);
+
+describe("beblia-xml adapter — listUrl / listAvailable", () => {
+  const adapter = getAdapter("beblia-xml");
+  const provider = KNOWN_PROVIDERS.translationProviders.find(p => p.adapterType === "beblia-xml")!;
+
+  it("listUrl returns the GitHub Contents API URL", () => {
+    expect(adapter.listUrl!(provider)).toBe(
+      "https://api.github.com/repos/Beblia/Holy-Bible-XML-Format/contents/"
+    );
+  });
+
+  it("listAvailable filters .xml files and maps to RemoteTranslationEntry[]", () => {
+    const entries = adapter.listAvailable!(GITHUB_CONTENTS_RESPONSE);
+    expect(entries).toHaveLength(2);
+    expect(entries[0]).toEqual({
+      id: "czechekumenickybible",
+      displayName: "CzechEkumenickyBible",
+      language: "",
+      remoteId: "CzechEkumenickyBible.xml",
+    });
+    expect(entries[1]).toEqual({
+      id: "englishkjv",
+      displayName: "EnglishKJV",
+      language: "",
+      remoteId: "EnglishKJV.xml",
+    });
+  });
+
+  it("listAvailable returns empty array for empty response", () => {
+    expect(adapter.listAvailable!(JSON.stringify([]))).toEqual([]);
+  });
+
+  it("listAvailable returns empty array on parse failure", () => {
+    expect(adapter.listAvailable!("not-json")).toEqual([]);
   });
 });

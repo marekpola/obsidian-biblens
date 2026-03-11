@@ -267,7 +267,11 @@ export class BibLensSettingTab extends PluginSettingTab {
 					loadBtn.setButtonText('Loading…');
 					try {
 						const resp = await requestUrl(a.listUrl(currentProvider));
-						const entries = a.listAvailable(resp.text);
+						const raw = a.listAvailable(resp.text);
+						const entries = raw.map(e => {
+							const cat = currentProvider.translations.find(c => c.remoteId === e.remoteId);
+							return cat ? { ...e, displayName: cat.displayName, language: cat.language } : e;
+						});
 						selectedTranslId = populateDrop(translDropRef, currentProvider, entries);
 						downloadBtnRef.setDisabled(!selectedTranslId);
 					} catch (e) {

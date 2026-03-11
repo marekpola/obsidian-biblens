@@ -1440,6 +1440,59 @@ Expected:
 
 ---
 
+## T052 – Implement Beblia listAvailable via GitHub Contents API
+
+### 52a – Load button appears for Beblia provider (manual)
+
+Steps:
+1. Open **Settings → BibLens → Translations** (expand).
+2. Select "Beblia Holy Bible XML (GitHub)" in the provider dropdown.
+
+Expected:
+- The **Load** button is visible next to the provider dropdown.
+
+### 52b – Load fetches live list from GitHub Contents API (manual)
+
+Steps:
+1. Select "Beblia Holy Bible XML (GitHub)" provider.
+2. Press **Load**.
+
+Expected:
+- The items dropdown is repopulated with `.xml` files discovered from the GitHub repository.
+- At least one entry appears (e.g. `CzechEkumenickyBible.xml` or similar).
+
+### 52c – Known catalog entries retain display name and language (manual)
+
+Steps:
+1. After pressing **Load** for the Beblia provider, inspect the items dropdown.
+
+Expected:
+- Entries that match a catalog entry by `remoteId` (e.g. `CzechEkumenickyBible.xml`) show the catalog display name (e.g. "Czech Ecumenical Bible") and language tag, not the raw filename stem.
+
+### 52d – Unknown entries use filename as display name (manual)
+
+Steps:
+1. After pressing **Load**, check for entries not present in the local catalog.
+
+Expected:
+- Such entries appear with the filename stem as display name and an empty language field.
+
+### 52e – HTTP 403 / 429 shows load-failed notice (manual)
+
+Steps:
+1. Simulate a rate-limit or auth error (e.g. by temporarily pointing to an invalid URL, or by exhausting the GitHub unauthenticated rate limit).
+2. Press **Load**.
+
+Expected:
+- A notice reading "BibLens: load failed — …" appears.
+- The items dropdown retains its previous catalog-based state.
+
+### 52f – CI (automated)
+
+- `npm run ci` passes with 0 errors.
+
+---
+
 ## Regression Checklist
 
 - Plugin still loads after Obsidian reload.

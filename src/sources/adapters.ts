@@ -105,9 +105,32 @@ const BOOK_RE    = /<book\s+number="(\d+)">([\s\S]*?)<\/book>/g;
 const CHAPTER_RE = /<chapter\s+number="(\d+)">([\s\S]*?)<\/chapter>/g;
 const VERSE_RE   = /<verse\s+number="(\d+)">([\s\S]*?)<\/verse>/g;
 
+type GitHubContentsItem = { name: string; type: string };
+
 const bebliaXml: SourceAdapter = {
 	buildUrl(provider, entry) {
 		return `${provider.baseUrl}/${entry.remoteId}`;
+	},
+	listUrl(_provider) {
+		return 'https://api.github.com/repos/Beblia/Holy-Bible-XML-Format/contents/';
+	},
+	listAvailable(raw) {
+		try {
+			const items = JSON.parse(raw as string) as GitHubContentsItem[];
+			return items
+				.filter(item => item.type === 'file' && item.name.endsWith('.xml'))
+				.map(item => {
+					const nameWithoutExt = item.name.slice(0, -4);
+					return {
+						id: nameWithoutExt.toLowerCase(),
+						displayName: nameWithoutExt,
+						language: '',
+						remoteId: item.name,
+					};
+				});
+		} catch {
+			return [];
+		}
 	},
 	transform(raw) {
 		const xml = raw as string;
