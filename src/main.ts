@@ -184,6 +184,10 @@ export default class BibLensPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
+	async reloadAllTranslations() {
+		await this.reloadTranslation();
+	}
+
 	async reloadTranslation() {
 		for (const k of Object.keys(this.allTranslationData)) delete this.allTranslationData[k];
 		for (const k of Object.keys(this._translationData)) delete this._translationData[k];

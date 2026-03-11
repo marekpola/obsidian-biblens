@@ -1,4 +1,21 @@
 import { App, ButtonComponent, DropdownComponent, Notice, PluginSettingTab, Setting, requestUrl } from 'obsidian';
+
+function reassignPriority(
+	translationOrder: Record<string, number | null>,
+	targetId: string,
+	newPriority: number | null
+): void {
+	const others = Object.entries(translationOrder)
+		.filter(([id, p]) => id !== targetId && p !== null)
+		.sort(([, a], [, b]) => (a as number) - (b as number))
+		.map(([id]) => id);
+	if (newPriority !== null) {
+		const insertAt = Math.min(newPriority - 1, others.length);
+		others.splice(insertAt, 0, targetId);
+	}
+	for (const id of Object.keys(translationOrder)) translationOrder[id] = null;
+	others.forEach((id, idx) => { translationOrder[id] = idx + 1; });
+}
 import type BibLensPlugin from './main';
 import { listAvailableTranslations } from './translationRegistry';
 import { listAvailableLanguagePacks } from './languagePackRegistry';
@@ -152,52 +169,115 @@ export class BibLensSettingTab extends PluginSettingTab {
 			return;
 		}
 
-		for (const t of translations) {
-			const isActive = t.id === getActivePriority1Id(this.plugin.settings);
-			const desc = [
-				t.lang ? `Language: ${t.lang}` : '',
-				t.source ? `Source: ${t.source}` : '',
-				isActive ? 'Active' : '',
-			].filter(Boolean).join(' · ');
+		const renderList = () => {
+			listEl.empty();
+			const n = translations.length;
+			const settings = this.plugin.settings;
 
-			const setting = new Setting(listEl)
-				.setName(t.displayName)
-				.setDesc(desc);
+			const sorted = [...translations].sort((a, b) => {
+				const pa = settings.translationOrder[a.id] ?? null;
+				const pb = settings.translationOrder[b.id] ?? null;
+				if (pa !== null && pb !== null) return pa - pb;
+				if (pa !== null) return -1;
+				if (pb !== null) return 1;
+				return 0;
+			});
 
-			if (!isActive) {
-				setting.addButton(btn => {
-					btn.setButtonText('Set as default');
-					btn.onClick(async () => {
-						btn.setDisabled(true);
-						for (const k of Object.keys(this.plugin.settings.translationOrder)) {
-							if (this.plugin.settings.translationOrder[k] === 1) {
-								this.plugin.settings.translationOrder[k] = null;
-							}
+			let dragSrcId: string | null = null;
+
+			for (const t of sorted) {
+				const currentPriority = settings.translationOrder[t.id] ?? null;
+				const rowEl = listEl.createDiv({ cls: 'biblens-transl-row' });
+				rowEl.draggable = true;
+
+				const nameEl = rowEl.createDiv({ cls: 'biblens-transl-row-name' });
+				nameEl.textContent = t.displayName;
+
+				const controlsEl = rowEl.createDiv({ cls: 'biblens-transl-row-controls' });
+
+				// Abbreviation input
+				const abbrInput = controlsEl.createEl('input', { type: 'text', cls: 'biblens-transl-abbr' });
+				abbrInput.value = settings.translationAbbreviations[t.id] ?? t.id;
+				if (abbrInput.value.length > 3) abbrInput.addClass('biblens-abbr-over-limit');
+				abbrInput.addEventListener('input', () => {
+					const val = abbrInput.value;
+					if (val.length > 3) {
+						abbrInput.addClass('biblens-abbr-over-limit');
+					} else {
+						abbrInput.removeClass('biblens-abbr-over-limit');
+					}
+					settings.translationAbbreviations[t.id] = val;
+					void this.plugin.saveSettings();
+				});
+
+				// Priority dropdown
+				const prioritySelect = controlsEl.createEl('select', { cls: 'dropdown biblens-transl-priority' });
+				prioritySelect.createEl('option', { value: '', text: '-' });
+				for (let i = 1; i <= n; i++) {
+					prioritySelect.createEl('option', { value: String(i), text: String(i) });
+				}
+				prioritySelect.value = currentPriority !== null ? String(currentPriority) : '';
+				prioritySelect.addEventListener('change', () => {
+					const val = prioritySelect.value;
+					const newPriority = val === '' ? null : parseInt(val, 10);
+					reassignPriority(settings.translationOrder, t.id, newPriority);
+					void this.plugin.saveSettings().then(() => this.plugin.reloadAllTranslations());
+					renderList();
+				});
+
+				// Delete button
+				const deleteBtn = controlsEl.createEl('button', { text: 'Delete', cls: 'mod-warning' });
+				deleteBtn.addEventListener('click', () => {
+					deleteBtn.disabled = true;
+					void (async () => {
+						try {
+							await deleteTranslation(this.app.vault.adapter, this.plugin.manifest.dir!, t.id);
+							new Notice(`BibLens: ${t.displayName} deleted`);
+						} catch (e) {
+							new Notice(`BibLens: delete failed — ${e instanceof Error ? e.message : String(e)}`);
 						}
-						this.plugin.settings.translationOrder[t.id] = 1;
-						await this.plugin.saveSettings();
-						await this.plugin.reloadTranslation();
-						new Notice(`BibLens: switched to ${t.displayName}`);
 						this.display();
-					});
+					})();
+				});
+
+				// Drag-and-drop
+				rowEl.addEventListener('dragstart', (e: DragEvent) => {
+					dragSrcId = t.id;
+					e.dataTransfer?.setData('text/plain', t.id);
+					rowEl.addClass('biblens-transl-dragging');
+				});
+				rowEl.addEventListener('dragend', () => {
+					rowEl.removeClass('biblens-transl-dragging');
+				});
+				rowEl.addEventListener('dragover', (e: DragEvent) => {
+					e.preventDefault();
+					rowEl.addClass('biblens-transl-dragover');
+				});
+				rowEl.addEventListener('dragleave', () => {
+					rowEl.removeClass('biblens-transl-dragover');
+				});
+				rowEl.addEventListener('drop', (e: DragEvent) => {
+					e.preventDefault();
+					rowEl.removeClass('biblens-transl-dragover');
+					if (!dragSrcId || dragSrcId === t.id) return;
+					const tgtPriority = settings.translationOrder[t.id] ?? null;
+					const srcPriority = settings.translationOrder[dragSrcId] ?? null;
+					let newPriority: number | null;
+					if (tgtPriority !== null) {
+						newPriority = tgtPriority;
+					} else if (srcPriority !== null) {
+						newPriority = null;
+					} else {
+						return;
+					}
+					reassignPriority(settings.translationOrder, dragSrcId, newPriority);
+					void this.plugin.saveSettings().then(() => this.plugin.reloadAllTranslations());
+					renderList();
 				});
 			}
+		};
 
-			setting.addButton(btn => {
-				btn.setButtonText('Delete');
-				btn.setWarning();
-				btn.onClick(async () => {
-					btn.setDisabled(true);
-					try {
-						await deleteTranslation(this.app.vault.adapter, this.plugin.manifest.dir!, t.id);
-						new Notice(`BibLens: ${t.displayName} deleted`);
-					} catch (e) {
-						new Notice(`BibLens: delete failed — ${e instanceof Error ? e.message : String(e)}`);
-					}
-					this.display();
-				});
-			});
-		}
+		renderList();
 
 		const installedIds = new Set(translations.map(t => t.id));
 		this.appendTranslInstallRow(installRowEl, catalog.translationProviders, installedIds);
