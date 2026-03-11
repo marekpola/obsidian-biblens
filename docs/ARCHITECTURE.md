@@ -186,14 +186,19 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - `requestHide(): void` — hides the popover only if the mouse is not currently over the popover element; called by the anchor's `mouseleave` handler in `main.ts`
   - `hide(): void` — unconditional teardown; called on plugin unload
   - Used in Reading View only
+- src/editor/scannerState.ts
+  - CM6 state primitives for live scanner propagation; no Obsidian imports
+  - Exports: `scannerEffect: StateEffect<RefScanner>` — dispatched by `main.ts` to push a new scanner into all open editor views
+  - Exports: `scannerField: StateField<RefScanner>` — holds the active scanner in CM6 state; initialised with a no-op stub; updated by `scannerEffect`; read by `refDecorations.ts` and `refTooltip.ts`
+  - May import from `@codemirror/*`; must not import from `obsidian`
 - src/editor/refDecorations.ts
   - CM6 ViewPlugin that scans visible ranges and applies underline decorations to detected references
-  - Exports: `refDecorationsExtension(scanner: RefScanner): Extension` — factory function
-  - Uses `scanner.scan()`; may import from `@codemirror/*`
+  - Exports: `refDecorationsExtension(): Extension` — factory function; no scanner parameter
+  - Reads active scanner from `view.state.field(scannerField)`; re-renders when `scannerEffect` is dispatched, `docChanged`, or `viewportChanged`; may import from `@codemirror/*`
 - src/editor/refTooltip.ts
   - CM6 `hoverTooltip` extension that shows verse content on hover in the editor
-  - Exports: `refTooltipExtension(scanner: RefScanner, data: TranslationData, refFormat?: ReferenceFormatRules): Extension` — factory function
-  - Uses `formatRef`, `scanner.scan()` from parser.ts; `getVerses` from provider.ts; passes `refFormat` to `getVerses`; may import from `@codemirror/*`
+  - Exports: `refTooltipExtension(data: TranslationData, refFormat?: ReferenceFormatRules): Extension` — factory function; no scanner parameter
+  - Reads active scanner from `view.state.field(scannerField)`; uses `formatRef`, `getVerses`; passes `refFormat` to `getVerses`; may import from `@codemirror/*`
 - src/editor/insertVerse.ts
   - CM6 command factory; no Obsidian imports
   - Exports: `insertAfterLastRefCommand(scanner: RefScanner, data: TranslationData, refFormat?: ReferenceFormatRules): Command`
@@ -212,6 +217,7 @@ Reference format pack files live under `reference-formats/` in the plugin direct
 - ui/hover.ts must not import from 'obsidian'
 - ui/verseDOM.ts must not import from 'obsidian'
 - editor/*.ts must not import from 'obsidian'; may import from `@codemirror/*` (provided by Obsidian host)
+- src/editor/scannerState.ts must not import from 'obsidian'; may import from `@codemirror/*`
 - translationLoader.ts may import from 'obsidian'
 - translationRegistry.ts may import from 'obsidian'
 - translationManager.ts may import from 'obsidian'
@@ -680,8 +686,9 @@ Remote catalog file shape — `schemaVersion: 2` (stored in `biblens-data` repo 
 - `src/provider.ts` exports: `getVerses(data: TranslationData, ref: BibleRef, refFormat?: ReferenceFormatRules): VerseEntry[]`
 - `src/ui/hover.ts` exports: `PopoverManager` (methods: `show`, `requestHide`, `hide`)
 - `src/ui/verseDOM.ts` exports: `buildVerseDOM(entries: VerseEntry[]): HTMLElement`
-- `src/editor/refDecorations.ts` exports: `refDecorationsExtension(scanner: RefScanner): Extension`
-- `src/editor/refTooltip.ts` exports: `refTooltipExtension(scanner: RefScanner, data: TranslationData, refFormat?: ReferenceFormatRules): Extension`
+- `src/editor/scannerState.ts` exports: `scannerEffect: StateEffect<RefScanner>`, `scannerField: StateField<RefScanner>`
+- `src/editor/refDecorations.ts` exports: `refDecorationsExtension(): Extension`
+- `src/editor/refTooltip.ts` exports: `refTooltipExtension(data: TranslationData, refFormat?: ReferenceFormatRules): Extension`
 - `src/editor/insertVerse.ts` exports: `insertAfterLastRefCommand(scanner: RefScanner, data: TranslationData, refFormat?: ReferenceFormatRules): Command`
 - `src/editor/insertVerse.ts` exports: `replaceLastRefWithQuoteCommand(scanner: RefScanner, data: TranslationData, refFormat?: ReferenceFormatRules): Command`
 - `src/translationRegistry.ts` exports: `listAvailableTranslations(adapter: DataAdapter, pluginDir: string): Promise<TranslationMeta[]>`

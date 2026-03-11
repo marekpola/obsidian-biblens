@@ -1169,6 +1169,76 @@ Expected:
 
 ---
 
+## T047 – CM6 StateField scanner propagation
+
+### 47a – Parsing rules live update (manual)
+
+Preconditions: Plugin loaded, at least one language pack and reference format pack active.
+
+Steps:
+1. Open a note containing a known Bible reference (e.g. "John 3:16").
+2. Confirm the reference is highlighted in the editor (Live Preview).
+3. Open Settings → BibLens → Parsing rules and toggle "Require whitespace before reference" on/off.
+4. Return to the note immediately (without reloading).
+
+Expected:
+- Highlight updates within the same editor session without requiring a plugin reload.
+- No console errors.
+
+### 47b – Language/format pack live update (manual)
+
+Preconditions: Plugin loaded, initial pack selected.
+
+Steps:
+1. Open a note with a reference matched by the current language pack (e.g. "John 3:16").
+2. Confirm the reference is highlighted.
+3. Open Settings → BibLens → Language pack and switch to a different pack (or "None").
+4. Return to the note immediately.
+
+Expected:
+- If switched to "None": highlight disappears without reload.
+- If switched to another pack: only references recognised by the new pack are highlighted.
+- Tooltip follows the same updated scanner.
+
+### 47c – Hover tooltip regression (manual)
+
+Steps:
+1. Open a note with a recognisable reference in Live Preview mode.
+2. Hover the mouse over the highlighted reference text.
+
+Expected:
+- Tooltip appears with the verse text.
+- No "scanner undefined" console errors.
+
+### 47d – Insert-verse and replace-ref commands regression (manual)
+
+Steps:
+1. Place the cursor after a recognised reference (e.g. "John 3:16").
+2. Run command "Insert verse after previous reference".
+3. Run command "Replace previous reference with quote".
+
+Expected:
+- Both commands execute correctly and produce verse text.
+- No console errors.
+
+### 47e – Reading View hover regression (manual)
+
+Steps:
+1. Switch the note to Reading View.
+2. Hover over a highlighted reference span.
+
+Expected:
+- Popover appears with verse text.
+- Behaviour identical to pre-T047.
+
+### 47f – Automated checks
+
+- `npm run build` succeeds with no TypeScript errors.
+- `npm run test` passes (all tests green).
+- `grep -r "StateEffect.appendConfig" src/` returns no matches (old re-render hack removed).
+
+---
+
 ## Mobile Compatibility (Periodic Check)
 
 Note:

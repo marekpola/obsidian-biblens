@@ -1,16 +1,16 @@
 import { EditorView, hoverTooltip, Tooltip } from "@codemirror/view";
-import type { RefScanner } from "../parser";
+import { scannerField } from "./scannerState";
 import { getVerses, type TranslationData } from "../provider";
 import type { ReferenceFormatRules } from "../types";
 import { buildVerseDOM } from "../ui/verseDOM";
 
 export function refTooltipExtension(
-	scanner: RefScanner,
 	data: TranslationData,
 	refFormat?: ReferenceFormatRules
 ) {
 	return hoverTooltip(
 		(view: EditorView, pos: number): Tooltip | null => {
+			const scanner = view.state.field(scannerField);
 			const line = view.state.doc.lineAt(pos);
 			const lineText = view.state.sliceDoc(line.from, line.to);
 			const lineOffset = pos - line.from;

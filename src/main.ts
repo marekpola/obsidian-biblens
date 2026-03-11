@@ -3,7 +3,7 @@ import enLanguagePack from './data/en.json';
 import enSblFormatPack from './data/en-sbl.json';
 import webTranslation from './data/web.json';
 import { EditorView } from '@codemirror/view';
-import { StateEffect } from '@codemirror/state';
+import { scannerEffect, scannerField } from './editor/scannerState';
 import { fetchCatalogUpdate } from './sources/catalogManager';
 import { isCatalogStale } from './sources/catalogUtils';
 import { buildRefScanner } from './parser';
@@ -161,9 +161,24 @@ export default class BibLensPlugin extends Plugin {
 		);
 
 		this.registerEditorExtension([
-			refDecorationsExtension(this.scanner),
-			refTooltipExtension(this.scanner, this.translationData, this._refFormat),
+			scannerField,
+			refDecorationsExtension(),
+			refTooltipExtension(this.translationData, this._refFormat),
 		]);
+
+		// Dispatch the scanner built during onload to editors that are already open
+		this.dispatchScanner(this._currentScanner);
+
+		// Dispatch to newly opened editors so they start with the current scanner
+		this.registerEvent(
+			this.app.workspace.on('active-leaf-change', (leaf) => {
+				if (!leaf || leaf.getViewState().type !== 'markdown') return;
+				const view = (leaf.view as unknown as { editor?: { cm?: EditorView } }).editor?.cm;
+				if (view instanceof EditorView) {
+					view.dispatch({ effects: scannerEffect.of(this._currentScanner) });
+				}
+			})
+		);
 	}
 
 	onunload() {
@@ -237,15 +252,15 @@ export default class BibLensPlugin extends Plugin {
 			for (const k of Object.keys(this._refFormat.books)) delete this._refFormat.books[k];
 		}
 
-		this.refreshEditorViews();
+		this.dispatchScanner(this._currentScanner);
 	}
 
-	private refreshEditorViews() {
+	private dispatchScanner(scanner: RefScanner) {
 		this.app.workspace.iterateAllLeaves(leaf => {
 			if (leaf.getViewState().type !== 'markdown') return;
 			const view = (leaf.view as unknown as { editor?: { cm?: EditorView } }).editor?.cm;
 			if (view instanceof EditorView) {
-				view.dispatch({ effects: StateEffect.appendConfig.of([]) });
+				view.dispatch({ effects: scannerEffect.of(scanner) });
 			}
 		});
 	}

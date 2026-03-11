@@ -1,11 +1,12 @@
-import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate} from "@codemirror/view";
+import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from "@codemirror/view";
 import type { Extension } from "@codemirror/state";
 import { RangeSetBuilder } from "@codemirror/state";
-import type { RefScanner } from "../parser";
+import { scannerEffect, scannerField } from "./scannerState";
 
 const refMark = Decoration.mark({ class: "biblens-ref" });
 
-function buildDecorations(view: EditorView, scanner: RefScanner): DecorationSet {
+function buildDecorations(view: EditorView): DecorationSet {
+	const scanner = view.state.field(scannerField);
 	const builder = new RangeSetBuilder<Decoration>();
 	for (const { from, to } of view.visibleRanges) {
 		const text = view.state.sliceDoc(from, to);
@@ -16,18 +17,21 @@ function buildDecorations(view: EditorView, scanner: RefScanner): DecorationSet 
 	return builder.finish();
 }
 
-export function refDecorationsExtension(scanner: RefScanner): Extension {
+export function refDecorationsExtension(): Extension {
 	return ViewPlugin.fromClass(
 		class {
 			decorations: DecorationSet;
 
 			constructor(view: EditorView) {
-				this.decorations = buildDecorations(view, scanner);
+				this.decorations = buildDecorations(view);
 			}
 
 			update(update: ViewUpdate) {
-				if (update.docChanged || update.viewportChanged) {
-					this.decorations = buildDecorations(update.view, scanner);
+				const scannerChanged = update.transactions.some(tr =>
+					tr.effects.some(e => e.is(scannerEffect))
+				);
+				if (update.docChanged || update.viewportChanged || scannerChanged) {
+					this.decorations = buildDecorations(update.view);
 				}
 			}
 		},
