@@ -243,32 +243,10 @@ Allow the user to discover and download Bible translations from a curated catalo
 - Download status is derived from the `translations/` directory listing (no separate tracking file).
 - A separate **Installed Translations** panel lists locally available translations with a Delete button.
 
-#### Catalog Update from GitHub
-
-The source catalog (list of providers and their translations) can be refreshed independently from the plugin itself, without requiring a new plugin release. This allows adding or removing providers when sources become available or go offline.
-
-Update modes:
-
-- **Manual** (always available): a "Update catalog" button in settings fetches the current catalog from a hardcoded GitHub URL and caches it locally as `catalog.json` in the plugin directory.
-- **Auto-update on startup** (opt-in, default off): if the cached catalog is older than a configurable threshold, the plugin fetches a fresh copy silently on load. The user enables this via a settings toggle.
-
-Fallback chain (in priority order):
-
-1. `plugins/biblens/catalog.json` — locally cached catalog (result of a previous update)
-2. Bundled `KNOWN_PROVIDERS` — static snapshot baked into the plugin at release time; always available offline
-
-Constraints:
-
-- The remote catalog URL is a hardcoded constant pointing to the BibLens data repository (`biblens-data`). It is not user-configurable.
-- The remote catalog can only update **data** (providers, translations, URLs). It cannot add new adapter types — those require a plugin release.
-- Providers in the fetched catalog that reference an unknown adapter type are silently ignored (forward-compatibility: a newer catalog entry won't crash an older plugin).
-- Schema validation is performed before accepting any fetched catalog.
-- The settings UI shows the date of the last successful catalog update.
-
 #### Constraints
 
 - The source catalog is bundled in plugin source code as an offline fallback.
-- All network access is an **explicit user action** or opt-in auto behavior; no silent background activity by default.
+- All network access is an **explicit user action**; no silent background activity by default.
 - Transformation to canonical format happens before writing to disk; corrupt or non-conforming data is rejected.
 - Once translations are downloaded, the plugin operates fully offline.
 - New providers and adapters are added by extending the catalog (data) and adapter registry (code) in the plugin; new adapter types always require a plugin release.
@@ -391,7 +369,7 @@ The settings tab is organized into five areas in order:
 - **Installed translations** (collapsible, collapsed by default) — list of installed translations; active translation marked; Delete and Set as default buttons; “Install new” row at the bottom with provider + translation dropdowns and Download button (already-installed translations are excluded from the dropdown)
 - **Reference formats** (collapsible, collapsed by default) — list of installed format packs with Delete and Set as default buttons; “Install new” row at the bottom with provider + format dropdowns and Download button
 - **Recognition languages** (collapsible, collapsed by default) — list of installed language packs with Delete and Set as default buttons; “Install new” row at the bottom with provider + language dropdowns and Download button
-- **Advanced** — catalog update button and auto-update toggle
+- **Advanced** — reserved for future diagnostic or reset actions
 
 **Auto-default behaviour:** when `display()` renders and the preference for any asset type is empty while at least one item of that type is installed, the first installed item is automatically set as default. This fires on first download, manual file drop (detected on next tab open), and active-item deletion (preference cleared → next available item auto-selected).
 
@@ -426,8 +404,12 @@ configuration.
     separator, hyphen range separator
   - English Bible translation — World English Bible (WEB; public domain,
     modern language)
-- On `onload()`, if any of these files does not yet exist in the plugin
-  directory, the plugin writes it from the bundled data:
+- On `onload()`, the plugin checks each bundled asset using a **write-once
+  flag** stored in plugin data (`bundledPacksWritten`). Each flag is keyed by
+  the relative file path (e.g. `"recognition-languages/en.json"`). If the flag
+  for a file is not set, the plugin writes the file from bundled data and sets
+  the flag. If the flag is already set, the file is never written again —
+  regardless of whether it exists on disk. This means:
   - `recognition-languages/en.json`
   - `reference-formats/en.json`
   - `translations/en-web.json`
@@ -436,7 +418,8 @@ configuration.
 - The auto-default mechanism activates them on first install without any user
   action.
 - The user may delete any of them; the plugin will not recreate them on the
-  next launch (deletion is intentional).
+  next launch (deletion is intentional and permanent — the write-once flag
+  remains set).
 - Attribution for the World English Bible is added to `LICENSES.md`.
 
 **Removal of hidden code-level fallbacks:**
@@ -481,6 +464,8 @@ a catalog update.
 **Proposed behaviour:**
 - Each "Install new" row gains an explicit **"Load"** button placed between
   the provider dropdown and the items dropdown.
+- The Load button carries a tooltip: *"Fetch the current list of available
+  items from the selected provider."*
 - Clicking "Load" queries the selected provider for its current item list (for
   example, reads `index.json` from the `biblens-data` repository, or calls the
   getbible.net list endpoint) and repopulates the items dropdown with the live
@@ -509,7 +494,27 @@ from the provider."*
 - `biblens-data` adapter: reads `resources/<category>/index.json` from the
   repository.
 - `getbible-v2`: uses their translation list endpoint.
-- `beblia-xml`: no list endpoint anticipated; button hidden.
+- `beblia-xml`: no dedicated index file exists in the repository. The adapter
+  implements `listUrl()` pointing to the GitHub Contents API:
+  `https://api.github.com/repos/Beblia/Holy-Bible-XML-Format/contents/`.
+  `listAvailable()` filters the JSON response for `.xml` files and maps each
+  filename to a `RemoteTranslationEntry`; entries already present in the
+  catalog keep their catalog display name and language tag; newly discovered
+  entries use the filename (without extension) as id and display name and leave
+  language unset. The Load button is shown for this provider.
+  **Constraint:** the GitHub unauthenticated API allows 60 requests/hour per
+  IP. Because Load is an explicit user action (not automatic), this limit is
+  acceptable in normal use. The adapter must handle HTTP 403/429 responses
+  gracefully and show the same "load failed" notice as any other network error.
+
+**Install row layout:**
+The "Install new" row (provider dropdown | Load button | items dropdown |
+Download button) must not expand or shift when the items dropdown is
+repopulated with long names. Implementation: wrap the row in a CSS `flex`
+container; give the items dropdown `flex: 1; min-width: 0; overflow: hidden;
+text-overflow: ellipsis` so it absorbs available space without pushing other
+elements; give the provider dropdown, Load button, and Download button
+`flex-shrink: 0` so they retain their natural size. No fixed pixel widths.
 
 **Open questions:** none.
 
@@ -574,4 +579,40 @@ Chapters in this section are design proposals awaiting Architect review and Revi
 Once accepted, the Analyst moves each chapter into the appropriate version section and removes the `**Status:** Proposed` line.
 
 <!-- New proposed chapters go here -->
+
+### Insert Book Abbreviation
+
+**Status:** Proposed
+
+**User need:** Users who do not know or cannot recall the canonical abbreviation
+for a book can insert it directly at the cursor without switching to another
+reference, memorising the abbreviation, or typing it manually.
+
+**Proposed behaviour:**
+- A new command `BibLens: Insert book abbreviation` is registered.
+- Running the command opens a filterable list modal (`SuggestModal`) showing
+  all canonical book abbreviations from the active reference format pack,
+  displayed as `<abbreviation> — <full book name>` (e.g. `Gen — Genesis`).
+- The user can filter by typing any part of the abbreviation or book name.
+- Selecting an entry inserts the abbreviation text at the current cursor
+  position in the active editor.
+- The command is a no-op (shows a Notice) when invoked outside an editing
+  context (e.g. Reading View, no active editor).
+- If no reference format pack is active, the modal falls back to USFM book
+  identifiers (e.g. `GEN`) as abbreviations, since no canonical short form is
+  defined.
+
+**Scope notes:**
+- Implementation uses Obsidian's built-in `SuggestModal` — no custom UI
+  required; works on desktop and mobile.
+- The command reads abbreviations from the active `ReferenceFormatRules.books`
+  map. No new data source is needed.
+- Insertion uses a standard CM6 transaction (same pattern as the two existing
+  insert commands); no `innerHTML`.
+- Source modules affected: `src/main.ts` (command registration),
+  `src/ui/bookAbbreviationModal.ts` (new — SuggestModal subclass).
+
+**Open questions:**
+- Should the modal also show the full book name as secondary text (greyed), or
+  only the abbreviation? Recommendation: show both for discoverability.
 

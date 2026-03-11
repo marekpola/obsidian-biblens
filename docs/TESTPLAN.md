@@ -1178,7 +1178,7 @@ Preconditions: Plugin loaded, at least one language pack and reference format pa
 Steps:
 1. Open a note containing a known Bible reference (e.g. "John 3:16").
 2. Confirm the reference is highlighted in the editor (Live Preview).
-3. Open Settings → BibLens → Parsing rules and toggle "Require whitespace before reference" on/off.
+3. Open Settings → BibLens → Parsing rules and switch between Strict and Extended.
 4. Return to the note immediately (without reloading).
 
 Expected:
