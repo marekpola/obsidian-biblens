@@ -50,9 +50,9 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - Exposes `reloadTranslation()` — mutates `translationData` in-place so all consumers (editor extensions, hover) see updated data without re-registration
   - Registers CM6 extensions via `this.registerEditorExtension([...])`
   - Calls `loadTranslation` on `onload()`; stores `translationData`; passes it to UI layers
-  - Loads active language pack via `languagePackLoader.ts` (falls back to built-in English defaults if none selected)
-  - Loads active reference format pack via `referenceFormatLoader.ts` (falls back to `books.ts: BUILT_IN_FORMAT_RULES` — English notation — if none selected)
-  - Builds `AbbreviationMap` from language pack data (USFM keys read directly); falls back to `books.ts: getBuiltInAbbreviationMap()`
+  - Loads active language pack via `languagePackLoader.ts`; uses empty `AbbreviationMap` (no-op scanner) if none selected or load fails
+  - Loads active reference format pack via `referenceFormatLoader.ts`; passes `undefined` (no-op scanner) if none selected or load fails
+  - Builds `AbbreviationMap` from language pack data (USFM keys read directly)
   - Builds `RefScanner` via `buildRefScanner(map, formatRules, settings.parsingRules)` and passes it to editor extension factories; passes active `ReferenceFormatRules` as `refFormat` to `refTooltipExtension`, `insertAfterLastRefCommand`, and `replaceLastRefWithQuoteCommand`; also passes `refFormat` to `getVerses` when building Reading View hover content (before calling `PopoverManager.show`)
   - Registers `biblens-insert-verse` command via `this.addCommand(...)`
 - src/settingsTab.ts
@@ -84,8 +84,6 @@ Reference format pack files live under `reference-formats/` in the plugin direct
   - `catalogLastUpdated: string` (default: `""`) — ISO timestamp of last successful catalog fetch; shown in settings UI
 - src/books.ts
   - Definition of standard representation of biblical books and built-in abbreviation mapping
-  - Exports: `getBuiltInAbbreviationMap(): AbbreviationMap` — returns the built-in English abbreviation map (standard short forms: `Gen`, `Exod`, `Matt`, etc.); used as offline fallback when no language pack is active
-  - Exports: `BUILT_IN_FORMAT_RULES: ReferenceFormatRules` — hardcoded English format rules: colon chapter-verse separator, hyphen range separator, space book-chapter separator, and canonical English abbreviations for all 66 books (e.g. `Gen`, `Matt`); used as offline fallback when no format pack is selected; does not depend on the bundled `en.json` being present on disk
   - Exports: `SINGLE_CHAPTER_BOOKS: Set<BookId>` — the set of USFM book identifiers that have only one chapter (`OBA`, `PHM`, `2JN`, `3JN`, `JUD`); used by `parseCVPart` and `formatRef` to apply single-chapter interpretation rules (see D029)
 - src/provider.ts
   - Pure data-access module (no Obsidian imports, no DOM)
@@ -339,7 +337,7 @@ main.ts
 → settings.preferredLanguage
 → languagePackLoader.ts: loadLanguagePack()
   → AbbreviationMap (USFM keys read directly from pack; no conversion step)
-  OR → books.ts: getBuiltInAbbreviationMap() (if no pack selected)
+  OR → empty AbbreviationMap {} (if no pack selected or load fails → no-op scanner)
 
 Reference format load:
 
@@ -347,7 +345,7 @@ main.ts
 → settings.standardReferenceFormat
 → referenceFormatLoader.ts: loadReferenceFormat()
   → ReferenceFormatRules
-  OR → books.ts: BUILT_IN_FORMAT_RULES (built-in English defaults, if no pack selected)
+  OR → undefined (if no pack selected or load fails → no-op scanner)
 
 Scanner construction:
 
@@ -503,7 +501,7 @@ type ReferenceFormatRules = {
 // AbbreviationMap: recognized input string → USFM 3.0 BookId
 // Built by languagePackLoader directly from a language pack's books[USFM_ID].aliases
 // (book keys in the pack file are already USFM; no conversion needed in the loader).
-// Falls back to books.ts: getBuiltInAbbreviationMap() when no pack is selected.
+// Uses empty AbbreviationMap {} when no pack is selected (produces no-op scanner).
 type AbbreviationMap = Record<string, BookId>;
 
 type ParsingMode = 'strict' | 'extended';
@@ -598,9 +596,9 @@ Reference format packs for well-known notation styles are bundled in the plugin 
 
 Bundled format packs at v0.4 release: `en` (English — colon notation, standard English abbreviations).
 
-The code-level `BUILT_IN_FORMAT_RULES` constant in `books.ts` is the actual offline fallback when no format pack is selected; the bundled `en.json` file is shipped for discoverability (it appears in the Installed formats list) but the plugin never reads it as a fallback.
+When no format pack is selected the scanner is a no-op stub; no references are detected. The bundled `en.json` is shipped so it appears in the Installed formats list and is set as the default on first install.
 
-Language packs are **not** bundled; the built-in `books.ts: getBuiltInAbbreviationMap()` (English aliases) serves as the offline fallback when no language pack is selected. Additional language packs require a download or manual drop.
+When no language pack is selected the scanner is a no-op stub. Additional language packs require a download or manual drop.
 
 ### Manual drop
 

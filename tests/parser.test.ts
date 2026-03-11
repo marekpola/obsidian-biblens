@@ -1,8 +1,30 @@
 import { describe, it, expect } from "vitest";
 import { parseCzechBibleRef, scanRefs, buildRefScanner, formatRef } from "../src/parser";
-import { BOOK_ALIASES, BUILT_IN_FORMAT_RULES } from "../src/books";
+import { BOOK_ALIASES } from "../src/books";
 import type { ReferenceFormatRules } from "../src/types";
 import type { AbbreviationMap } from "../src/books";
+
+// Inline English SBL-style format rules (mirrors the removed EN_FORMAT constant)
+const EN_FORMAT: ReferenceFormatRules = {
+  chapterVerseSeparator: ':',
+  rangeSeparator: '-',
+  bookChapterSeparator: ' ',
+  books: {
+    GEN: "Gen", EXO: "Exod", LEV: "Lev", NUM: "Num", DEU: "Deut",
+    JOS: "Josh", JDG: "Judg", RUT: "Ruth",
+    "1SA": "1Sam", "2SA": "2Sam", "1KI": "1Kgs", "2KI": "2Kgs", "1CH": "1Chr", "2CH": "2Chr",
+    EZR: "Ezra", NEH: "Neh", EST: "Esth",
+    JOB: "Job", PSA: "Ps", PRO: "Prov", ECC: "Eccl", SNG: "Song",
+    ISA: "Isa", JER: "Jer", LAM: "Lam", EZK: "Ezek", DAN: "Dan",
+    HOS: "Hos", JOL: "Joel", AMO: "Amos", OBA: "Obad", JON: "Jonah",
+    MIC: "Mic", NAM: "Nah", HAB: "Hab", ZEP: "Zeph", HAG: "Hag", ZEC: "Zech", MAL: "Mal",
+    MAT: "Matt", MRK: "Mark", LUK: "Luke", JHN: "John", ACT: "Acts",
+    ROM: "Rom", "1CO": "1Cor", "2CO": "2Cor", GAL: "Gal", EPH: "Eph", PHP: "Phil", COL: "Col",
+    "1TH": "1Thess", "2TH": "2Thess", "1TI": "1Tim", "2TI": "2Tim", TIT: "Titus", PHM: "Phlm",
+    HEB: "Heb", JAS: "Jas", "1PE": "1Pet", "2PE": "2Pet",
+    "1JN": "1John", "2JN": "2John", "3JN": "3John", JUD: "Jude", REV: "Rev",
+  },
+};
 
 describe("parseCzechBibleRef", () => {
   it("parses Mt 1,3", () => {
@@ -94,8 +116,8 @@ describe("parseCzechBibleRef", () => {
   });
 });
 
-describe("buildRefScanner – strict mode (BUILT_IN_FORMAT_RULES)", () => {
-  const scanner = buildRefScanner(BOOK_ALIASES, BUILT_IN_FORMAT_RULES, "strict");
+describe("buildRefScanner – strict mode (EN_FORMAT)", () => {
+  const scanner = buildRefScanner(BOOK_ALIASES, EN_FORMAT, "strict");
 
   it("detects Matt 1:3", () => {
     const matches = scanner.scan("Matt 1:3");
@@ -152,7 +174,7 @@ describe("buildRefScanner – strict mode (BUILT_IN_FORMAT_RULES)", () => {
 });
 
 describe("buildRefScanner – extended mode", () => {
-  const scanner = buildRefScanner(BOOK_ALIASES, BUILT_IN_FORMAT_RULES, "extended");
+  const scanner = buildRefScanner(BOOK_ALIASES, EN_FORMAT, "extended");
 
   it("detects Matt 1:3", () => {
     const matches = scanner.scan("Matt 1:3");
@@ -195,28 +217,28 @@ describe("buildRefScanner – extended mode", () => {
   });
 });
 
-describe("formatRef with BUILT_IN_FORMAT_RULES", () => {
+describe("formatRef with EN_FORMAT", () => {
   it('produces "Gen 1:1"', () => {
-    expect(formatRef({ bookId: "GEN", chapterStart: 1, verseStart: 1 }, BUILT_IN_FORMAT_RULES)).toBe("Gen 1:1");
+    expect(formatRef({ bookId: "GEN", chapterStart: 1, verseStart: 1 }, EN_FORMAT)).toBe("Gen 1:1");
   });
 
   it('produces "Matt 1:3"', () => {
-    expect(formatRef({ bookId: "MAT", chapterStart: 1, verseStart: 3 }, BUILT_IN_FORMAT_RULES)).toBe("Matt 1:3");
+    expect(formatRef({ bookId: "MAT", chapterStart: 1, verseStart: 3 }, EN_FORMAT)).toBe("Matt 1:3");
   });
 
   it('produces "Gen 22:1-19"', () => {
-    expect(formatRef({ bookId: "GEN", chapterStart: 22, verseStart: 1, verseEnd: 19 }, BUILT_IN_FORMAT_RULES)).toBe("Gen 22:1-19");
+    expect(formatRef({ bookId: "GEN", chapterStart: 22, verseStart: 1, verseEnd: 19 }, EN_FORMAT)).toBe("Gen 22:1-19");
   });
 
   it('produces "Gen 1-2" for chapter range', () => {
-    expect(formatRef({ bookId: "GEN", chapterStart: 1, chapterEnd: 2 }, BUILT_IN_FORMAT_RULES)).toBe("Gen 1-2");
+    expect(formatRef({ bookId: "GEN", chapterStart: 1, chapterEnd: 2 }, EN_FORMAT)).toBe("Gen 1-2");
   });
 
   it('produces "Gen 1:1-2:20" for cross-chapter range', () => {
     expect(
       formatRef(
         { bookId: "GEN", chapterStart: 1, verseStart: 1, chapterEnd: 2, verseEnd: 20 },
-        BUILT_IN_FORMAT_RULES
+        EN_FORMAT
       )
     ).toBe("Gen 1:1-2:20");
   });
@@ -225,13 +247,13 @@ describe("formatRef with BUILT_IN_FORMAT_RULES", () => {
     expect(
       formatRef(
         { bookId: "OBA", chapterStart: 1, verseStart: 2, verseEnd: 3 },
-        BUILT_IN_FORMAT_RULES
+        EN_FORMAT
       )
     ).toBe("Obad 2-3");
   });
 
-  it("falls back to default format", () => {
-    expect(formatRef({ bookId: "GEN", chapterStart: 1, verseStart: 1 })).toBe("Gen 1:1");
+  it("falls back to bookId when no refFormat supplied", () => {
+    expect(formatRef({ bookId: "GEN", chapterStart: 1, verseStart: 1 })).toBe("GEN 1:1");
   });
 });
 

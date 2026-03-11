@@ -922,23 +922,16 @@ Cases:
 
 ---
 
-## Task 40 – `formatRef` no-arg fallback: English notation
+## Task 40 – `formatRef` no-arg fallback
 
 All cases covered by `tests/parser.test.ts`. No manual steps required (pure parser logic).
 
-### 40a – No-arg fallback uses English notation (automated)
+### 40a – No-arg fallback uses USFM BookId as abbreviation (automated)
 
 Cases:
-- `formatRef({ bookId: "GEN", chapterStart: 1, verseStart: 1 })` → `"Gen 1:1"`
-- `formatRef({ bookId: "MAT", chapterStart: 1, verseStart: 3 })` → `"Matt 1:3"`
-- `formatRef({ bookId: "GEN", chapterStart: 22, verseStart: 1, verseEnd: 19 })` → `"Gen 22:1-19"`
+- `formatRef({ bookId: "GEN", chapterStart: 1, verseStart: 1 })` → `"GEN 1:1"` (no book map active)
 
-### 40b – Explicit `BUILT_IN_FORMAT_RULES` arg produces same result as no-arg (automated)
-
-Cases:
-- `formatRef(ref, BUILT_IN_FORMAT_RULES)` === `formatRef(ref)` for any `ref`
-
-### 40c – Existing explicit-refFormat tests unchanged (automated)
+### 40b – Existing explicit-refFormat tests unchanged (automated)
 
 Cases:
 - All pre-existing `formatRef` test cases that pass an explicit `refFormat` continue to pass without modification
@@ -1134,6 +1127,45 @@ Steps:
 
 Expected:
 - A description reads: "Items shown are from the catalog. Click load to fetch the current list from the provider."
+
+---
+
+## Task 44 – Remove built-in fallback constants
+
+### 44a – No packs active: scanner is no-op, status shows "None" (manual)
+
+Setup: clear `preferredLanguage` and `standardReferenceFormat` from saved plugin data (or remove the bundled pack files) so neither pack is active.
+
+Steps:
+1. Enable BibLens. Open **Settings → BibLens**.
+2. Observe the General section rows for Reference format and Recognition language.
+3. Open a note containing `Gen 1:1` and observe the editor.
+4. Open Dev Tools console.
+
+Expected:
+- General status shows **"None"** for Reference format and Recognition language.
+- No underline decoration appears on `Gen 1:1` (scanner is no-op).
+- No hover tooltip appears on references.
+- No BibLens console errors.
+
+### 44b – Packs installed and active: behaviour unchanged (manual)
+
+Steps:
+1. Ensure `recognition-languages/en.json` and `reference-formats/en-sbl.json` are present and selected.
+2. Reload Obsidian.
+3. Open **Settings → BibLens**; verify Reference format shows `en-sbl` and Language shows `en`.
+4. Open a note containing `Gen 1:1` and `Matt 5:3`.
+
+Expected:
+- References are underlined in the editor.
+- Hovering shows verse text in a tooltip.
+- Behaviour identical to pre-T044.
+
+### 44c – No references to removed exports in source (automated)
+
+- `grep -r "BUILT_IN_FORMAT_RULES\|getBuiltInAbbreviationMap" src/` returns no matches.
+- `npm run test` passes (133 tests green).
+- `npm run build` succeeds.
 
 ---
 

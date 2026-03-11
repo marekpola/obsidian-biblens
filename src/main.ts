@@ -21,7 +21,7 @@ import { loadLanguagePack } from './languagePackLoader';
 import { listAvailableLanguagePacks } from './languagePackRegistry';
 import { loadReferenceFormat } from './referenceFormatLoader';
 import { listAvailableReferenceFormats } from './referenceFormatRegistry';
-import { getBuiltInAbbreviationMap, BUILT_IN_FORMAT_RULES} from './books';
+import type { AbbreviationMap } from './books';
 import type { BibLensSettings } from './settings';
 import { DEFAULT_SETTINGS } from './settings';
 import type { ReferenceFormatRules } from './types';
@@ -55,10 +55,10 @@ export default class BibLensPlugin extends Plugin {
 
 	// Mutable refFormat — mutated in-place so extensions always read current state
 	private readonly _refFormat: ReferenceFormatRules = {
-		chapterVerseSeparator: BUILT_IN_FORMAT_RULES.chapterVerseSeparator,
-		rangeSeparator: BUILT_IN_FORMAT_RULES.rangeSeparator,
-		bookChapterSeparator: BUILT_IN_FORMAT_RULES.bookChapterSeparator,
-		books: { ...BUILT_IN_FORMAT_RULES.books },
+		chapterVerseSeparator: ':',
+		rangeSeparator: '-',
+		bookChapterSeparator: ' ',
+		books: {},
 	};
 
 	// Internal scanner implementation — rebuilt on reloadScanner()
@@ -190,8 +190,8 @@ export default class BibLensPlugin extends Plugin {
 	}
 
 	async reloadScanner() {
-		// Load language pack (or fall back to built-in)
-		let map = getBuiltInAbbreviationMap();
+		// Load language pack; use empty map (no-op scanner) if none selected or load fails
+		let map: AbbreviationMap = {};
 		if (this.settings.preferredLanguage) {
 			try {
 				const { map: packMap } = await loadLanguagePack(
@@ -201,12 +201,12 @@ export default class BibLensPlugin extends Plugin {
 				);
 				map = packMap;
 			} catch (e) {
-				console.error('BibLens: failed to load language pack, using built-in', e);
+				console.error('BibLens: failed to load language pack', e);
 			}
 		}
 
-		// Load reference format pack (or fall back to built-in)
-		let formatRules: ReferenceFormatRules = BUILT_IN_FORMAT_RULES;
+		// Load reference format pack; leave undefined (no-op scanner) if none selected or load fails
+		let formatRules: ReferenceFormatRules | undefined;
 		if (this.settings.standardReferenceFormat) {
 			try {
 				const { rules } = await loadReferenceFormat(
@@ -216,7 +216,7 @@ export default class BibLensPlugin extends Plugin {
 				);
 				formatRules = rules;
 			} catch (e) {
-				console.error('BibLens: failed to load reference format, using built-in', e);
+				console.error('BibLens: failed to load reference format', e);
 			}
 		}
 
@@ -224,11 +224,18 @@ export default class BibLensPlugin extends Plugin {
 		this._currentScanner = buildRefScanner(map, formatRules, this.settings.parsingRules);
 
 		// Mutate _refFormat in-place so all existing extension references see the new rules
-		this._refFormat.chapterVerseSeparator = formatRules.chapterVerseSeparator;
-		this._refFormat.rangeSeparator = formatRules.rangeSeparator;
-		this._refFormat.bookChapterSeparator = formatRules.bookChapterSeparator;
-		for (const k of Object.keys(this._refFormat.books)) delete this._refFormat.books[k];
-		Object.assign(this._refFormat.books, formatRules.books);
+		if (formatRules) {
+			this._refFormat.chapterVerseSeparator = formatRules.chapterVerseSeparator;
+			this._refFormat.rangeSeparator = formatRules.rangeSeparator;
+			this._refFormat.bookChapterSeparator = formatRules.bookChapterSeparator;
+			for (const k of Object.keys(this._refFormat.books)) delete this._refFormat.books[k];
+			Object.assign(this._refFormat.books, formatRules.books);
+		} else {
+			this._refFormat.chapterVerseSeparator = ':';
+			this._refFormat.rangeSeparator = '-';
+			this._refFormat.bookChapterSeparator = ' ';
+			for (const k of Object.keys(this._refFormat.books)) delete this._refFormat.books[k];
+		}
 
 		this.refreshEditorViews();
 	}

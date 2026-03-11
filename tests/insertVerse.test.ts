@@ -4,6 +4,14 @@ import { scanRefs } from "../src/parser";
 import type { TranslationData } from "../src/provider";
 import type { RefScanner } from "../src/parser";
 import type { EditorView } from "@codemirror/view";
+import type { ReferenceFormatRules } from "../src/types";
+
+const EN_FORMAT: ReferenceFormatRules = {
+	chapterVerseSeparator: ':',
+	rangeSeparator: '-',
+	bookChapterSeparator: ' ',
+	books: { GEN: "Gen", MAT: "Matt" },
+};
 
 const data: TranslationData = {
 	"GEN.1.1": "Na počátku stvořil Bůh nebe a zemi.",
@@ -73,7 +81,7 @@ describe("replaceLastRefWithQuoteCommand", () => {
 	it("replaces reference with blockquote (mid-line adds leading newline)", () => {
 		const doc = "See Gn 1,1 for reference.";
 		const { view, getInsert, getFrom, getTo } = makeView(doc);
-		replaceLastRefWithQuoteCommand(scanner, data)(view);
+		replaceLastRefWithQuoteCommand(scanner, data, EN_FORMAT)(view);
 		expect(getInsert()).toBe("\n> Gen 1:1 Na počátku stvořil Bůh nebe a zemi.\n");
 		// "See " = 4 chars; "Gn 1,1" starts at 4, ends at 10
 		expect(getFrom()).toBe(4);
@@ -83,13 +91,13 @@ describe("replaceLastRefWithQuoteCommand", () => {
 	it("replaces reference without leading newline when reference is at line start", () => {
 		const doc = "Some intro.\nGn 1,1";
 		const { view, getInsert } = makeView(doc);
-		replaceLastRefWithQuoteCommand(scanner, data)(view);
+		replaceLastRefWithQuoteCommand(scanner, data, EN_FORMAT)(view);
 		expect(getInsert()).toBe("> Gen 1:1 Na počátku stvořil Bůh nebe a zemi.\n");
 	});
 
 	it("returns false when no references found", () => {
 		const { view, wasDispatched } = makeView("No references here.");
-		expect(replaceLastRefWithQuoteCommand(scanner, data)(view)).toBe(false);
+		expect(replaceLastRefWithQuoteCommand(scanner, data, EN_FORMAT)(view)).toBe(false);
 		expect(wasDispatched()).toBe(false);
 	});
 });

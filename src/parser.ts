@@ -1,5 +1,15 @@
 import type { ParseResult, BibleRef, ReferenceFormatRules, ParsingMode } from "./types";
-import { resolveBookId, normalizeBookKey, BUILT_IN_FORMAT_RULES, SINGLE_CHAPTER_BOOKS } from "./books";
+import { resolveBookId, normalizeBookKey, SINGLE_CHAPTER_BOOKS } from "./books";
+import type { ReferenceFormatRules as _RFR } from "./types";
+
+// Private inline fallback used by formatRef when no refFormat is supplied.
+// Books map is intentionally empty — the bookId itself is used as abbreviation.
+const FALLBACK_FORMAT: _RFR = {
+  chapterVerseSeparator: ':',
+  rangeSeparator: '-',
+  bookChapterSeparator: ' ',
+  books: {},
+};
 import type { AbbreviationMap, BookId } from "./books";
 
 export type RefMatch = {
@@ -34,7 +44,7 @@ export function scanRefs(text: string): RefMatch[] {
 
 
 export function formatRef(ref: BibleRef, refFormat?: ReferenceFormatRules): string {
-  const fmt = refFormat ?? BUILT_IN_FORMAT_RULES;
+  const fmt = refFormat ?? FALLBACK_FORMAT;
   const abbr = fmt.books[ref.bookId] ?? ref.bookId;
   const bookChapSep = fmt.bookChapterSeparator;
   const cvSep = fmt.chapterVerseSeparator;
@@ -201,7 +211,8 @@ export function buildRefScanner(
   format?: ReferenceFormatRules,
   mode?: ParsingMode
 ): RefScanner {
-  const fmt = format ?? BUILT_IN_FORMAT_RULES;
+  if (!format) return { scan: () => [] };
+  const fmt = format;
   const parsingMode = mode ?? 'strict';
 
   const rawAliases: string[] =

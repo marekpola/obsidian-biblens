@@ -1,13 +1,12 @@
 import type { BibleRef, ReferenceFormatRules } from "./types";
 import { formatRef } from "./parser";
-import { BUILT_IN_FORMAT_RULES } from "./books";
 
 export type VerseEntry = { label: string; text: string; chapterBreak?: boolean };
 export type TranslationData = Record<string, string>;
 
 export function getVerses(data: TranslationData, ref: BibleRef, refFormat?: ReferenceFormatRules): VerseEntry[] {
   const entries: VerseEntry[] = [];
-  const cvSep = refFormat?.chapterVerseSeparator ?? BUILT_IN_FORMAT_RULES.chapterVerseSeparator;
+  const cvSep = refFormat?.chapterVerseSeparator ?? ':';
 
   const addChapterVerses = (chapter: number, fromVerse?: number, toVerse?: number) => {
     const prefix = `${ref.bookId}.${chapter}.`;
