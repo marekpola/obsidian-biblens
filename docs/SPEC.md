@@ -343,4 +343,72 @@ Items in this section are prepared for the implementation of future versions.
 Chapters in this section are design proposals awaiting Architect review and Reviewer approval.
 Once accepted, the Analyst moves each chapter into the appropriate version section and removes the `**Status:** Proposed` line.
 
-<!-- New proposed chapters go here -->
+### BibLens Side Panel
+**Status:** Proposed
+
+**User need:** Users want a persistent, scrollable panel that shows the biblical text surrounding a referenced verse without interrupting their note-writing flow.
+
+**Proposed behaviour:**
+- A side panel (Obsidian leaf) that opens via **right-click on a reference → "Open in BibLens panel"** and stays pinned by default.
+- User can open a side panel also by other standard means (command etc.)
+- Displays the referenced verse centred in the viewport, with ±2 surrounding verses visible on opening; the referenced verse reference is highlighted with a light background and a thin vertical accent line.
+- If the panel is already open, it updates automatically when the user opens a new reference.
+- A **navigation bar** at the top: `<< < Book C:V > >>` where `<` / `>` step verse by verse and `<<` / `>>` step chapter by chapter.
+- Content is **continuously scrollable** — scrolling up or down reveals additional verses beyond the initial ±2; the panel behaves as a chapter reader, not a fixed excerpt.
+- Clicking a verse block moves the highlight to that verse and updates the reference shown in the navigation bar.
+- Scrolling alone does not move the highlight; only navigation buttons and verse clicks do.
+
+**Scope notes:**
+- Depends on the existing translation data layer; no new data format required.
+- The panel is a new Obsidian `ItemView` leaf type; no conflict with existing pop-up or tooltip UI.
+- Mobile-compatible (Obsidian leaf API works on mobile).
+- This is the foundation for all other v1.2 panel features.
+
+**Open questions:** none.
+
+---
+
+### Multi-Translation View in Side Panel
+**Status:** Proposed
+
+**User need:** Users who have multiple translations active want to compare verse texts from all active translations in the panel without switching settings.
+
+**Proposed behaviour:**
+- A row of **translation toggle buttons** appears at the bottom of the panel (e.g. `[CEB] [BKR] [LXX]`). Active translations are visually accented; inactive ones are greyed out.
+- When two or more translations are toggled on, the panel displays **verse-aligned blocks**: all active translations stacked per verse, labelled by their abbreviation (from Translation Display Priority settings, v1.1).
+  ```
+  6
+  CEB  I will make it a wasteland…
+  BKR  I will lay waste my vineyard…
+  LXX  καὶ θήσω τὸν ἀμπελῶνά μου…
+  ```
+- Toggling a translation on or off updates the panel content immediately; scroll position and highlighted verse are preserved.
+- When only one translation is active the label prefix is omitted and layout is unchanged from single-translation mode.
+
+**Scope notes:**
+- Requires Translation Display Priority and Abbreviation Settings (v1.1) for abbreviation labels and active-translation ordering.
+- Only translations with a priority number (not `-`) appear as toggle buttons; their initial state is "on". All priority-numbered translations are already loaded into memory at plugin startup (consistent with the v1.1 architecture in `main.ts`); toggle buttons control visibility only, not loading.
+
+**Open questions:** none.
+
+---
+
+### Contextual Actions in Side Panel
+**Status:** Proposed
+
+**User need:** Users want to act on verse text visible in the panel — inserting references or verse text into their note — without leaving the panel.
+
+**Proposed behaviour:**
+- Right-clicking a verse block in the panel opens a small context menu with three actions:
+  - **Insert reference** — inserts the canonical reference (e.g. `Isa 5:6`) at the cursor in the active editor.
+  - **Insert verse text** — inserts the verse text from the translation currently displayed (priority-1 if multiple are active) at the cursor in the active editor, using the same format as the existing `Insert verse after previous reference` command.
+  - **Copy verse** — copies the verse text (all active translations, verse-aligned) to the clipboard.
+- Actions operate on the verse that was right-clicked, not necessarily the highlighted verse.
+- If no editor is active, **Insert reference** and **Insert verse text** show a Notice and do nothing.
+
+**Scope notes:**
+- Uses the same CM6 insertion pattern as existing insert commands; no new editor integration needed.
+- Depends on **BibLens Side Panel** being implemented first.
+- Copy uses the standard Clipboard API (available in Electron and WKWebView). The right-click `contextmenu` event is not reliably triggered on mobile (touch input); contextual actions are therefore desktop-only in the initial implementation.
+
+**Open questions:** none.

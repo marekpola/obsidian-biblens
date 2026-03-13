@@ -628,6 +628,31 @@ Remote catalog file shape — `schemaVersion: 2` (stored in `biblens-data` repo 
 
 `schemaVersion` allows breaking catalog changes to be detected. Older plugin versions (expecting `schemaVersion: 1`) will reject a v2 catalog and fall back to bundled `KNOWN_PROVIDERS`.
 
+## Planned Modules — v1.2
+
+### src/ui/panelView.ts
+- Obsidian `ItemView` subclass; may import from `obsidian`
+- Registered in `main.ts` via `this.registerView(BIBLENS_PANEL_VIEW_TYPE, ...)`
+- Holds the panel's current state: active `BibleRef`, highlighted verse, visible translations
+- Consumes `allTranslationData` (passed in from `main.ts` on open/update; no new loading mechanism required — all priority-numbered translations are already in memory)
+- Verse content rendered by a panel-specific DOM builder (see below); must not reuse `buildVerseDOM` or `buildMultiTranslationDOM` from `verseDOM.ts` — those are designed for compact pop-ups
+- Calls `getVerses(data, { bookId, chapterStart })` (chapter-only `BibleRef`, `verseStart` absent) to fetch one chapter at a time; loads the next chapter as the user scrolls to a chapter boundary
+- Navigation bar buttons dispatch state updates within the view; no CM6 transaction required
+- Right-click `contextmenu` handler on verse blocks dispatches insert/copy actions (desktop only; see scope note in SPEC.md)
+- Insert actions reuse the CM6 transaction pattern from `insertVerse.ts`; copy uses `navigator.clipboard`
+- Must not import from `@codemirror/*`
+
+### src/ui/panelDOM.ts (or inline in panelView.ts if small)
+- DOM builder for the panel's verse display; no Obsidian imports
+- Produces a scrollable verse list with verse-number labels, chapter headings, and highlight marker
+- Verse-aligned multi-translation layout (stacked per verse, labelled by abbreviation) used when multiple translations are toggled on; separate from `buildMultiTranslationDOM` which targets the pop-up
+
+### Boundary additions
+- `src/ui/panelView.ts` may import from `obsidian`
+- `src/ui/panelDOM.ts` must not import from `obsidian`
+
+---
+
 ## Build
 - esbuild bundles to main.js
 - 'obsidian' is external and provided by the host
