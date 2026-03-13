@@ -199,6 +199,11 @@ export default class BibLensPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
+	refreshActiveTranslations() {
+		const newActive = getActiveTranslations(this.settings, this.allTranslationData);
+		this._activeTranslations.splice(0, this._activeTranslations.length, ...newActive);
+	}
+
 	async reloadAllTranslations() {
 		const ids = Object.entries(this.settings.translationOrder)
 			.filter(([, p]) => p !== null)

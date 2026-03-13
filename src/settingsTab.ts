@@ -208,6 +208,7 @@ export class BibLensSettingTab extends PluginSettingTab {
 					}
 					settings.translationAbbreviations[t.id] = val;
 					void this.plugin.saveSettings();
+					this.plugin.refreshActiveTranslations();
 				});
 
 				// Priority dropdown
