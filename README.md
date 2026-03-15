@@ -137,7 +137,11 @@ This allows new translations and language packs to be published without updating
 3. Reload Obsidian
 4. Enable the plugin in Community Plugins
 
+## Support
+If BibLens is useful in your research,
+consider supporting its development.
 
+☕ https://buymeacoffee.com/marekpola
 
 ## License
 
