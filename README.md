@@ -1,5 +1,7 @@
 # BibLens
 
+![BibLens logo](docs/Biblens_logo_600.jpg)
+
 An [Obsidian](https://obsidian.md) plugin that detects Bible references in your notes and shows the verse text as a hover preview — in the editor and in Reading View.
 
 Works fully offline. No external services required.
